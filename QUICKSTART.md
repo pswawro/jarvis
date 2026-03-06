@@ -15,6 +15,9 @@ cp .env.example .env
 
 | Variable | Default | Description |
 |---|---|---|
+| `AWS_ACCESS_KEY_ID` | *(empty)* | IAM access key — leave empty to use default credential chain |
+| `AWS_SECRET_ACCESS_KEY` | *(empty)* | IAM secret key — leave empty to use default credential chain |
+| `AWS_SESSION_TOKEN` | *(empty)* | Temporary session token — only needed for assumed roles / SSO |
 | `LLM_AWS_REGION` | `eu-west-1` | AWS region for Bedrock |
 | `LLM_MODEL_ID` | `eu.anthropic.claude-sonnet-4-6` | Bedrock model inference profile |
 | `LLM_MAX_TOKENS` | `4096` | Max tokens per LLM response |
@@ -22,14 +25,14 @@ cp .env.example .env
 | `HOST` | `0.0.0.0` | Backend bind address |
 | `PORT` | `8000` | Backend port |
 
-The AI assistant requires AWS credentials configured (e.g. `AWS_PROFILE` or `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`) with Bedrock access in the configured region.
+AWS credentials are optional — if left empty, boto3 falls back on the default credential chain (IAM role, `~/.aws/credentials`, `AWS_PROFILE`, etc.). Whichever credentials are used must have Bedrock access in the configured region.
 
 ## Backend
 
 ```bash
 cd backend
 pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+python -m uvicorn main:app --reload --port 8000
 ```
 
 API runs at `http://localhost:8000`. Verify with:

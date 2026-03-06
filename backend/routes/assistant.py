@@ -23,7 +23,12 @@ from routes.chart import get_brand_chart, get_region_chart, get_unit_chart, get_
 
 router = APIRouter()
 
-client = AnthropicBedrock(aws_region=config.LLM_AWS_REGION)
+client = AnthropicBedrock(
+    aws_region=config.LLM_AWS_REGION,
+    aws_access_key=config.AWS_ACCESS_KEY_ID,
+    aws_secret_key=config.AWS_SECRET_ACCESS_KEY,
+    aws_session_token=config.AWS_SESSION_TOKEN,
+)
 
 # ---------------------------------------------------------------------------
 # Semantic model — built once at startup from dimension tables
