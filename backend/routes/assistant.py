@@ -432,6 +432,7 @@ async def assistant_chat(req: AssistantRequest):
                     client.messages.create,
                     model=config.LLM_MODEL_ID,
                     max_tokens=config.LLM_MAX_TOKENS,
+                    temperature=config.LLM_TEMPERATURE,
                     system=system,
                     tools=TOOLS,
                     messages=messages,

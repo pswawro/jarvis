@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jarvis — Hackathon Presentation</title>
+  <style>
+    :root {
+      --az-purple: #6b2fa0;
+      --az-teal:   #00a3a1;
+      --az-dark:   #1a1a2e;
+      --az-light:  #f4f0f9;
+      --az-accent: #e63888;
+      --white:     #ffffff;
+      --text:      #2d2d2d;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--az-dark);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* ── Deck container ── */
+    .deck {
+      width: 100%;
+      max-width: 960px;
+      position: relative;
+    }
+
+    /* ── Individual slide ── */
+    .slide {
+      display: none;
+      background: var(--white);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,.5);
+      min-height: 540px;
+    }
+    .slide.active { display: flex; flex-direction: column; }
+
+    /* ── Slide header bar ── */
+    .slide-header {
+      background: linear-gradient(135deg, var(--az-purple) 0%, var(--az-teal) 100%);
+      padding: 28px 40px 24px;
+      color: var(--white);
+    }
+    .slide-header .eyebrow {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      opacity: .75;
+      margin-bottom: 6px;
+    }
+    .slide-header h1 { font-size: 2rem; font-weight: 700; line-height: 1.2; }
+    .slide-header p  { font-size: .95rem; opacity: .9; margin-top: 6px; }
+
+    /* ── Slide body ── */
+    .slide-body {
+      flex: 1;
+      padding: 32px 40px;
+      background: var(--white);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    /* ── Card grid ── */
+    .cards {
+      display: grid;
+      gap: 16px;
+    }
+    .cards.col2 { grid-template-columns: 1fr 1fr; }
+    .cards.col3 { grid-template-columns: repeat(3, 1fr); }
+
+    .card {
+      border-radius: 10px;
+      padding: 18px 20px;
+      background: var(--az-light);
+      border-left: 4px solid var(--az-purple);
+    }
+    .card.teal  { border-left-color: var(--az-teal); }
+    .card.accent{ border-left-color: var(--az-accent); }
+    .card.dark  { border-left-color: var(--az-dark); }
+
+    .card h3 {
+      font-size: .85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--az-purple);
+      margin-bottom: 8px;
+    }
+    .card.teal  h3 { color: var(--az-teal); }
+    .card.accent h3{ color: var(--az-accent); }
+    .card.dark  h3 { color: var(--az-dark); }
+
+    .card ul { list-style: none; padding: 0; }
+    .card ul li {
+      font-size: .88rem;
+      color: var(--text);
+      padding: 3px 0 3px 14px;
+      position: relative;
+      line-height: 1.45;
+    }
+    .card ul li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: var(--az-teal);
+      font-size: .7rem;
+      top: 5px;
+    }
+
+    /* ── Tension table (slide 3) ── */
+    .tension-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .9rem;
+    }
+    .tension-table th {
+      background: linear-gradient(135deg, var(--az-purple), var(--az-teal));
+      color: var(--white);
+      padding: 12px 18px;
+      text-align: left;
+      font-weight: 600;
+    }
+    .tension-table td {
+      padding: 11px 18px;
+      border-bottom: 1px solid #e8e0f0;
+      color: var(--text);
+    }
+    .tension-table tr:nth-child(even) td { background: var(--az-light); }
+    .tension-table .arrow {
+      text-align: center;
+      font-size: 1.2rem;
+      color: var(--az-accent);
+      font-weight: 700;
+    }
+
+    /* ── Challenge pills ── */
+    .challenge-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+    .challenge-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: var(--az-light);
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+    .challenge-icon {
+      font-size: 1.6rem;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .challenge-item h4 {
+      font-size: .83rem;
+      font-weight: 700;
+      color: var(--az-purple);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      margin-bottom: 4px;
+    }
+    .challenge-item p {
+      font-size: .83rem;
+      color: var(--text);
+      line-height: 1.45;
+    }
+
+    /* ── Vision slide big quote ── */
+    .big-quote {
+      font-size: 1.15rem;
+      font-style: italic;
+      color: var(--az-purple);
+      border-left: 4px solid var(--az-teal);
+      padding: 12px 20px;
+      background: var(--az-light);
+      border-radius: 0 8px 8px 0;
+      line-height: 1.6;
+    }
+
+    /* ── Progress bar ── */
+    .progress-bar {
+      height: 4px;
+      background: rgba(255,255,255,.2);
+      border-radius: 2px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--az-accent);
+      border-radius: 2px;
+      transition: width .4s ease;
+    }
+
+    /* ── Navigation ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 20px;
+      width: 100%;
+      max-width: 960px;
+    }
+    nav button {
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.25);
+      color: var(--white);
+      padding: 10px 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: .9rem;
+      font-weight: 600;
+      transition: background .2s;
+    }
+    nav button:hover  { background: rgba(255,255,255,.22); }
+    nav button:disabled { opacity: .3; cursor: default; }
+
+    .slide-counter {
+      color: rgba(255,255,255,.7);
+      font-size: .9rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    /* ── Dot indicators ── */
+    .dots {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.3);
+      transition: background .2s, transform .2s;
+      cursor: pointer;
+    }
+    .dot.active {
+      background: var(--az-teal);
+      transform: scale(1.3);
+    }
+  </style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- ════════════════════════════════════════════
+       SLIDE 1 — Title / Vision
+  ════════════════════════════════════════════ -->
+  <div class="slide active" id="slide-1">
+    <div class="slide-header">
+      <div class="eyebrow">AI30 Data to Insights Hackathon · 2026</div>
+      <h1>Jarvis — Next-Gen Enterprise Analytics</h1>
+      <p>Reimagining how AstraZeneca leaders consume, explore and act on data</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:20%"></div></div>
+    </div>
+    <div class="slide-body">
+      <p class="big-quote">
+        "What could a next-generation experience look like that puts trusted enterprise data in the hands
+        of our organisation — when they need it, how they need it — empowering robust decision-making
+        and surfacing the root causes that require management attention?"
+      </p>
+      <div class="cards col3">
+        <div class="card">
+          <h3>Audience</h3>
+          <ul>
+            <li>SET / SET-1 / SET-2</li>
+            <li>~500 senior leaders</li>
+            <li>Designed to scale enterprise-wide</li>
+          </ul>
+        </div>
+        <div class="card teal">
+          <h3>Horizon</h3>
+          <ul>
+            <li>MVP deployable 2026</li>
+            <li>Full vision by 2028</li>
+            <li>Finance & commercial first, then R&D, HR, Ops</li>
+          </ul>
+        </div>
+        <div class="card accent">
+          <h3>Stack</h3>
+          <ul>
+            <li>FastAPI + React (Vite)</li>
+            <li>AWS Bedrock / Claude</li>
+            <li>Snowflake data layer</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SLIDE 2 — Requirements
+  ════════════════════════════════════════════ -->
+  <div class="slide" id="slide-2">
+    <div class="slide-header">
+      <div class="eyebrow">Slide 2 of 5 · Requirements</div>
+      <h1>What We Must Deliver</h1>
+      <p>Core capabilities the prototype must demonstrate</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:40%"></div></div>
+    </div>
+    <div class="slide-body">
+      <div class="cards col2">
+        <div class="card">
+          <h3>📊 Unified Data Access</h3>
+          <ul>
+            <li>Financial data: revenue, OPEX, margin (2023–2025)</li>
+            <li>Commercial: market share, growth by brand & market</li>
+            <li>Consistent hierarchies across all views (Brand→TA→Total AZ)</li>
+            <li>Budget vs. actuals vs. forecast vs. prior year</li>
+          </ul>
+        </div>
+        <div class="card teal">
+          <h3>🤖 AI Augmentation</h3>
+          <ul>
+            <li>Auto-detect significant variances & outliers</li>
+            <li>Contextual, data-grounded explanations</li>
+            <li>Natural language &amp; voice queries</li>
+            <li>Clear fact / interpretation / hypothesis separation</li>
+          </ul>
+        </div>
+        <div class="card accent">
+          <h3>🎨 Flexible UX</h3>
+          <ul>
+            <li>Table ↔ chart ↔ chat — seamless switching</li>
+            <li>Mobile-native &amp; web-responsive</li>
+            <li>Push notifications + pull analysis</li>
+            <li>Personalised views without breaking governance</li>
+          </ul>
+        </div>
+        <div class="card dark">
+          <h3>🔐 Governance & Trust</h3>
+          <ul>
+            <li>Role-based access control (CEO → market user)</li>
+            <li>Reconciled totals always visible</li>
+            <li>Transparency of data sources &amp; AI reasoning</li>
+            <li>No cherry-picking — full-hierarchy consistency</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SLIDE 3 — The Core Tension
+  ════════════════════════════════════════════ -->
+  <div class="slide" id="slide-3">
+    <div class="slide-header">
+      <div class="eyebrow">Slide 3 of 5 · Core Tension</div>
+      <h1>Today vs. Tomorrow</h1>
+      <p>The fundamental design challenge: preserving trust while enabling exploration</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:60%"></div></div>
+    </div>
+    <div class="slide-body">
+      <table class="tension-table">
+        <thead>
+          <tr>
+            <th>What We Value Today</th>
+            <th class="arrow">→</th>
+            <th>What We Want to Enable</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Consistency &amp; control via pre-agreed tables</td>
+            <td class="arrow">⇄</td>
+            <td>Flexibility &amp; free exploration</td>
+          </tr>
+          <tr>
+            <td>Static dashboards — pull when needed</td>
+            <td class="arrow">⇄</td>
+            <td>Proactive, pushed insight notifications</td>
+          </tr>
+          <tr>
+            <td>Tables that show everything, reconcile cleanly</td>
+            <td class="arrow">⇄</td>
+            <td>Patterns, trends &amp; forward-looking signals</td>
+          </tr>
+          <tr>
+            <td>Standard views for governance</td>
+            <td class="arrow">⇄</td>
+            <td>Personalised, actionable discovery</td>
+          </tr>
+          <tr>
+            <td>Structured drilldowns within rows/columns</td>
+            <td class="arrow">⇄</td>
+            <td>Natural language / voice intent queries</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:.85rem;color:#666;text-align:center;margin-top:4px;">
+        ✅ Jarvis must make <strong>both sides coexist</strong> — not choose one over the other
+      </p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SLIDE 4 — Key Challenges
+  ════════════════════════════════════════════ -->
+  <div class="slide" id="slide-4">
+    <div class="slide-header">
+      <div class="eyebrow">Slide 4 of 5 · Challenges</div>
+      <h1>Hard Problems to Crack</h1>
+      <p>Technical and design challenges the team must tackle</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:80%"></div></div>
+    </div>
+    <div class="slide-body">
+      <div class="challenge-grid">
+        <div class="challenge-item">
+          <div class="challenge-icon">🔍</div>
+          <div>
+            <h4>Root Cause, Not Surface Noise</h4>
+            <p>AI must explain <em>why</em> a variance happened — linking financial outcomes to commercial drivers — not just describe what the number is.</p>
+          </div>
+        </div>
+        <div class="challenge-item">
+          <div class="challenge-icon">🏗️</div>
+          <div>
+            <h4>Hierarchy Integrity at Scale</h4>
+            <p>Brand→TA→Total AZ, Market→Region→Total AZ and Sub-unit→Unit→Total AZ must remain consistent across every view, drill and AI response.</p>
+          </div>
+        </div>
+        <div class="challenge-item">
+          <div class="challenge-icon">🔒</div>
+          <div>
+            <h4>Fine-Grained Access Control</h4>
+            <p>CEO sees everything; a market lead sees only their market. RBAC must be enforced at query level, not just the UI — including AI-generated answers.</p>
+          </div>
+        </div>
+        <div class="challenge-item">
+          <div class="challenge-icon">⚖️</div>
+          <div>
+            <h4>Fact vs. AI Interpretation</h4>
+            <p>Every AI-generated insight must be clearly labelled: is it a confirmed data fact, a model interpretation, or a hypothesis? Trust depends on this boundary.</p>
+          </div>
+        </div>
+        <div class="challenge-item">
+          <div class="challenge-icon">📱</div>
+          <div>
+            <h4>Mobile-First, Table-First Culture</h4>
+            <p>Users expect reconciled totals and full-hierarchy tables. The mobile UX must preserve that trust while not becoming a cramped spreadsheet.</p>
+          </div>
+        </div>
+        <div class="challenge-item">
+          <div class="challenge-icon">🔔</div>
+          <div>
+            <h4>Push Without Alert Fatigue</h4>
+            <p>Deciding which variances are worth surfacing proactively — and when — without overwhelming leaders with irrelevant noise.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SLIDE 5 — Success Criteria & Next Steps
+  ════════════════════════════════════════════ -->
+  <div class="slide" id="slide-5">
+    <div class="slide-header">
+      <div class="eyebrow">Slide 5 of 5 · Success</div>
+      <h1>What "Done" Looks Like</h1>
+      <p>Criteria the judges will use to evaluate the prototype</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+    </div>
+    <div class="slide-body">
+      <div class="cards col2">
+        <div class="card">
+          <h3>✅ Must-Have</h3>
+          <ul>
+            <li>Clickable web + mobile prototype (not prod-ready)</li>
+            <li>AI assistant that answers NL queries with cited data</li>
+            <li>Consistent hierarchies across all views</li>
+            <li>Role-based data access demonstrated</li>
+            <li>Reconciled totals always visible</li>
+          </ul>
+        </div>
+        <div class="card teal">
+          <h3>⭐ Differentiators</h3>
+          <ul>
+            <li>Root-cause explanation, not just variance labels</li>
+            <li>Seamless table ↔ chart ↔ chat switching</li>
+            <li>Push insight with signal-to-noise control</li>
+            <li>Fact / interpretation / hypothesis tagging on AI output</li>
+            <li>Credible scale &amp; rollout roadmap</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card accent" style="margin-top:4px;">
+        <h3>🚀 Jarvis Prototype — Current State</h3>
+        <ul style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">
+          <li>FastAPI backend with SSE streaming AI assistant</li>
+          <li>KPI, Revenue, Market &amp; Expense endpoints live</li>
+          <li>React + Vite frontend with chart &amp; table views</li>
+          <li>AWS Bedrock / Claude Sonnet 4 for NL queries</li>
+          <li>2023–2025 financial &amp; commercial data loaded</li>
+          <li>Next: RBAC, push notifications, voice input</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- Navigation -->
+<nav>
+  <button id="prev" onclick="navigate(-1)" disabled>← Previous</button>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+    <div class="dots" id="dots"></div>
+    <span class="slide-counter" id="counter">1 / 5</span>
+  </div>
+  <button id="next" onclick="navigate(1)">Next →</button>
+</nav>
+
+<script>
+  const TOTAL = 5;
+  let current = 1;
+
+  const dotsEl = document.getElementById('dots');
+  for (let i = 1; i <= TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 1 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotsEl.appendChild(d);
+  }
+
+  function goTo(n) {
+    document.getElementById('slide-' + current).classList.remove('active');
+    dotsEl.children[current - 1].classList.remove('active');
+    current = n;
+    document.getElementById('slide-' + current).classList.add('active');
+    dotsEl.children[current - 1].classList.add('active');
+    document.getElementById('counter').textContent = current + ' / ' + TOTAL;
+    document.getElementById('prev').disabled = current === 1;
+    document.getElementById('next').disabled = current === TOTAL;
+  }
+
+  function navigate(dir) { goTo(current + dir); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' && current < TOTAL) navigate(1);
+    if (e.key === 'ArrowLeft'  && current > 1)     navigate(-1);
+  });
+</script>
+</body>
+</html>

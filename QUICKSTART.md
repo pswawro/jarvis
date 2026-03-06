@@ -57,6 +57,8 @@ All endpoints accept `?year=2025&quarter=Q2` query params.
 ## Frontend
 
 ```bash
+#Download newest Node.js from AZ Software Store
+
 cd frontend
 npm install
 npm run dev
