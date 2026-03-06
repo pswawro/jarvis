@@ -1,0 +1,21 @@
+sub_unit_id,sub_unit_name,unit
+COM_US,US Commercial,Commercial
+COM_CN,China Commercial,Commercial
+COM_MKTG,Global Marketing,Commercial
+COM_ACCESS,Market Access,Commercial
+RD_ONCO,Oncology R&D,R&D
+RD_BIO,BioPharma R&D,R&D
+RD_CLIN,Clinical Operations,R&D
+RD_REG,Regulatory Affairs,R&D
+OPS_US,US Manufacturing,Operations
+OPS_CN,China Manufacturing,Operations
+OPS_SC,Supply Chain,Operations
+OPS_QA,Quality,Operations
+FIN_FPA,FP&A,Finance
+FIN_TREAS,Treasury & Tax,Finance
+FIN_ACCT,Accounting,Finance
+FIN_AUDIT,Internal Audit,Finance
+EN_HR,HR,Enabling
+EN_IT,IT & Digital,Enabling
+EN_LEGAL,Legal & Compliance,Enabling
+EN_COMMS,Communications,Enabling

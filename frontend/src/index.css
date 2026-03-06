@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  /* AZ brand — used sparingly as accents */
+  --color-az-plum: #6B2D5B;
+  --color-az-plum-light: #8A3D75;
+
+  /* Neutral foundation */
+  --color-az-navy: #1a2332;
+  --color-az-slate: #4b5563;
+  --color-az-muted: #9ca3af;
+
+  /* Accent */
+  --color-az-accent: #2563EB;
+  --color-az-accent-light: #3b82f6;
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8f9fb;
+  color: #1a2332;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+}

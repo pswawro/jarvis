@@ -1,0 +1,21 @@
+brand_id,brand_name,therapeutic_area,indication
+TAGRISSO,Tagrisso,Oncology,NSCLC (EGFR-mutated)
+IMFINZI,Imfinzi,Oncology,"Lung cancer, biliary tract cancer"
+LYNPARZA,Lynparza,Oncology,"Ovarian, breast, prostate cancer (BRCA)"
+CALQUENCE,Calquence,Oncology,CLL/SLL (blood cancer)
+ENHERTU,Enhertu,Oncology,"HER2+ breast, lung, gastric cancer"
+KOSELUGO,Koselugo,Oncology,Neurofibromatosis type 1
+TRUQAP,Truqap,Oncology,HR+/HER2- breast cancer
+FARXIGA,Farxiga,CVRM,"Type 2 diabetes, heart failure, CKD"
+BRILINTA,Brilinta,CVRM,Acute coronary syndrome
+LOKELMA,Lokelma,CVRM,Hyperkalemia
+CRESTOR,Crestor,CVRM,Cholesterol management
+SYMBICORT,Symbicort,R&I,"Asthma, COPD"
+BREZTRI,Breztri,R&I,COPD triple therapy
+FASENRA,Fasenra,R&I,Severe eosinophilic asthma
+SAPHNELO,Saphnelo,R&I,Systemic lupus erythematosus
+TEZSPIRE,Tezspire,R&I,Severe asthma
+ULTOMIRIS,Ultomiris,Rare Disease,"PNH, aHUS, gMG, NMOSD"
+SOLIRIS,Soliris,Rare Disease,"PNH, aHUS"
+STRENSIQ,Strensiq,Rare Disease,Hypophosphatasia
+BEYFORTUS,Beyfortus,V&I,RSV prevention in infants

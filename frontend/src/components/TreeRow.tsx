@@ -1,0 +1,169 @@
+import { useCallback } from "react";
+import clsx from "clsx";
+import type { TreeNode, AssistantContext } from "../types";
+import { VariancePill } from "./VariancePill";
+import { Sparkline } from "./Sparkline";
+import { useLongPress } from "../hooks/useLongPress";
+
+interface Props {
+  node: TreeNode;
+  depth: number;
+  isExpanded: boolean;
+  hasChildren: boolean;
+  onToggle: () => void;
+  showShare?: boolean;
+  showForecast?: boolean;
+  showExpenseBreakdown?: boolean;
+  invertColor?: boolean;
+  varianceSuffix?: string;
+  parentPath?: string[];
+  onAssistantTrigger?: (ctx: AssistantContext) => void;
+}
+
+function formatValue(val: number): string {
+  if (val >= 1000) return `$${(val / 1000).toFixed(1)}B`;
+  return `$${val.toFixed(0)}M`;
+}
+
+export function TreeRow({ node, depth, isExpanded, hasChildren, onToggle, showShare, showForecast, showExpenseBreakdown, invertColor, varianceSuffix, parentPath, onAssistantTrigger }: Props) {
+  const { values } = node;
+
+  const triggerAssistant = useCallback(() => {
+    if (!onAssistantTrigger) return;
+    onAssistantTrigger({
+      source: "tree_row",
+      view: "Brand", // will be overridden by view component wrapper
+      period: { year: 2025, quarter: null }, // will be overridden
+      filters: { market_id: [], ta: [] }, // will be overridden
+      dataPoint: {
+        node_id: node.id,
+        node_name: node.name,
+        values: node.values,
+        parent_path: parentPath,
+      },
+    });
+  }, [onAssistantTrigger, node, parentPath]);
+
+  const longPress = useLongPress(triggerAssistant);
+
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      if (!onAssistantTrigger) return;
+      e.preventDefault();
+      triggerAssistant();
+    },
+    [onAssistantTrigger, triggerAssistant],
+  );
+
+  return (
+    <button
+      onClick={hasChildren && !longPress.didLongPress.current ? onToggle : undefined}
+      onContextMenu={handleContextMenu}
+      {...longPress}
+      className={clsx(
+        "w-full flex items-center gap-1.5 sm:gap-2 px-3 text-left transition-colors",
+        depth === 0 && "py-2.5 bg-gray-50/80 border-b border-gray-200",
+        depth === 1 && "py-2 bg-white border-b border-gray-100",
+        depth === 2 && "py-1.5 bg-white border-b border-gray-50",
+        hasChildren && "cursor-pointer hover:bg-gray-50",
+        !hasChildren && "cursor-default hover:bg-gray-50/50"
+      )}
+    >
+      {/* Indent + chevron */}
+      <div
+        className="flex items-center shrink-0"
+        style={{ paddingLeft: depth * 16 }}
+      >
+        {hasChildren ? (
+          <svg
+            className={clsx(
+              "w-3 h-3 transition-transform duration-200",
+              isExpanded ? "rotate-90 text-gray-500" : "text-gray-400"
+            )}
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2.5}
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+        ) : (
+          <span className="w-3" />
+        )}
+      </div>
+
+      {/* Name */}
+      <span
+        className={clsx(
+          "flex-1 truncate",
+          depth === 0 && "text-sm font-semibold text-az-navy",
+          depth === 1 && "text-sm font-medium text-az-navy/85",
+          depth === 2 && "text-[13px] font-normal text-gray-600"
+        )}
+      >
+        {node.name}
+      </span>
+
+      {/* Actual value */}
+      <span
+        className={clsx(
+          "tabular-nums shrink-0 text-az-navy w-[72px] text-right",
+          depth === 0 && "text-sm font-semibold",
+          depth === 1 && "text-sm font-medium",
+          depth === 2 && "text-[13px]"
+        )}
+      >
+        {formatValue(values.actual)}
+      </span>
+
+      {/* Forecast */}
+      {showForecast && values.forecast != null && (
+        <span
+          className={clsx(
+            "hidden sm:inline-flex tabular-nums shrink-0 text-gray-500 w-[72px] text-right",
+            depth === 0 && "text-sm font-semibold",
+            depth === 1 && "text-sm font-medium",
+            depth === 2 && "text-[13px]"
+          )}
+        >
+          {formatValue(values.forecast)}
+        </span>
+      )}
+
+      {/* Expense breakdown columns */}
+      {showExpenseBreakdown && (
+        <>
+          <span className={clsx("hidden sm:inline-flex tabular-nums shrink-0 text-gray-500 w-[64px] text-right", depth === 0 ? "text-[12px] font-semibold" : depth === 1 ? "text-[12px] font-medium" : "text-[11px]")}>
+            {formatValue(values.personnel_costs ?? 0)}
+          </span>
+          <span className={clsx("hidden sm:inline-flex tabular-nums shrink-0 text-gray-500 w-[64px] text-right", depth === 0 ? "text-[12px] font-semibold" : depth === 1 ? "text-[12px] font-medium" : "text-[11px]")}>
+            {formatValue(values.external_costs ?? 0)}
+          </span>
+          <span className={clsx("hidden sm:inline-flex tabular-nums shrink-0 text-gray-500 w-[64px] text-right", depth === 0 ? "text-[12px] font-semibold" : depth === 1 ? "text-[12px] font-medium" : "text-[11px]")}>
+            {formatValue(values.other_costs ?? 0)}
+          </span>
+        </>
+      )}
+
+      {/* vs Budget */}
+      <VariancePill value={values.variance_pct} invertColor={invertColor} suffix={varianceSuffix} />
+
+      {/* vs PY */}
+      {values.py_variance_pct !== null && (
+        <VariancePill value={values.py_variance_pct} invertColor={invertColor} suffix={varianceSuffix} />
+      )}
+
+      {/* Market Share */}
+      {showShare && values.market_share_pct != null && (
+        <span className="hidden sm:inline-flex text-[11px] font-medium tabular-nums text-gray-500 w-[60px] text-right shrink-0">
+          {values.market_share_pct.toFixed(1)}%
+        </span>
+      )}
+
+      {/* Sparkline */}
+      <span className="hidden sm:inline-flex w-[72px] justify-center">
+        <Sparkline data={values.sparkline} />
+      </span>
+    </button>
+  );
+}
