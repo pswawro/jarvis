@@ -1,9 +1,9 @@
-user_id,user_name,role,access_level,allowed_markets,allowed_tas,allowed_units,can_see_budget,can_see_forecast
-user_001,Sarah Chen,CEO,total_az,ALL,ALL,ALL,True,True
-user_002,James Miller,CFO,total_az,ALL,ALL,ALL,True,True
-user_003,Maria Rodriguez,VP Oncology,therapeutic_area,ALL,Oncology,ALL,True,True
-user_004,Wei Zhang,China GM,market,CN,ALL,ALL,True,True
-user_005,David Park,VP CVRM,therapeutic_area,ALL,CVRM,ALL,True,False
-user_006,Lisa Thompson,US Commercial Lead,unit,US,ALL,Commercial,True,True
-user_007,Robert Kim,R&D Director,unit,ALL,ALL,R&D,False,False
-user_008,Anna Kowalski,Finance Director,unit,ALL,ALL,Finance,True,True
+user_id,user_name,role,access_level,allowed_markets,allowed_tas,allowed_units,can_see_budget,can_see_forecast,can_see_mtp,can_see_rbu2,default_comparator
+user_001,Sarah Chen,CEO,total_az,ALL,ALL,ALL,True,True,True,True,BUD
+user_002,James Miller,CFO,total_az,ALL,ALL,ALL,True,True,True,True,BUD
+user_003,Maria Rodriguez,VP Oncology,therapeutic_area,ALL,Oncology,ALL,True,True,True,True,BUD
+user_004,Wei Zhang,China GM,market,CN,ALL,ALL,True,True,True,False,BUD
+user_005,David Park,VP CVRM,therapeutic_area,ALL,CVRM,ALL,True,False,False,False,BUD
+user_006,Lisa Thompson,US Commercial Lead,unit,US,ALL,Commercial,True,True,True,True,MTP
+user_007,Robert Kim,R&D Director,unit,ALL,ALL,R&D,False,False,False,False,BUD
+user_008,Anna Kowalski,Finance Director,unit,ALL,ALL,Finance,True,True,True,True,BUD

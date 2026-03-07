@@ -1,127 +1,80 @@
-import type { Period } from "../types";
+import { useEffect, useState } from "react";
 
 interface Props {
-  period: Period;
-  onPeriodChange: (p: Period) => void;
   onAssistantOpen?: () => void;
+  onExport?: () => void;
+  hasNotification?: boolean;
 }
 
-const YEARS = [2025, 2024, 2023];
-const QUARTERS = [null, "Q1", "Q2", "Q3", "Q4"];
+export function TopBar({ onAssistantOpen, onExport, hasNotification }: Props) {
+  const [freshness, setFreshness] = useState<string | null>(null);
 
-export function TopBar({ period, onPeriodChange, onAssistantOpen }: Props) {
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/config", { signal: controller.signal })
+      .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
+      .then((cfg) => setFreshness(cfg.data_refreshed_at))
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
+
   return (
     <header className="bg-az-navy">
-      {/* Top row: brand + year */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-1.5 sm:pb-3 sm:pt-3.5">
+      <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-white/95 to-white/80 flex items-center justify-center shadow-sm shadow-black/20">
             <span className="text-az-navy text-sm font-extrabold leading-none">J</span>
           </div>
           <div className="flex flex-col">
             <span className="font-semibold text-white text-[15px] tracking-tight leading-none">Jarvis</span>
-            <span className="text-[10px] text-white/30 font-medium tracking-[0.15em] uppercase mt-0.5 leading-none">AstraZeneca</span>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-[10px] text-white/30 font-medium tracking-[0.15em] uppercase leading-none">AstraZeneca</span>
+              {freshness && (
+                <span className="text-[9px] text-white/20 font-medium leading-none" title="Data refreshed at">
+                  {freshness}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Desktop: all controls in one row */}
-        <div className="hidden sm:flex items-center gap-2">
-          {onAssistantOpen && (
+        <div className="flex items-center gap-2">
+          {onExport && (
             <button
-              onClick={onAssistantOpen}
+              onClick={onExport}
               className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-              title="Ask Jarvis"
+              title="Export CSV"
             >
               <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
               </svg>
             </button>
           )}
-          <div className="flex bg-white/[0.06] rounded-lg p-[3px]">
-            {YEARS.map((y) => (
-              <button
-                key={y}
-                onClick={() => onPeriodChange({ ...period, year: y })}
-                className={`px-3 py-1 text-[12px] font-semibold rounded-md transition-all duration-150 tabular-nums ${
-                  period.year === y
-                    ? "bg-white text-az-navy shadow-sm"
-                    : "text-white/35 hover:text-white/60"
-                }`}
-              >
-                {y}
-              </button>
-            ))}
-          </div>
-
-          <div className="w-px h-5 bg-white/10" />
-
-          <div className="flex bg-white/[0.06] rounded-lg p-[3px]">
-            {QUARTERS.map((q) => (
-              <button
-                key={q ?? "FY"}
-                onClick={() => onPeriodChange({ ...period, quarter: q })}
-                className={`px-2.5 py-1 text-[12px] font-medium rounded-md transition-all duration-150 ${
-                  period.quarter === q
-                    ? "bg-white text-az-navy shadow-sm"
-                    : "text-white/35 hover:text-white/60"
-                }`}
-              >
-                {q ?? "FY"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Mobile: year + assistant icon */}
-        <div className="flex sm:hidden items-center gap-2">
           {onAssistantOpen && (
             <button
               onClick={onAssistantOpen}
-              className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              className="relative w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
               title="Ask Jarvis"
             >
-              <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+              <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none">
+                <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5A8.48 8.48 0 0121 11v.5z" stroke="url(#ai-grad)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="8.5" cy="11.5" r="1" fill="url(#ai-grad)" opacity={0.8} />
+                <circle cx="12.5" cy="11.5" r="1" fill="url(#ai-grad)" opacity={0.8} />
+                <circle cx="16.5" cy="11.5" r="1" fill="url(#ai-grad)" opacity={0.8} />
+                <defs>
+                  <linearGradient id="ai-grad" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#c4b5fd" />
+                    <stop offset="1" stopColor="#60a5fa" />
+                  </linearGradient>
+                </defs>
               </svg>
+              {hasNotification && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-az-navy" />
+              )}
             </button>
           )}
-          <div className="flex bg-white/[0.06] rounded-lg p-[3px]">
-            {YEARS.map((y) => (
-              <button
-                key={y}
-                onClick={() => onPeriodChange({ ...period, year: y })}
-                className={`px-2.5 py-1 text-[12px] font-semibold rounded-md transition-all duration-150 tabular-nums ${
-                  period.year === y
-                    ? "bg-white text-az-navy shadow-sm"
-                    : "text-white/35 hover:text-white/60"
-                }`}
-              >
-                {y}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
-
-      {/* Mobile: quarter row */}
-      <div className="flex sm:hidden justify-center px-4 pb-2.5">
-        <div className="flex bg-white/[0.06] rounded-lg p-[3px]">
-          {QUARTERS.map((q) => (
-            <button
-              key={q ?? "FY"}
-              onClick={() => onPeriodChange({ ...period, quarter: q })}
-              className={`px-3.5 py-1 text-[12px] font-medium rounded-md transition-all duration-150 ${
-                period.quarter === q
-                  ? "bg-white text-az-navy shadow-sm"
-                  : "text-white/35 hover:text-white/60"
-              }`}
-            >
-              {q ?? "FY"}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <div className="h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
     </header>
   );

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import clsx from "clsx";
 
 interface Props {
@@ -6,7 +7,7 @@ interface Props {
   suffix?: string;
 }
 
-export function VariancePill({ value, invertColor, suffix = "%" }: Props) {
+export const VariancePill = memo(function VariancePill({ value, invertColor, suffix = "%" }: Props) {
   const isPositive = value > 0;
   const isNeutral = value === 0;
   const isGood = invertColor ? value < 0 : value > 0;
@@ -30,4 +31,4 @@ export function VariancePill({ value, invertColor, suffix = "%" }: Props) {
       {value.toFixed(1)}{suffix}
     </span>
   );
-}
+});

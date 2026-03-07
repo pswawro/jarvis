@@ -6,10 +6,9 @@ interface Props {
 }
 
 const TABS = [
-  { label: "Brand", subtitle: "Revenue by Product" },
-  { label: "Region", subtitle: "Revenue by Geography" },
-  { label: "Unit", subtitle: "Expenses by Org" },
-  { label: "Market", subtitle: "Competitive Position" },
+  { label: "Overview", subtitle: "Performance Summary" },
+  { label: "Landing", subtitle: "Actuals + Forecast" },
+  { label: "Phased", subtitle: "Scenario Comparison" },
 ];
 
 export function ViewTabs({ activeIndex, onSwitch }: Props) {

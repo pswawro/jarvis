@@ -1,21 +1,21 @@
-sub_unit_id,sub_unit_name,unit
-COM_US,US Commercial,Commercial
-COM_CN,China Commercial,Commercial
-COM_MKTG,Global Marketing,Commercial
-COM_ACCESS,Market Access,Commercial
-RD_ONCO,Oncology R&D,R&D
-RD_BIO,BioPharma R&D,R&D
-RD_CLIN,Clinical Operations,R&D
-RD_REG,Regulatory Affairs,R&D
-OPS_US,US Manufacturing,Operations
-OPS_CN,China Manufacturing,Operations
-OPS_SC,Supply Chain,Operations
-OPS_QA,Quality,Operations
-FIN_FPA,FP&A,Finance
-FIN_TREAS,Treasury & Tax,Finance
-FIN_ACCT,Accounting,Finance
-FIN_AUDIT,Internal Audit,Finance
-EN_HR,HR,Enabling
-EN_IT,IT & Digital,Enabling
-EN_LEGAL,Legal & Compliance,Enabling
-EN_COMMS,Communications,Enabling
+sub_unit_id,sub_unit_name,unit,department,management_unit_code
+COM_US,US Commercial,Commercial,Sales & Marketing,MU_COM_01
+COM_CN,China Commercial,Commercial,Sales & Marketing,MU_COM_02
+COM_MKTG,Global Marketing,Commercial,Sales & Marketing,MU_COM_03
+COM_ACCESS,Market Access,Commercial,Sales & Marketing,MU_COM_04
+RD_ONCO,Oncology R&D,R&D,Research,MU_RD_01
+RD_BIO,BioPharma R&D,R&D,Research,MU_RD_02
+RD_CLIN,Clinical Operations,R&D,Development,MU_RD_03
+RD_REG,Regulatory Affairs,R&D,Development,MU_RD_04
+OPS_US,US Manufacturing,Operations,Manufacturing,MU_OPS_01
+OPS_CN,China Manufacturing,Operations,Manufacturing,MU_OPS_02
+OPS_SC,Supply Chain,Operations,Supply & Logistics,MU_OPS_03
+OPS_QA,Quality,Operations,Quality & Compliance,MU_OPS_04
+FIN_FPA,FP&A,Finance,Financial Planning,MU_FIN_01
+FIN_TREAS,Treasury & Tax,Finance,Financial Planning,MU_FIN_02
+FIN_ACCT,Accounting,Finance,Financial Reporting,MU_FIN_03
+FIN_AUDIT,Internal Audit,Finance,Financial Reporting,MU_FIN_04
+EN_HR,HR,Enabling,People & Culture,MU_EN_01
+EN_IT,IT & Digital,Enabling,Technology,MU_EN_02
+EN_LEGAL,Legal & Compliance,Enabling,Legal Affairs,MU_EN_03
+EN_COMMS,Communications,Enabling,Corporate Affairs,MU_EN_04

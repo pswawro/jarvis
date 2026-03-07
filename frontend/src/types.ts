@@ -27,11 +27,21 @@ export interface TreeNodeValues {
   sparkline: number[];
   forecast: number | null;
   forecast_variance_pct: number | null;
+  mtp: number | null;
+  mtp_variance_pct: number | null;
+  rbu2: number | null;
+  rbu2_variance_pct: number | null;
+  comparator_label: string | null;
+  comparator_value: number | null;
+  comparator_variance_pct: number | null;
   market_share_pct: number | null;
   market_growth_pct: number | null;
   personnel_costs: number | null;
   external_costs: number | null;
   other_costs: number | null;
+  fte_count: number | null;
+  headcount: number | null;
+  cost_per_fte: number | null;
 }
 
 export interface TreeNode {
@@ -83,9 +93,47 @@ export interface ChartInteraction {
   formatted_value: string;
 }
 
+// FCT-aligned navigation types
+export type PageType = "overview" | "landing" | "phased";
+
+// Composable dimensions
+export type LevelId = "ta" | "brand" | "market" | "region" | "unit" | "sub_unit" | "category";
+export type Domain = "revenue" | "expense" | "competitive";
+
+export interface LevelDef {
+  id: LevelId;
+  label: string;
+  domain: Domain;
+}
+
+export interface DimensionConfig {
+  levels: LevelId[];
+  label?: string;
+}
+
+export interface SavedDimension {
+  id: string;
+  label: string;
+  levels: LevelId[];
+  createdAt: string;
+}
+
+// Legacy alias — kept for backward compat during migration
+export type Dimension = "brand" | "region" | "unit" | "market";
+
+// FCT-aligned filter types
+export type Comparator = "BUD" | "MTP" | "RBU2" | "PYACT";
+export type Scale = "M" | "K" | "B";
+export type Granularity = "year" | "quarter" | "month";
+
 export interface Filters {
   market_id: string[];
   ta: string[];
+  product: string[];
+  comparator: Comparator;
+  scale: Scale;
+  year: number;
+  granularity: Granularity;
 }
 
 export interface Period {
@@ -95,7 +143,9 @@ export interface Period {
 
 export interface AssistantContext {
   source: "tree_row" | "treemap_bar" | "time_chart_point" | "header";
-  view: "Brand" | "Region" | "Unit" | "Market";
+  page: PageType;
+  dimension?: Dimension;
+  levels?: LevelId[];
   period: Period;
   filters: Filters;
   dataPoint?: {
@@ -110,4 +160,98 @@ export interface AssistantContext {
     value?: number;
     formatted_value?: string;
   };
+}
+
+// Config types from /api/config
+export interface AppConfig {
+  comparators: { id: string; label: string; field: string | null }[];
+  period_types: { id: string; label: string }[];
+  accounts: { id: string; label: string; category: string }[];
+  scales: { id: string; label: string; divisor: number }[];
+  defaults: { comparator: string; period_type: string; scale: string; month: number | null; account: string };
+  data_refreshed_at?: string;
+}
+
+// Bookmark state for localStorage
+export interface BookmarkState {
+  id: string;
+  label: string;
+  period: Period;
+  filters: Filters;
+  activeView: number;
+  createdAt: string;
+}
+
+// Assistant chat types
+export interface ToolStatus {
+  label: string;
+  done: boolean;
+}
+
+export interface Visual {
+  tool: "render_table" | "render_chart";
+  title: string;
+  headers?: string[];
+  rows?: string[][];
+  type?: "bar" | "line";
+  labels?: string[];
+  datasets?: { name: string; values: number[]; color?: string }[];
+}
+
+export interface ConfigProposal {
+  summary: string;
+  comparator?: string;
+  year?: number;
+  quarter?: string;
+  market_id?: string[];
+  ta?: string[];
+  page?: string;
+  dimension?: string;
+  levels?: LevelId[];
+  scale?: string;
+  scenario_preset?: string;
+}
+
+export interface Clarification {
+  question: string;
+  options: string[];
+}
+
+export interface ThinkingStep {
+  step: "plan" | "finding" | "pivot";
+  content: string;
+}
+
+export type TimelineEvent =
+  | { kind: "tool"; tool: ToolStatus }
+  | { kind: "thinking"; step: ThinkingStep };
+
+export interface Message {
+  role: "user" | "assistant";
+  question?: string;
+  facts?: string;
+  interpretation?: string;
+  hypothesis?: string;
+  tools?: ToolStatus[];
+  visuals?: Visual[];
+  configProposal?: ConfigProposal;
+  clarification?: Clarification;
+  thinking?: ThinkingStep[];
+  timeline?: TimelineEvent[];
+}
+
+export interface ChatSummary {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChatState {
+  id: string;
+  title: string;
+  messages: Message[];
+  context: AssistantContext | null;
+  createdAt: string;
+  updatedAt: string;
 }

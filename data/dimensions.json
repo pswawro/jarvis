@@ -1,0 +1,12 @@
+{
+  "levels": [
+    { "id": "ta",       "label": "Therapeutic Area", "domain": "revenue" },
+    { "id": "brand",    "label": "Brand",            "domain": "revenue" },
+    { "id": "market",   "label": "Market",           "domain": "revenue" },
+    { "id": "region",   "label": "Region",           "domain": "revenue" },
+    { "id": "unit",     "label": "Unit",             "domain": "expense" },
+    { "id": "sub_unit", "label": "Sub-unit",         "domain": "expense" },
+    { "id": "category", "label": "Category",         "domain": "competitive" }
+  ],
+  "default_levels": ["ta", "brand", "market"]
+}

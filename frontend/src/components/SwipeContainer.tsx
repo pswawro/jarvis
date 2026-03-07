@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useRef, useCallback } from "react";
 import type { ReactNode } from "react";
 
 interface Props {
@@ -7,11 +8,28 @@ interface Props {
   children: ReactNode[];
 }
 
+/** Check if an element or any ancestor has horizontal scroll */
+function hasHorizontalScroll(el: HTMLElement | null): boolean {
+  while (el) {
+    if (el.scrollWidth > el.clientWidth + 1) return true;
+    el = el.parentElement;
+  }
+  return false;
+}
+
 export function SwipeContainer({ activeIndex, onSwitch, children }: Props) {
+  const dragEnabled = useRef(true);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    dragEnabled.current = !hasHorizontalScroll(e.target as HTMLElement);
+  }, []);
+
   const handleDragEnd = (
     _: unknown,
     info: { offset: { x: number }; velocity: { x: number } }
   ) => {
+    if (!dragEnabled.current) return;
+
     const threshold = 50;
     const velThreshold = 500;
 
@@ -23,12 +41,12 @@ export function SwipeContainer({ activeIndex, onSwitch, children }: Props) {
   };
 
   return (
-    <div className="relative overflow-hidden flex-1">
+    <div className="relative overflow-hidden flex-1" onPointerDown={handlePointerDown}>
       <motion.div
         className="flex h-full"
         animate={{ x: `-${activeIndex * 100}%` }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        drag="x"
+        drag={dragEnabled.current ? "x" : false}
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.15}
         dragDirectionLock

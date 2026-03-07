@@ -1,15 +1,14 @@
 import { useState, useMemo } from "react";
 import clsx from "clsx";
-import type { TreeNode, AssistantContext } from "../types";
+import type { TreeNode, AssistantContext, Scale, Comparator } from "../types";
 import { TreeRow } from "./TreeRow";
 
-type SortKey = "actual" | "forecast" | "variance_pct" | "py_variance_pct" | "market_share_pct";
+type SortKey = "actual" | "forecast" | "variance_pct" | "market_share_pct";
 type SortDir = "asc" | "desc";
 
 interface HeaderLabels {
   actual?: string;
   variance?: string;
-  pyVariance?: string;
   share?: string;
   trend?: string;
 }
@@ -21,18 +20,25 @@ interface Props {
   headerLabels?: HeaderLabels;
   varianceSuffix?: string;
   onAssistantTrigger?: (ctx: AssistantContext) => void;
+  scale?: Scale;
+  comparator?: Comparator;
+  expandedIds?: Set<string>;
+  onExpandedIdsChange?: (ids: Set<string>) => void;
 }
 
 function sortChildren(children: TreeNode[], sortKey: SortKey, sortDir: SortDir): TreeNode[] {
   return [...children].sort((a, b) => {
     const aVal = a.values[sortKey] ?? 0;
     const bVal = b.values[sortKey] ?? 0;
+    if (Number.isNaN(aVal) || Number.isNaN(bVal)) return 0;
     return sortDir === "desc" ? bVal - aVal : aVal - bVal;
   });
 }
 
-export function TreeTable({ tree, columns, invertColor, headerLabels, varianceSuffix, onAssistantTrigger }: Props) {
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set([tree.id]));
+export function TreeTable({ tree, columns, invertColor, headerLabels, varianceSuffix, onAssistantTrigger, scale, comparator, expandedIds: externalExpandedIds, onExpandedIdsChange }: Props) {
+  const [internalExpandedIds, setInternalExpandedIds] = useState<Set<string>>(() => new Set([tree.id]));
+  const expandedIds = externalExpandedIds ?? internalExpandedIds;
+  const setExpandedIds = onExpandedIdsChange ?? setInternalExpandedIds;
   const [sortKey, setSortKey] = useState<SortKey>("actual");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
@@ -80,7 +86,6 @@ export function TreeTable({ tree, columns, invertColor, headerLabels, varianceSu
   const h = {
     actual: headerLabels?.actual ?? "Actual",
     variance: headerLabels?.variance ?? "vs Bgt",
-    pyVariance: headerLabels?.pyVariance ?? "vs PY",
     share: headerLabels?.share ?? "Mkt Shr",
     trend: headerLabels?.trend ?? "12m Trend",
   };
@@ -108,9 +113,6 @@ export function TreeTable({ tree, columns, invertColor, headerLabels, varianceSu
         <button onClick={() => handleSort("variance_pct")} className={clsx("shrink-0 hover:text-az-navy w-[72px] text-right transition-colors", sortKey === "variance_pct" && "text-az-navy")}>
           {h.variance}{sortIndicator("variance_pct")}
         </button>
-        <button onClick={() => handleSort("py_variance_pct")} className={clsx("shrink-0 hover:text-az-navy w-[72px] text-right transition-colors", sortKey === "py_variance_pct" && "text-az-navy")}>
-          {h.pyVariance}{sortIndicator("py_variance_pct")}
-        </button>
         {showShare && (
           <button onClick={() => handleSort("market_share_pct")} className={clsx("hidden sm:block shrink-0 hover:text-az-navy w-[60px] text-right transition-colors", sortKey === "market_share_pct" && "text-az-navy")}>
             {h.share}{sortIndicator("market_share_pct")}
@@ -136,6 +138,8 @@ export function TreeTable({ tree, columns, invertColor, headerLabels, varianceSu
             varianceSuffix={varianceSuffix}
             parentPath={parentPath}
             onAssistantTrigger={onAssistantTrigger}
+            scale={scale}
+            comparator={comparator}
           />
         ))}
       </div>

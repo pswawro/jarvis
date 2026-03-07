@@ -1,42 +1,53 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { AssistantContext } from "../types";
-
-interface ToolStatus {
-  label: string;
-  done: boolean;
-}
-
-interface Visual {
-  tool: "render_table" | "render_chart";
-  title: string;
-  headers?: string[];
-  rows?: string[][];
-  type?: "bar" | "line";
-  labels?: string[];
-  datasets?: { name: string; values: number[]; color?: string }[];
-}
-
-interface Message {
-  role: "user" | "assistant";
-  question?: string;
-  facts?: string;
-  interpretation?: string;
-  hypothesis?: string;
-  tools?: ToolStatus[];
-  visuals?: Visual[];
-}
+import type {
+  AssistantContext,
+  Message,
+  ToolStatus,
+  Visual,
+  ConfigProposal,
+  Clarification,
+  ThinkingStep,
+  TimelineEvent,
+  ChatSummary,
+} from "../types";
+import { ChatListPanel } from "./ChatListPanel";
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  context: AssistantContext | null;
+
+  // From useAssistantChat hook
+  activeChatId: string | null;
+  messages: Message[];
+  activeContext: AssistantContext | null;
+  loading: boolean;
+  liveTools: ToolStatus[];
+  liveVisuals: Visual[];
+  liveResponse: { facts: string; interpretation: string; hypothesis: string };
+  liveConfigProposal: ConfigProposal | null;
+  liveClarification: Clarification | null;
+  liveThinking: ThinkingStep[];
+  liveTimeline: TimelineEvent[];
+
+  sendQuestion: (q: string) => void;
+  setActiveContext: (ctx: AssistantContext | null) => void;
+  onApplyConfig?: (cfg: ConfigProposal) => void;
+
+  chatList: ChatSummary[];
+  switchChat: (id: string) => void;
+  newChat: (context?: AssistantContext) => void;
+  deleteChat: (id: string) => void;
 }
+
+const COMPARATOR_LABELS: Record<string, string> = { BUD: "Budget", MTP: "Mid-Term Plan", RBU2: "Reforecast", PYACT: "Prior Year" };
+const PAGE_LABELS: Record<string, string> = { overview: "Overview", landing: "Landing", trend: "Trend", scenarios: "Scenarios" };
+const DIM_LABELS: Record<string, string> = { brand: "Brand", region: "Region", unit: "Unit", market: "Market" };
 
 function ContextChip({ context, onClear }: { context: AssistantContext; onClear: () => void }) {
   if (context.source === "header") return null;
   const dp = context.dataPoint;
-  const parts = [dp?.node_name || dp?.series_name || "", context.view, `${context.period.year}${context.period.quarter ? " " + context.period.quarter : ""}`].filter(Boolean);
+  const parts = [dp?.node_name || dp?.series_name || "", `${DIM_LABELS[context.dimension] || context.dimension} / ${PAGE_LABELS[context.page] || context.page}`, `${context.period.year}${context.period.quarter ? " " + context.period.quarter : ""}`].filter(Boolean);
   return (
     <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-lg text-[12px] text-gray-600">
       <span className="text-gray-400">&#x1f4cd;</span>
@@ -50,24 +61,61 @@ function ContextChip({ context, onClear }: { context: AssistantContext; onClear:
   );
 }
 
-function ToolIndicators({ tools }: { tools: ToolStatus[] }) {
-  if (tools.length === 0) return null;
+const STEP_ICONS: Record<string, string> = { plan: "\ud83d\udd0d", finding: "\ud83d\udca1", pivot: "\u21a9\ufe0f" };
+const STEP_COLORS: Record<string, string> = { plan: "text-gray-500", finding: "text-gray-600", pivot: "text-amber-600" };
+
+function InvestigationTimeline({ timeline, defaultExpanded }: { timeline: TimelineEvent[]; defaultExpanded?: boolean }) {
+  const [expanded, setExpanded] = useState(defaultExpanded ?? false);
+
+  if (timeline.length === 0) return null;
+
+  const toolCount = timeline.filter((e) => e.kind === "tool").length;
+  const thinkCount = timeline.filter((e) => e.kind === "thinking").length;
+  const parts: string[] = [];
+  if (toolCount > 0) parts.push(`${toolCount} tool${toolCount > 1 ? "s" : ""}`);
+  if (thinkCount > 0) parts.push(`${thinkCount} step${thinkCount > 1 ? "s" : ""}`);
+
   return (
     <div className="space-y-1">
-      {tools.map((t, i) => (
-        <div key={i} className={`flex items-center gap-2 text-[11px] ${t.done ? "text-gray-400" : "text-gray-600"}`}>
-          {t.done ? (
-            <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-          ) : (
-            <span className="w-3 h-3 flex items-center justify-center">
-              <span className="w-1.5 h-1.5 bg-az-navy rounded-full animate-pulse" />
-            </span>
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center gap-1.5 text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
+      >
+        <svg
+          className={`w-3 h-3 transition-transform ${expanded ? "rotate-90" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+        <span>Investigation ({parts.join(", ")})</span>
+      </button>
+      {expanded && (
+        <div className="space-y-1 pl-2 border-l-2 border-gray-200 ml-1">
+          {timeline.map((event, i) =>
+            event.kind === "tool" ? (
+              <div key={i} className={`flex items-center gap-2 text-[11px] ${event.tool.done ? "text-gray-400" : "text-gray-600"}`}>
+                {event.tool.done ? (
+                  <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <span className="w-3 h-3 flex items-center justify-center">
+                    <span className="w-1.5 h-1.5 bg-az-navy rounded-full animate-pulse" />
+                  </span>
+                )}
+                <span>{event.tool.label}</span>
+              </div>
+            ) : (
+              <div key={i} className="flex items-start gap-1.5 text-[11px]">
+                <span className="shrink-0 leading-none mt-px">{STEP_ICONS[event.step.step] || ""}</span>
+                <span className={STEP_COLORS[event.step.step] || "text-gray-500"}>{event.step.content}</span>
+              </div>
+            ),
           )}
-          <span>{t.label}</span>
         </div>
-      ))}
+      )}
     </div>
   );
 }
@@ -91,6 +139,7 @@ function parseMarkdown(text: string) {
   const lines = text.split("\n");
   const result: JSX.Element[] = [];
   let bullets: string[] = [];
+  let tableRows: string[][] = [];
   let key = 0;
 
   const flushBullets = () => {
@@ -105,17 +154,104 @@ function parseMarkdown(text: string) {
     bullets = [];
   };
 
+  const flushTable = () => {
+    if (tableRows.length === 0) return;
+    const header = tableRows[0];
+    const body = tableRows.slice(1);
+    result.push(
+      <div key={key++} className="overflow-x-auto my-1">
+        <table className="w-full text-[12px] border-collapse">
+          <thead>
+            <tr className="border-b border-gray-200">
+              {header.map((h, i) => (
+                <th key={i} className="text-left py-1.5 px-2 font-semibold text-gray-600 whitespace-nowrap">{parseBold(h.trim(), key + i * 100)}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {body.map((row, ri) => (
+              <tr key={ri} className="border-b border-gray-50">
+                {row.map((cell, ci) => (
+                  <td key={ci} className="py-1 px-2 text-gray-700 whitespace-nowrap">{parseBold(cell.trim(), key + ri * 100 + ci)}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>,
+    );
+    tableRows = [];
+  };
+
+  const isTableRow = (line: string) => line.trim().startsWith("|") && line.trim().endsWith("|");
+  const isSeparator = (line: string) => /^\|[\s:?-]+\|/.test(line.trim()) && !line.includes("|") === false && /^[\s|:-]+$/.test(line.trim());
+  const parseTableRow = (line: string) => line.trim().slice(1, -1).split("|");
+
   for (const line of lines) {
-    const bullet = line.match(/^[-•]\s+(.*)/);
-    if (bullet) {
-      bullets.push(bullet[1]);
-    } else {
+    if (isTableRow(line)) {
       flushBullets();
-      result.push(<span key={key++}>{parseBold(line, key * 100)}{"\n"}</span>);
+      if (isSeparator(line)) continue; // skip --- separator rows
+      tableRows.push(parseTableRow(line));
+    } else {
+      flushTable();
+      const bullet = line.match(/^[-•]\s+(.*)/);
+      if (bullet) {
+        bullets.push(bullet[1]);
+      } else {
+        flushBullets();
+        result.push(<span key={key++}>{parseBold(line, key * 100)}{"\n"}</span>);
+      }
     }
   }
   flushBullets();
+  flushTable();
   return result;
+}
+
+function CollapsedMessage({ msg, index, onApply, applied }: { msg: Message; index: number; onApply: (p: ConfigProposal, i: number) => void; applied: boolean }) {
+  const [expanded, setExpanded] = useState(false);
+  // Build a short summary of the assistant response
+  const summary = msg.configProposal
+    ? `Config: ${msg.configProposal.summary || "View change proposed"}`
+    : msg.clarification
+    ? `Asked: ${msg.clarification.question}`
+    : msg.facts
+    ? msg.facts.slice(0, 80) + (msg.facts.length > 80 ? "..." : "")
+    : "Response";
+
+  return (
+    <div className="space-y-1">
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center gap-1.5 text-[11px] text-gray-400 hover:text-gray-600 transition-colors w-full text-left"
+      >
+        <svg
+          className={`w-3 h-3 shrink-0 transition-transform ${expanded ? "rotate-90" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+        <span className="truncate">{summary}</span>
+      </button>
+      {expanded && (
+        <div className="space-y-2 pl-3 border-l border-gray-200 ml-1">
+          {msg.configProposal && (
+            <ConfigProposalCard
+              proposal={msg.configProposal}
+              onApply={() => onApply(msg.configProposal!, index)}
+              applied={applied}
+            />
+          )}
+          {msg.facts && <Section label="Facts" color="border-green-500" content={msg.facts} />}
+          {msg.interpretation && <Section label="Interpretation" color="border-blue-500" content={msg.interpretation} />}
+          {msg.hypothesis && <Section label="Hypothesis" color="border-purple-500" content={msg.hypothesis} />}
+        </div>
+      )}
+      <div className="border-b border-gray-100" />
+    </div>
+  );
 }
 
 function Section({ label, color, content }: { label: string; color: string; content: string }) {
@@ -123,6 +259,104 @@ function Section({ label, color, content }: { label: string; color: string; cont
     <div className={`border-l-2 ${color} pl-3`}>
       <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">{label}</div>
       <div className="text-[13px] text-gray-700 leading-relaxed">{parseMarkdown(content)}</div>
+    </div>
+  );
+}
+
+function ConfigProposalCard({ proposal, onApply, applied }: { proposal: ConfigProposal; onApply: () => void; applied: boolean }) {
+  const changes: string[] = [];
+  if (proposal.comparator) changes.push(`Comparator: ${COMPARATOR_LABELS[proposal.comparator] || proposal.comparator}`);
+  if (proposal.page) changes.push(`Page: ${PAGE_LABELS[proposal.page] || proposal.page}`);
+  if (proposal.dimension) changes.push(`Dimension: ${DIM_LABELS[proposal.dimension] || proposal.dimension}`);
+  if (proposal.market_id?.length) changes.push(`Market: ${proposal.market_id.join(", ")}`);
+  if (proposal.ta?.length) changes.push(`TA: ${proposal.ta.join(", ")}`);
+  if (proposal.year) changes.push(`Year: ${proposal.year}`);
+  if (proposal.quarter) changes.push(`Quarter: ${proposal.quarter}`);
+  if (proposal.scale) changes.push(`Scale: $${proposal.scale}`);
+
+  return (
+    <div className="rounded-lg border border-az-navy/20 bg-az-navy/5 p-3 space-y-2">
+      <div className="text-[13px] text-gray-700 font-medium">{proposal.summary}</div>
+      {changes.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {changes.map((c) => (
+            <span key={c} className="inline-flex px-2 py-0.5 rounded-full bg-white text-[11px] text-gray-600 border border-gray-200">
+              {c}
+            </span>
+          ))}
+        </div>
+      )}
+      <button
+        onClick={onApply}
+        disabled={applied}
+        className={`w-full py-2 rounded-lg text-[13px] font-semibold transition-all ${
+          applied
+            ? "bg-green-100 text-green-700 cursor-default"
+            : "bg-az-navy text-white hover:bg-az-navy/90 active:scale-[0.98]"
+        }`}
+      >
+        {applied ? "Applied" : "Apply to Dashboard"}
+      </button>
+    </div>
+  );
+}
+
+function ClarificationCard({ clarification, onSelect, disabled }: { clarification: Clarification; onSelect: (opt: string) => void; disabled: boolean }) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const [freeText, setFreeText] = useState("");
+
+  const handleClick = (opt: string) => {
+    if (disabled || selected) return;
+    setSelected(opt);
+    onSelect(opt);
+  };
+
+  const handleFreeSubmit = () => {
+    if (disabled || selected || !freeText.trim()) return;
+    setSelected(freeText.trim());
+    onSelect(freeText.trim());
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="text-[13px] font-medium text-gray-700">{clarification.question}</div>
+      <div className="flex flex-col gap-1.5">
+        {clarification.options.map((opt) => (
+          <button
+            key={opt}
+            onClick={() => handleClick(opt)}
+            disabled={disabled || !!selected}
+            className={`text-left px-3 py-2 rounded-lg text-[13px] border transition-all ${
+              selected === opt
+                ? "border-az-navy bg-az-navy/10 text-az-navy font-medium"
+                : selected
+                  ? "border-gray-100 text-gray-300 cursor-default"
+                  : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 active:bg-gray-100"
+            }`}
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+      {!disabled && !selected && (
+        <div className="flex gap-1.5 mt-1">
+          <input
+            type="text"
+            value={freeText}
+            onChange={(e) => setFreeText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleFreeSubmit(); }}
+            placeholder="Or type your own answer..."
+            className="flex-1 px-3 py-1.5 text-[12px] border border-gray-200 rounded-lg focus:border-az-navy focus:outline-none"
+          />
+          <button
+            onClick={handleFreeSubmit}
+            disabled={!freeText.trim()}
+            className="px-3 py-1.5 text-[12px] font-medium text-white bg-az-navy rounded-lg disabled:opacity-30 hover:bg-az-navy/90 transition-colors"
+          >
+            Send
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -142,6 +376,74 @@ function VisualIcon({ visual, onClick }: { visual: Visual; onClick: () => void }
 }
 
 function VisualOverlay({ visual, onClose }: { visual: Visual; onClose: () => void }) {
+  let content: React.ReactNode = null;
+  try {
+    if (visual.tool === "render_table" && visual.headers && visual.rows) {
+      content = (
+        <div className="overflow-x-auto">
+          <table className="w-full text-[12px]">
+            <thead>
+              <tr className="border-b border-gray-200">
+                {visual.headers.map((h, i) => (
+                  <th key={i} className="text-left py-2 px-2 font-semibold text-gray-600">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {visual.rows.map((row, ri) => (
+                <tr key={ri} className="border-b border-gray-50">
+                  {(Array.isArray(row) ? row : []).map((cell, ci) => (
+                    <td key={ci} className="py-1.5 px-2 text-gray-700">{String(cell ?? "")}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    } else if (visual.tool === "render_chart" && visual.datasets) {
+      const labels = visual.labels || [];
+      content = (
+        <div className="space-y-4">
+          {visual.datasets.map((ds, di) => {
+            const vals = Array.isArray(ds.values) ? ds.values.map(Number) : [];
+            const max = vals.length > 0 ? vals.reduce((a, b) => Math.max(a, b), 0) : 0;
+            const barH = 96;
+            return (
+              <div key={di}>
+                <div className="text-[11px] text-gray-500 mb-1">{ds.name}</div>
+                <div className="flex items-end gap-1" style={{ height: barH + 20 }}>
+                  {vals.map((v, vi) => {
+                    const h = max > 0 ? (v / max) * barH : 0;
+                    return (
+                      <div key={vi} className="flex-1 flex flex-col items-center justify-end">
+                        <div className="text-[9px] text-gray-500 mb-0.5">
+                          {typeof v === "number" ? (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v % 1 === 0 ? v : v.toFixed(1)) : v}
+                        </div>
+                        <div
+                          className="w-full rounded-t"
+                          style={{
+                            height: Math.max(h, v > 0 ? 2 : 0),
+                            backgroundColor: ds.color || "#003366",
+                          }}
+                        />
+                        <span className="text-[8px] text-gray-400 truncate w-full text-center mt-0.5">
+                          {labels[vi] ?? ""}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+  } catch {
+    content = <div className="text-[12px] text-red-500">Unable to render this visual.</div>;
+  }
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
@@ -154,216 +456,91 @@ function VisualOverlay({ visual, onClose }: { visual: Visual; onClose: () => voi
             </svg>
           </button>
         </div>
-        {visual.tool === "render_table" && visual.headers && visual.rows && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-[12px]">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  {visual.headers.map((h, i) => (
-                    <th key={i} className="text-left py-2 px-2 font-semibold text-gray-600">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {visual.rows.map((row, ri) => (
-                  <tr key={ri} className="border-b border-gray-50">
-                    {row.map((cell, ci) => (
-                      <td key={ci} className="py-1.5 px-2 text-gray-700">{cell}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        {visual.tool === "render_chart" && visual.labels && visual.datasets && (
-          <div className="space-y-4">
-            {visual.datasets.map((ds, di) => {
-              const max = Math.max(...ds.values, 0);
-              const barH = 96; // px
-              return (
-                <div key={di}>
-                  <div className="text-[11px] text-gray-500 mb-1">{ds.name}</div>
-                  <div className="flex items-end gap-1" style={{ height: barH + 20 }}>
-                    {ds.values.map((v, vi) => {
-                      const h = max > 0 ? (v / max) * barH : 0;
-                      return (
-                        <div key={vi} className="flex-1 flex flex-col items-center justify-end">
-                          <div className="text-[9px] text-gray-500 mb-0.5">
-                            {typeof v === "number" ? (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v % 1 === 0 ? v : v.toFixed(1)) : v}
-                          </div>
-                          <div
-                            className="w-full rounded-t"
-                            style={{
-                              height: Math.max(h, v > 0 ? 2 : 0),
-                              backgroundColor: ds.color || "#003366",
-                            }}
-                          />
-                          <span className="text-[8px] text-gray-400 truncate w-full text-center mt-0.5">
-                            {visual.labels![vi]}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        {content || <div className="text-[12px] text-gray-400">No data to display.</div>}
       </div>
     </div>
   );
 }
 
-export function AssistantDrawer({ open, onClose, context }: Props) {
-  const [activeContext, setActiveContext] = useState<AssistantContext | null>(null);
+export function AssistantDrawer({
+  open,
+  onClose,
+  activeChatId,
+  messages,
+  activeContext,
+  loading,
+  liveTools,
+  liveVisuals,
+  liveResponse,
+  liveConfigProposal,
+  liveClarification,
+  liveThinking,
+  liveTimeline,
+  sendQuestion,
+  setActiveContext,
+  onApplyConfig,
+  chatList,
+  switchChat,
+  newChat,
+  deleteChat,
+}: Props) {
   const [question, setQuestion] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [liveTools, setLiveTools] = useState<ToolStatus[]>([]);
-  const [liveVisuals, setLiveVisuals] = useState<Visual[]>([]);
-  const [liveResponse, setLiveResponse] = useState({ facts: "", interpretation: "", hypothesis: "" });
+  const [appliedProposals, setAppliedProposals] = useState<Set<number>>(new Set());
   const [expandedVisual, setExpandedVisual] = useState<Visual | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [showChatList, setShowChatList] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const prevContextRef = useRef<AssistantContext | null>(null);
-
-  // When opened with a NEW context, reset conversation; otherwise keep history
-  useEffect(() => {
-    if (open && context) {
-      const isNewContext = context !== prevContextRef.current;
-      prevContextRef.current = context;
-      if (isNewContext) {
-        setActiveContext(context);
-        setMessages([]);
-        setLiveTools([]);
-        setLiveVisuals([]);
-        setLiveResponse({ facts: "", interpretation: "", hypothesis: "" });
-        setQuestion("");
-      }
-    }
-  }, [open, context]);
 
   // Auto-scroll when new content arrives
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [liveTools, liveResponse, messages]);
+  }, [messages.length, liveTimeline.length, liveResponse.facts, liveResponse.interpretation, liveResponse.hypothesis, liveConfigProposal, liveClarification]);
 
-  const sendQuestion = useCallback(
-    async (q: string) => {
-      if (!q.trim() || loading) return;
-      setLoading(true);
-      setLiveResponse({ facts: "", interpretation: "", hypothesis: "" });
-      setLiveTools([]);
-      setLiveVisuals([]);
-
-      // Add user message to history
-      setMessages((prev) => [...prev, { role: "user", question: q }]);
-
-      try {
-        const res = await fetch("/api/assistant", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ context: activeContext, question: q }),
-        });
-
-        const reader = res.body!.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-        const accumulated = { facts: "", interpretation: "", hypothesis: "" };
-        const accVisuals: Visual[] = [];
-        const accTools: ToolStatus[] = [];
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-
-          const lines = buffer.split("\n\n");
-          buffer = lines.pop()!;
-
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            try {
-              const data = JSON.parse(line.slice(6));
-              switch (data.type) {
-                case "tool_use":
-                  accTools.push({ label: data.content, done: false });
-                  setLiveTools([...accTools]);
-                  break;
-                case "tool_done":
-                  for (let i = accTools.length - 1; i >= 0; i--) {
-                    if (!accTools[i].done) { accTools[i] = { ...accTools[i], done: true }; break; }
-                  }
-                  setLiveTools([...accTools]);
-                  break;
-                case "facts":
-                  accumulated.facts = data.content;
-                  setLiveResponse({ ...accumulated });
-                  break;
-                case "interpretation":
-                  accumulated.interpretation = data.content;
-                  setLiveResponse({ ...accumulated });
-                  break;
-                case "hypothesis":
-                  accumulated.hypothesis = data.content;
-                  setLiveResponse({ ...accumulated });
-                  break;
-                case "visual":
-                  accVisuals.push(JSON.parse(data.content));
-                  setLiveVisuals([...accVisuals]);
-                  break;
-                case "done":
-                  // Finalize: move live state into message history
-                  setMessages((prev) => [
-                    ...prev,
-                    {
-                      role: "assistant",
-                      facts: accumulated.facts,
-                      interpretation: accumulated.interpretation,
-                      hypothesis: accumulated.hypothesis,
-                      tools: [...accTools],
-                      visuals: [...accVisuals],
-                    },
-                  ]);
-                  setLiveTools([]);
-                  setLiveVisuals([]);
-                  setLiveResponse({ facts: "", interpretation: "", hypothesis: "" });
-                  break;
-                case "error":
-                  accumulated.facts = accumulated.facts || `Error: ${data.content}`;
-                  setLiveResponse({ ...accumulated });
-                  break;
-              }
-            } catch {
-              // skip malformed SSE lines
-            }
-          }
-        }
-      } catch (e: any) {
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", facts: `Connection error: ${e.message}` },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [activeContext, loading],
-  );
+  const questionRef = useRef(question);
+  questionRef.current = question;
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
-      if (question.trim()) {
-        sendQuestion(question);
+      if (questionRef.current.trim()) {
+        sendQuestion(questionRef.current);
         setQuestion("");
       }
     },
-    [question, sendQuestion],
+    [sendQuestion],
   );
 
-  const hasAnyContent = messages.length > 0 || liveResponse.facts || liveResponse.interpretation || liveResponse.hypothesis || liveTools.length > 0;
+  const handleClarificationSelect = useCallback(
+    (option: string) => {
+      sendQuestion(option);
+    },
+    [sendQuestion],
+  );
+
+  const handleApplyProposal = useCallback(
+    (proposal: ConfigProposal, msgIndex: number) => {
+      onApplyConfig?.(proposal);
+      setAppliedProposals((prev) => new Set(prev).add(msgIndex));
+      onClose();
+    },
+    [onApplyConfig, onClose],
+  );
+
+  const handleNewChat = useCallback(() => {
+    newChat();
+    setShowChatList(false);
+    setAppliedProposals(new Set());
+  }, [newChat]);
+
+  const handleSwitchChat = useCallback(
+    (id: string) => {
+      switchChat(id);
+      setShowChatList(false);
+      setAppliedProposals(new Set());
+    },
+    [switchChat],
+  );
+
+  const hasAnyContent = messages.length > 0 || liveResponse.facts || liveResponse.interpretation || liveResponse.hypothesis || liveTools.length > 0 || liveConfigProposal || liveClarification;
 
   return (
     <AnimatePresence>
@@ -383,24 +560,49 @@ export function AssistantDrawer({ open, onClose, context }: Props) {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            drag="y"
-            dragConstraints={{ top: 0 }}
-            dragElastic={0.2}
-            onDragEnd={(_, info) => {
-              if (info.offset.y > 100) onClose();
-            }}
           >
-            {/* Handle bar */}
-            <div className="flex justify-center py-2 cursor-grab">
+            {/* Handle bar + chat list toggle — drag only from here */}
+            <motion.div
+              className="flex items-center justify-between px-4 py-2 cursor-grab active:cursor-grabbing touch-none"
+              drag="y"
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={0.2}
+              onDragEnd={(_, info) => {
+                if (info.offset.y > 100) onClose();
+              }}
+            >
+              <button
+                onClick={() => setShowChatList((v) => !v)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                title="Chat history"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                </svg>
+              </button>
               <div className="w-10 h-1 rounded-full bg-gray-300" />
-            </div>
+              <div className="w-4" />
+            </motion.div>
+
+            {/* Chat list panel */}
+            <AnimatePresence>
+              {showChatList && (
+                <ChatListPanel
+                  chatList={chatList}
+                  activeChatId={activeChatId}
+                  onSwitch={handleSwitchChat}
+                  onNew={handleNewChat}
+                  onDelete={deleteChat}
+                />
+              )}
+            </AnimatePresence>
 
             {/* Context chip */}
             {activeContext && activeContext.source !== "header" && (
               <div className="px-4 pb-2">
                 <ContextChip
                   context={activeContext}
-                  onClear={() => setActiveContext((c) => c ? { ...c, source: "header", dataPoint: undefined } : null)}
+                  onClear={() => setActiveContext(activeContext ? { ...activeContext, source: "header", dataPoint: undefined } : null)}
                 />
               </div>
             )}
@@ -408,13 +610,40 @@ export function AssistantDrawer({ open, onClose, context }: Props) {
             {/* Scrollable response area */}
             <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
               {/* Past messages */}
-              {messages.map((msg, i) =>
-                msg.role === "user" ? (
+              {messages.map((msg, i) => {
+                const isOld = i < messages.length - 2; // older than the current exchange
+                return msg.role === "user" ? (
                   <div key={i} className="text-[12px] text-gray-500 italic">{msg.question}</div>
+                ) : isOld ? (
+                  <CollapsedMessage key={i} msg={msg} index={i} onApply={handleApplyProposal} applied={appliedProposals.has(i)} />
                 ) : (
                   <div key={i} className="space-y-2">
-                    {msg.tools && msg.tools.length > 0 && (
-                      <ToolIndicators tools={msg.tools} />
+                    {msg.timeline && msg.timeline.length > 0 ? (
+                      <InvestigationTimeline timeline={msg.timeline} />
+                    ) : (
+                      /* Fallback for old messages without timeline */
+                      (msg.tools?.length || msg.thinking?.length) ? (
+                        <InvestigationTimeline
+                          timeline={[
+                            ...(msg.tools || []).map((t): TimelineEvent => ({ kind: "tool", tool: t })),
+                            ...(msg.thinking || []).map((s): TimelineEvent => ({ kind: "thinking", step: s })),
+                          ]}
+                        />
+                      ) : null
+                    )}
+                    {msg.configProposal && (
+                      <ConfigProposalCard
+                        proposal={msg.configProposal}
+                        onApply={() => handleApplyProposal(msg.configProposal!, i)}
+                        applied={appliedProposals.has(i)}
+                      />
+                    )}
+                    {msg.clarification && (
+                      <ClarificationCard
+                        clarification={msg.clarification}
+                        onSelect={handleClarificationSelect}
+                        disabled={loading || i < messages.length - 1}
+                      />
                     )}
                     {msg.facts && <Section label="Facts" color="border-green-500" content={msg.facts} />}
                     {msg.visuals && msg.visuals.length > 0 && (
@@ -428,11 +657,19 @@ export function AssistantDrawer({ open, onClose, context }: Props) {
                     {msg.hypothesis && <Section label="Hypothesis" color="border-purple-500" content={msg.hypothesis} />}
                     {i < messages.length - 1 && <div className="border-b border-gray-100" />}
                   </div>
-                ),
-              )}
+                );
+              })}
 
               {/* Live streaming state */}
-              <ToolIndicators tools={liveTools} />
+              {liveTimeline.length > 0 && (
+                <InvestigationTimeline timeline={liveTimeline} defaultExpanded />
+              )}
+              {liveConfigProposal && (
+                <ConfigProposalCard proposal={liveConfigProposal} onApply={() => {}} applied={false} />
+              )}
+              {liveClarification && (
+                <ClarificationCard clarification={liveClarification} onSelect={() => {}} disabled />
+              )}
               {liveResponse.facts && <Section label="Facts" color="border-green-500" content={liveResponse.facts} />}
               {liveVisuals.length > 0 && (
                 <div className="flex flex-wrap gap-2 pl-3">

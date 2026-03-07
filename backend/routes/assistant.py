@@ -100,9 +100,18 @@ def _build_semantic_model() -> str:
     lines.append("### Data Availability")
     lines.append("- Years: 2023, 2024, 2025")
     lines.append("- Granularity: monthly (Jan–Dec), aggregatable by quarter (Q1–Q4) or full year")
-    lines.append("- Financial metrics: revenue, cost_of_sales, gross_profit, budget, forecast, prior_year")
+    lines.append("- Revenue metrics: gross_product_sales, returns, rebates_negotiable, rebates_non_negotiable, early_payment_discount, patient_programs, tax_and_clawbacks, revenue (net), cost_of_sales, gross_profit")
+    lines.append("- Targets: budget_amount, forecast_amount, mtp_amount (Mid-Term Plan), rbu2_amount (Reforecast)")
     lines.append("- Expense metrics: personnel_costs, external_costs, other_costs, total_operating_expenses")
+    lines.append("- Headcount: fte_count, headcount per sub-unit per month")
     lines.append("- Market metrics: total_market_size_usd_m, market_growth_pct, az_market_share_pct, az_revenue_usd_m")
+    lines.append("- Comparators: BUD (Budget), MTP (Mid-Term Plan), RBU2 (Reforecast), PYACT (Prior Year)")
+    lines.append("")
+    lines.append("### Comparator Guide")
+    lines.append("- **BUD (Budget)**: Annual plan set before the fiscal year starts. Primary performance benchmark — 'are we on plan?'")
+    lines.append("- **MTP (Mid-Term Plan)**: 3-5 year strategic plan updated annually. Shows alignment with long-term strategy — 'are we on track strategically?'")
+    lines.append("- **RBU2 (Reforecast)**: Mid-year updated forecast. H1 is close to actuals, H2 diverges. Best for in-year tracking — 'are we hitting the latest forecast?'")
+    lines.append("- **PYACT (Prior Year)**: Last year's actual results. Shows year-over-year growth — 'are we growing?'")
     lines.append("")
 
     # Key relationships
@@ -246,6 +255,121 @@ TOOLS = [
         },
     },
     {
+        "name": "query_config",
+        "description": "Get the application configuration: available comparators (BUD/MTP/RBU2/PYACT), period types (MTD/QTD/YTD/FY), accounts (gross-to-net breakdown), scales ($M/$K/$B), column groups, and default settings. Use this to understand what dimensions and options are available in the dashboard.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+        },
+    },
+    {
+        "name": "propose_config",
+        "description": (
+            "Propose a dashboard configuration change. Use when the user asks to 'show', 'compare', "
+            "'switch to', 'focus on', or 'filter to' a particular view, comparator, market, or TA. "
+            "The proposal renders as an interactive card with an Apply button. "
+            "Only include fields that differ from the current dashboard state. "
+            "Always include a plain-English summary explaining what the config does and why."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "summary": {
+                    "type": "string",
+                    "description": "Plain-English explanation of what this config does (1-2 sentences).",
+                },
+                "comparator": {
+                    "type": "string",
+                    "enum": ["BUD", "MTP", "RBU2", "PYACT"],
+                    "description": "BUD=Budget, MTP=Mid-Term Plan, RBU2=Reforecast, PYACT=Prior Year.",
+                },
+                "year": {"type": "integer", "description": "Fiscal year: 2023, 2024, or 2025"},
+                "quarter": {"type": "string", "enum": ["Q1", "Q2", "Q3", "Q4"]},
+                "market_id": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Markets: ['US'], ['CN'], or ['US','CN']. Omit to keep current.",
+                },
+                "ta": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Therapeutic areas: e.g. ['Oncology', 'CVRM']. Omit to keep current.",
+                },
+                "page": {
+                    "type": "string",
+                    "enum": ["overview", "landing", "phased"],
+                    "description": (
+                        "Dashboard page to switch to. "
+                        "overview = tree table with KPI metrics (best for drill-down analysis). "
+                        "landing = actuals + forecast timeline with cumulative chart (best for YTD tracking). "
+                        "phased = scenario comparison table showing ACT vs BUD/MTP/RBU2/PY by period (best for plan variance). "
+                        "Omit to keep current."
+                    ),
+                },
+                "scenario_preset": {
+                    "type": "string",
+                    "enum": ["all", "bud", "mtp", "rbu2", "py", "bud_mtp", "bud_py"],
+                    "description": (
+                        "Scenario preset for the Phased tab. "
+                        "all = show all scenarios, bud = ACT vs Budget, mtp = ACT vs MTP, "
+                        "rbu2 = ACT vs RBU2, py = ACT vs Prior Year, "
+                        "bud_mtp = ACT vs BUD & MTP, bud_py = ACT vs BUD & PY. "
+                        "Only relevant when page='phased'. Omit to keep current."
+                    ),
+                },
+                "dimension": {
+                    "type": "string",
+                    "enum": ["brand", "region", "unit", "market"],
+                    "description": "DEPRECATED: Use 'levels' instead. Legacy dimension shortcut. Omit to keep current.",
+                },
+                "levels": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["ta", "brand", "market", "region", "unit", "sub_unit", "category"]},
+                    "description": (
+                        "Ordered drill hierarchy levels. All must be same domain. "
+                        "Revenue levels: ta, brand, market, region. "
+                        "Expense levels: unit, sub_unit. "
+                        "Competitive levels: category, brand. "
+                        "E.g. ['region', 'ta', 'brand'] for revenue by region then TA. "
+                        "Omit to keep current."
+                    ),
+                },
+                "scale": {
+                    "type": "string",
+                    "enum": ["K", "M", "B"],
+                    "description": "Number scale ($K/$M/$B). Omit to keep current.",
+                },
+            },
+            "required": ["summary"],
+        },
+    },
+    {
+        "name": "clarify",
+        "description": (
+            "Ask the user a clarifying question with 2-5 clickable options. "
+            "Use this INSTEAD of guessing when the user's query is too vague to determine: "
+            "which metric (revenue/expenses/market share), which scope (brand/region/unit), "
+            "or which time period. Each option must be concise (under 10 words) and directly actionable."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "question": {
+                    "type": "string",
+                    "description": "The clarifying question to ask (1 sentence).",
+                },
+                "options": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "2-5 concise options. Each should work as a standalone follow-up question.",
+                    "minItems": 2,
+                    "maxItems": 5,
+                },
+            },
+            "required": ["question", "options"],
+        },
+    },
+    {
         "name": "render_table",
         "description": "Render a summary table for the user. The user sees a small clickable icon; tapping it opens the full table. Use for comparisons, rankings, or structured breakdowns.",
         "input_schema": {
@@ -283,6 +407,29 @@ TOOLS = [
             "required": ["title", "type", "labels", "datasets"],
         },
     },
+    {
+        "name": "think",
+        "description": (
+            "Record your investigation reasoning. Call this BEFORE querying data to state your plan, "
+            "and AFTER receiving results to record findings and decide next steps. "
+            "The user sees these as investigation steps — be concise and specific."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "step": {
+                    "type": "string",
+                    "enum": ["plan", "finding", "pivot"],
+                    "description": "plan = what you'll investigate next, finding = what you learned from data, pivot = changing direction based on findings",
+                },
+                "content": {
+                    "type": "string",
+                    "description": "1-2 sentences. For plan: what and why. For finding: the key insight from the data. For pivot: why you're changing approach.",
+                },
+            },
+            "required": ["step", "content"],
+        },
+    },
 ]
 
 # Map tool names to function calls
@@ -296,6 +443,7 @@ TOOL_DISPATCH = {
     "query_unit_chart": lambda p: get_unit_chart(**p).model_dump_json(),
     "query_market": lambda p: get_market_view(**p).model_dump_json(),
     "query_market_chart": lambda p: get_market_chart(**p).model_dump_json(),
+    "query_config": lambda p: json.dumps(data_loader.app_config),
 }
 
 TOOL_LABELS = {
@@ -308,8 +456,12 @@ TOOL_LABELS = {
     "query_unit_chart": "expense trend data",
     "query_market": "market share data",
     "query_market_chart": "market share trends",
+    "query_config": "dashboard configuration",
+    "propose_config": "configuration proposal",
+    "clarify": "clarification",
     "render_table": "table",
     "render_chart": "chart",
+    "think": "reasoning",
 }
 
 
@@ -333,7 +485,9 @@ def _build_system_prompt(ctx: dict) -> str:
         semantic,
         "",
         "## Current Dashboard State",
-        f"- Active view: {ctx.get('view', 'Brand')}",
+        f"- Active page: {ctx.get('page', 'overview')}",
+        f"- Drill hierarchy: {' → '.join(ctx.get('levels', ['ta', 'brand', 'market']))}",
+        "- Available levels: Revenue=[ta, brand, market, region], Expense=[unit, sub_unit], Competitive=[category, brand]",
         f"- Period: year={ctx.get('period', {}).get('year', 2025)}, quarter={ctx.get('period', {}).get('quarter', 'Full Year')}",
     ]
 
@@ -380,21 +534,69 @@ def _build_system_prompt(ctx: dict) -> str:
         if dp.get("formatted_value"):
             parts.append(f"- Value: {dp['formatted_value']}")
 
+    comp = filters.get("comparator", "BUD")
+    parts.append(f"- Comparator: {comp}")
+    scale = filters.get("scale", "M")
+    parts.append(f"- Scale: ${scale}")
+
     parts.extend([
         "",
-        "## Response Format",
-        "Use XML tags to structure your answer. Include only the sections that are relevant to the question:",
-        "- <facts>...</facts> — Objective data points. Always include when you queried data. Be specific with numbers.",
-        "- <interpretation>...</interpretation> — Your analysis: what patterns mean, what's driving the numbers, comparisons.",
-        "- <hypothesis>...</hypothesis> — Forward-looking: risks, opportunities, what to watch, suggested actions.",
+        "## Response Modes — PICK EXACTLY ONE",
+        "",
+        "Every response must use exactly ONE of these three modes. Never mix them.",
+        "",
+        "### Mode 1: Clarify (vague query)",
+        "Call the `clarify` tool ONLY. No text output, no other tools.",
+        "Use when the user's query is too vague: 'How are we doing?', 'Show me the numbers', 'What about China?', single-word queries.",
+        "Do NOT clarify when the user mentions a specific brand, TA, market, metric, or clicked on a data point.",
+        "Each option must be a self-contained question the user could ask directly.",
+        "",
+        "### Mode 2: Configure (navigation request)",
+        "Call the `propose_config` tool ONLY. Do NOT output any text before or after the tool call.",
+        "Do NOT query data. Do NOT fabricate numbers or tables. Do NOT describe what the view looks like.",
+        "JUST call propose_config with the right parameters. Nothing else.",
+        "Use when the user wants to CHANGE the dashboard — switching comparators, markets, TAs, views, or periods.",
+        "Trigger phrases: 'show me', 'set me', 'compare', 'switch to', 'focus on', 'filter to', 'vs plan/budget/forecast', 'view for'.",
+        "- Always include a plain-English summary explaining what the config does.",
+        "- Only include fields that differ from the current dashboard state.",
+        "- Map user language: 'vs plan'/'vs budget' → BUD, 'vs forecast'/'vs reforecast' → RBU2, 'vs last year' → PYACT, 'vs MTP' → MTP.",
+        "- **Compose the full view**: set page + levels + filters + scenario together when it makes sense.",
+        "- **Page selection guide**:",
+        "  - `overview`: best for drill-down analysis, seeing the tree hierarchy with KPIs, variances, sparklines.",
+        "  - `landing`: best for YTD tracking — shows actuals + forecast cumulative chart and monthly table.",
+        "  - `phased`: best for scenario comparison — shows ACT side by side with BUD/MTP/RBU2/PY by period.",
+        "- When the user asks to 'compare scenarios' or 'show phased' or 'actuals vs budget by quarter', suggest page='phased' with the right scenario_preset.",
+        "- When the user asks for 'YTD' or 'forecast' or 'landing', suggest page='landing'.",
+        "- When the user asks for a 'breakdown' or 'drill down', suggest page='overview' with appropriate levels.",
+        "",
+        "### Mode 3: Analyze (data question)",
+        "Conduct a structured investigation. Use the `think` tool to make your reasoning visible.",
+        "Use when the user asks a question about the data: performance, trends, comparisons, drivers, rankings.",
+        "",
+        "Investigation pattern:",
+        "1. **Plan** — Call `think(step=\"plan\")` to state what you'll investigate and why",
+        "2. **Query** — Call the relevant data tool(s)",
+        "3. **Record** — Call `think(step=\"finding\")` to note what you learned",
+        "4. **Decide** — Either:",
+        "   a. Drill deeper: call `think(step=\"plan\")` with next investigation step, then query more",
+        "   b. Pivot: call `think(step=\"pivot\")` if findings suggest a different angle, then query",
+        "   c. Synthesize: write your final response with XML tags",
         "",
         "Guidelines:",
-        "- Be concise. Prefer bullet points over paragraphs. No filler or preamble.",
-        "- You do NOT need all three sections. A simple factual question may only need <facts>. An analytical question may need <facts> and <interpretation>. Include <hypothesis> only when you have a genuine forward-looking insight.",
+        "- ALWAYS start with think(plan) before your first data query",
+        "- ALWAYS call think(finding) after receiving data results — never skip to the next query",
+        "- For simple questions (single metric lookup), use 1 plan + 1 finding + synthesis",
+        "- For complex questions (trends, drivers, comparisons), investigate 2-4 angles",
+        "- Never exceed 4 investigation steps — synthesize what you have",
+        "- Each think content must be 1-2 sentences, specific, with numbers when available",
+        "- Use XML tags for final response: <facts>...</facts>, <interpretation>...</interpretation>, <hypothesis>...</hypothesis>",
+        "- You do NOT need all three sections. Simple questions may only need <facts>.",
         "- Keep each section to 2-4 bullet points. Be dense with information, not verbose.",
         "- Use render_table when comparing 3+ items side-by-side. Use render_chart for trends or distributions.",
         "- Always query data first — never fabricate or estimate numbers.",
-        "- When the user asks about a specific brand/TA, use the right filters to get precise data rather than fetching everything.",
+        "- NEVER output a table of numbers in text. Use render_table for tables.",
+        "- NEVER describe what the dashboard shows — you don't see the screen. Only use queried data.",
+        "- When the user asks about a specific brand/TA, use the right filters to get precise data.",
         "- Match the period and filters from the dashboard context unless the user asks for something different.",
     ])
 
@@ -421,9 +623,16 @@ def _parse_sections(text: str) -> list[tuple[str, str]]:
 async def assistant_chat(req: AssistantRequest):
     async def generate():
         system = _build_system_prompt(req.context)
-        messages = [{"role": "user", "content": req.question}]
-        log.info("Assistant request: question=%r context_view=%s", req.question, req.context.get("view"))
 
+        # Build multi-turn conversation from history
+        messages = []
+        for h in req.history:
+            messages.append({"role": h.role, "content": h.content})
+        messages.append({"role": "user", "content": req.question})
+
+        log.info("Assistant request: question=%r history_len=%d context_view=%s", req.question, len(req.history), req.context.get("view"))
+
+        sent_done = False
         try:
             for iteration in range(config.LLM_MAX_ITERATIONS):
                 log.info("Iteration %d — calling Claude...", iteration)
@@ -449,10 +658,20 @@ async def assistant_chat(req: AssistantRequest):
 
                 if not tool_uses:
                     log.info("Final response (%d chars)", len(text_content))
+                    # Guard: if text has no XML tags and looks like fabricated data (many $/ B values),
+                    # the LLM probably failed to use a tool — log and send minimal error
+                    if not any(f"<{t}>" in text_content for t in ("facts", "interpretation", "hypothesis")) and \
+                       text_content.count("B0.") + text_content.count("B1.") + text_content.count("$") > 5:
+                        log.warning("LLM returned fabricated table data instead of using tools — suppressing")
+                        yield _sse("error", "I wasn't able to process that correctly. Could you rephrase your question?")
+                        yield _sse("done", "")
+                        sent_done = True
+                        break
                     sections = _parse_sections(text_content)
                     for section_type, content in sections:
                         yield _sse(section_type, content)
                     yield _sse("done", "")
+                    sent_done = True
                     break
 
                 # Execute tool calls — yield SSE events immediately
@@ -461,18 +680,42 @@ async def assistant_chat(req: AssistantRequest):
                     name = tool_block.name
                     label = TOOL_LABELS.get(name, name)
                     log.info("Tool call: %s params=%r", name, tool_block.input)
-                    yield _sse("tool_use", f"Querying {label}...")
 
-                    if name in ("render_table", "render_chart"):
-                        visual_spec = json.dumps({"tool": name, **tool_block.input})
-                        log.info("Visual spec: %s", visual_spec[:200])
-                        yield _sse("visual", visual_spec)
-                        tool_results.append({
-                            "type": "tool_result",
-                            "tool_use_id": tool_block.id,
-                            "content": f"Rendered {name.replace('render_', '')} for the user.",
-                        })
+                    if name in ("render_table", "render_chart", "propose_config", "clarify", "think"):
+                        # UI-only tools — no "Querying..." status, just emit the visual/event
+                        if name == "think":
+                            yield _sse("thinking", json.dumps(tool_block.input))
+                            tool_results.append({
+                                "type": "tool_result",
+                                "tool_use_id": tool_block.id,
+                                "content": "Noted. Continue your investigation.",
+                            })
+                        elif name == "propose_config":
+                            yield _sse("config_proposal", json.dumps(tool_block.input))
+                            tool_results.append({
+                                "type": "tool_result",
+                                "tool_use_id": tool_block.id,
+                                "content": "Configuration proposal shown to user. They can apply it with one tap.",
+                            })
+                        elif name == "clarify":
+                            yield _sse("clarification", json.dumps(tool_block.input))
+                            tool_results.append({
+                                "type": "tool_result",
+                                "tool_use_id": tool_block.id,
+                                "content": "Clarification options shown to user. Wait for their response.",
+                            })
+                        else:
+                            visual_spec = json.dumps({"tool": name, **tool_block.input})
+                            log.info("Visual spec: %s", visual_spec[:200])
+                            yield _sse("visual", visual_spec)
+                            tool_results.append({
+                                "type": "tool_result",
+                                "tool_use_id": tool_block.id,
+                                "content": f"Rendered {name.replace('render_', '')} for the user.",
+                            })
                     else:
+                        # Data query tools — show progress
+                        yield _sse("tool_use", f"Querying {label}...")
                         params = {k: v for k, v in tool_block.input.items() if v is not None}
                         try:
                             result = TOOL_DISPATCH[name](params)
@@ -487,17 +730,27 @@ async def assistant_chat(req: AssistantRequest):
                             tool_results.append({
                                 "type": "tool_result",
                                 "tool_use_id": tool_block.id,
-                                "content": f"Error: {str(e)}",
+                                "content": f"Error: {type(e).__name__}",
                                 "is_error": True,
                             })
+                        yield _sse("tool_done", f"Queried {label}")
 
-                    yield _sse("tool_done", f"Queried {label}")
+                # If clarify or propose_config was used, stop — these are standalone responses
+                if any(tb.name in ("clarify", "propose_config") for tb in tool_uses):
+                    yield _sse("done", "")
+                    sent_done = True
+                    break
 
                 messages.append({"role": "assistant", "content": response.content})
                 messages.append({"role": "user", "content": tool_results})
 
+        except asyncio.CancelledError:
+            log.info("Assistant SSE stream cancelled by client")
         except Exception as e:
             log.exception("Assistant error")
-            yield _sse("error", str(e))
+            yield _sse("error", "An error occurred processing your request.")
+        finally:
+            if not sent_done:
+                yield _sse("done", "")
 
     return StreamingResponse(generate(), media_type="text/event-stream")

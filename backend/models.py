@@ -34,11 +34,21 @@ class TreeNodeValues(BaseModel):
     sparkline: list[float]
     forecast: float | None = None
     forecast_variance_pct: float | None = None
+    mtp: float | None = None
+    mtp_variance_pct: float | None = None
+    rbu2: float | None = None
+    rbu2_variance_pct: float | None = None
+    comparator_label: str | None = None
+    comparator_value: float | None = None
+    comparator_variance_pct: float | None = None
     market_share_pct: float | None = None
     market_growth_pct: float | None = None
     personnel_costs: float | None = None
     external_costs: float | None = None
     other_costs: float | None = None
+    fte_count: float | None = None
+    headcount: int | None = None
+    cost_per_fte: float | None = None
 
 
 class TreeNode(BaseModel):
@@ -83,9 +93,14 @@ class LineChartSpec(BaseModel):
 
 # --- Assistant ---
 
+class AssistantHistoryMessage(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str  # question text or summary of assistant response
+
 class AssistantRequest(BaseModel):
-    context: dict
+    context: dict = {}
     question: str
+    history: list[AssistantHistoryMessage] = []
 
 
 class AssistantChunk(BaseModel):

@@ -182,9 +182,10 @@ export function TimeChart({ spec, onDrill, onDrillBack, onInteraction, onAssista
         if (!seriesSpec) return;
         onAssistantTrigger({
           source: "time_chart_point",
-          view: "Brand",
-          period: { year: 2025, quarter: null },
-          filters: { market_id: [], ta: [] },
+          page: "overview",
+          dimension: "brand",
+          period: { year: 0, quarter: null },
+          filters: { market_id: [], ta: [], comparator: "BUD", scale: "M" },
           dataPoint: {
             series_name: params.seriesName,
             series_id: seriesSpec.id,

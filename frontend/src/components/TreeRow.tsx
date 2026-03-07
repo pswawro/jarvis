@@ -1,9 +1,10 @@
-import { useCallback } from "react";
+import { memo, useCallback } from "react";
 import clsx from "clsx";
-import type { TreeNode, AssistantContext } from "../types";
+import type { TreeNode, TreeNodeValues, AssistantContext, Scale, Comparator } from "../types";
 import { VariancePill } from "./VariancePill";
 import { Sparkline } from "./Sparkline";
 import { useLongPress } from "../hooks/useLongPress";
+import { scaleValue } from "../utils";
 
 interface Props {
   node: TreeNode;
@@ -18,23 +19,33 @@ interface Props {
   varianceSuffix?: string;
   parentPath?: string[];
   onAssistantTrigger?: (ctx: AssistantContext) => void;
+  scale?: Scale;
+  comparator?: Comparator;
 }
 
-function formatValue(val: number): string {
-  if (val >= 1000) return `$${(val / 1000).toFixed(1)}B`;
-  return `$${val.toFixed(0)}M`;
+function formatValue(val: number, scale: Scale = "M"): string {
+  const suffix = scale === "M" ? "M" : scale === "K" ? "K" : "B";
+  return `$${scaleValue(val, scale)}${suffix}`;
 }
 
-export function TreeRow({ node, depth, isExpanded, hasChildren, onToggle, showShare, showForecast, showExpenseBreakdown, invertColor, varianceSuffix, parentPath, onAssistantTrigger }: Props) {
+const COMPARATOR_VARIANCE: Record<Comparator, keyof TreeNodeValues> = {
+  BUD: "variance_pct",
+  MTP: "mtp_variance_pct",
+  RBU2: "rbu2_variance_pct",
+  PYACT: "py_variance_pct",
+};
+
+export const TreeRow = memo(function TreeRow({ node, depth, isExpanded, hasChildren, onToggle, showShare, showForecast, showExpenseBreakdown, invertColor, varianceSuffix, parentPath, onAssistantTrigger, scale = "M", comparator = "BUD" }: Props) {
   const { values } = node;
 
   const triggerAssistant = useCallback(() => {
     if (!onAssistantTrigger) return;
     onAssistantTrigger({
       source: "tree_row",
-      view: "Brand", // will be overridden by view component wrapper
+      page: "overview", // will be overridden by page component wrapper
+      dimension: "brand", // will be overridden
       period: { year: 2025, quarter: null }, // will be overridden
-      filters: { market_id: [], ta: [] }, // will be overridden
+      filters: { market_id: [], ta: [], comparator: "BUD", scale: "M" }, // will be overridden
       dataPoint: {
         node_id: node.id,
         node_name: node.name,
@@ -64,7 +75,7 @@ export function TreeRow({ node, depth, isExpanded, hasChildren, onToggle, showSh
         "w-full flex items-center gap-1.5 sm:gap-2 px-3 text-left transition-colors",
         depth === 0 && "py-2.5 bg-gray-50/80 border-b border-gray-200",
         depth === 1 && "py-2 bg-white border-b border-gray-100",
-        depth === 2 && "py-1.5 bg-white border-b border-gray-50",
+        depth >= 2 && "py-1.5 bg-white border-b border-gray-50",
         hasChildren && "cursor-pointer hover:bg-gray-50",
         !hasChildren && "cursor-default hover:bg-gray-50/50"
       )}
@@ -98,7 +109,7 @@ export function TreeRow({ node, depth, isExpanded, hasChildren, onToggle, showSh
           "flex-1 truncate",
           depth === 0 && "text-sm font-semibold text-az-navy",
           depth === 1 && "text-sm font-medium text-az-navy/85",
-          depth === 2 && "text-[13px] font-normal text-gray-600"
+          depth >= 2 && "text-[13px] font-normal text-gray-600"
         )}
       >
         {node.name}
@@ -110,10 +121,10 @@ export function TreeRow({ node, depth, isExpanded, hasChildren, onToggle, showSh
           "tabular-nums shrink-0 text-az-navy w-[72px] text-right",
           depth === 0 && "text-sm font-semibold",
           depth === 1 && "text-sm font-medium",
-          depth === 2 && "text-[13px]"
+          depth >= 2 && "text-[13px]"
         )}
       >
-        {formatValue(values.actual)}
+        {formatValue(values.actual, scale)}
       </span>
 
       {/* Forecast */}
@@ -123,10 +134,10 @@ export function TreeRow({ node, depth, isExpanded, hasChildren, onToggle, showSh
             "hidden sm:inline-flex tabular-nums shrink-0 text-gray-500 w-[72px] text-right",
             depth === 0 && "text-sm font-semibold",
             depth === 1 && "text-sm font-medium",
-            depth === 2 && "text-[13px]"
+            depth >= 2 && "text-[13px]"
           )}
         >
-          {formatValue(values.forecast)}
+          {formatValue(values.forecast, scale)}
         </span>
       )}
 
@@ -134,24 +145,29 @@ export function TreeRow({ node, depth, isExpanded, hasChildren, onToggle, showSh
       {showExpenseBreakdown && (
         <>
           <span className={clsx("hidden sm:inline-flex tabular-nums shrink-0 text-gray-500 w-[64px] text-right", depth === 0 ? "text-[12px] font-semibold" : depth === 1 ? "text-[12px] font-medium" : "text-[11px]")}>
-            {formatValue(values.personnel_costs ?? 0)}
+            {formatValue(values.personnel_costs ?? 0, scale)}
           </span>
           <span className={clsx("hidden sm:inline-flex tabular-nums shrink-0 text-gray-500 w-[64px] text-right", depth === 0 ? "text-[12px] font-semibold" : depth === 1 ? "text-[12px] font-medium" : "text-[11px]")}>
-            {formatValue(values.external_costs ?? 0)}
+            {formatValue(values.external_costs ?? 0, scale)}
           </span>
           <span className={clsx("hidden sm:inline-flex tabular-nums shrink-0 text-gray-500 w-[64px] text-right", depth === 0 ? "text-[12px] font-semibold" : depth === 1 ? "text-[12px] font-medium" : "text-[11px]")}>
-            {formatValue(values.other_costs ?? 0)}
+            {formatValue(values.other_costs ?? 0, scale)}
           </span>
+          {values.fte_count != null && (
+            <span className={clsx("hidden sm:inline-flex tabular-nums shrink-0 text-gray-500 w-[54px] text-right", depth === 0 ? "text-[12px] font-semibold" : depth === 1 ? "text-[12px] font-medium" : "text-[11px]")}>
+              {values.fte_count >= 1000 ? `${(values.fte_count / 1000).toFixed(1)}K` : values.fte_count.toFixed(0)}
+            </span>
+          )}
+          {values.cost_per_fte != null && (
+            <span className={clsx("hidden sm:inline-flex tabular-nums shrink-0 text-gray-500 w-[54px] text-right", depth === 0 ? "text-[12px] font-semibold" : depth === 1 ? "text-[12px] font-medium" : "text-[11px]")}>
+              {formatValue(values.cost_per_fte, scale)}
+            </span>
+          )}
         </>
       )}
 
-      {/* vs Budget */}
-      <VariancePill value={values.variance_pct} invertColor={invertColor} suffix={varianceSuffix} />
-
-      {/* vs PY */}
-      {values.py_variance_pct !== null && (
-        <VariancePill value={values.py_variance_pct} invertColor={invertColor} suffix={varianceSuffix} />
-      )}
+      {/* vs Comparator (Budget/MTP/RBU2/PY) */}
+      <VariancePill value={(values[COMPARATOR_VARIANCE[comparator]] as number) ?? values.variance_pct} invertColor={invertColor} suffix={varianceSuffix} />
 
       {/* Market Share */}
       {showShare && values.market_share_pct != null && (
@@ -166,4 +182,4 @@ export function TreeRow({ node, depth, isExpanded, hasChildren, onToggle, showSh
       </span>
     </button>
   );
-}
+});

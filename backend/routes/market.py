@@ -4,16 +4,20 @@ from fastapi import APIRouter
 
 import data_loader
 from models import TreeTableSpec, TreeNode, TreeNodeValues
+from routes.shared import validate_params, var_pct, safe_round as _safe_round, period_label
 
 router = APIRouter()
 
 
-def var_pct(actual, compare):
-    return round((actual - compare) / compare * 100, 1) if compare else 0.0
+def _share_sparkline(monthly_agg):
+    """Vectorized share % from monthly az/mkt aggregation."""
+    share = (monthly_agg["az"] / monthly_agg["mkt"] * 100).where(monthly_agg["mkt"] > 0, 0.0)
+    return [_safe_round(v) for v in share.values]
 
 
 @router.get("/market", response_model=TreeTableSpec)
 def get_market_view(year: int = 2025, quarter: str | None = None, market_id: str | None = None, ta: str | None = None):
+    validate_params(year=year, quarter=quarter)
     comm = data_loader.commercial
     prods = data_loader.products
 
@@ -35,9 +39,17 @@ def get_market_view(year: int = 2025, quarter: str | None = None, market_id: str
     # Full year for sparklines (monthly share %)
     c_full = comm[comm.period_date.dt.year == year]
 
+    # Lookup dicts
+    brand_names = dict(zip(prods.brand_id, prods.brand_name))
+
     # Category-level aggregation
     cat_groups = c.groupby("category")
     cat_py_groups = c_py.groupby("category")
+    # Pre-compute PY by (category, brand_id)
+    py_cat_brand = c_py.groupby(["category", "brand_id"]).agg(
+        az=("az_revenue_usd_m", "sum"),
+        mkt=("total_market_size_usd_m", "sum"),
+    )
 
     cat_children: list[TreeNode] = []
 
@@ -49,38 +61,38 @@ def get_market_view(year: int = 2025, quarter: str | None = None, market_id: str
         brand_children: list[TreeNode] = []
         for brand_id in cat_brands:
             b = cat_data[cat_data.brand_id == brand_id]
-            b_py = c_py[(c_py.category == category) & (c_py.brand_id == brand_id)]
 
             az_rev = b.az_revenue_usd_m.sum()
             mkt_size = b.total_market_size_usd_m.sum()
-            share = round(az_rev / mkt_size * 100, 1) if mkt_size > 0 else 0.0
-            growth = round(b.market_growth_pct.mean(), 1)
+            share = _safe_round(az_rev / mkt_size * 100) if mkt_size > 0 else 0.0
+            growth = _safe_round(b.market_growth_pct.mean())
 
             # PY share for delta
-            py_rev = b_py.az_revenue_usd_m.sum() if not b_py.empty else 0
-            py_mkt = b_py.total_market_size_usd_m.sum() if not b_py.empty else 0
-            py_share = round(py_rev / py_mkt * 100, 1) if py_mkt > 0 else 0.0
-            share_delta = round(share - py_share, 1)
+            py_key = (category, brand_id)
+            if py_key in py_cat_brand.index:
+                py_row = py_cat_brand.loc[py_key]
+                py_rev, py_mkt = float(py_row["az"]), float(py_row["mkt"])
+            else:
+                py_rev = py_mkt = 0.0
+            py_share = _safe_round(py_rev / py_mkt * 100) if py_mkt > 0 else 0.0
+            share_delta = _safe_round(share - py_share)
 
-            # Monthly share sparkline
+            # Monthly share sparkline (vectorized)
             b_full = c_full[(c_full.category == category) & (c_full.brand_id == brand_id)]
             monthly = b_full.groupby(b_full.period_date.dt.month).agg(
                 az=("az_revenue_usd_m", "sum"),
                 mkt=("total_market_size_usd_m", "sum"),
-            )
-            monthly = monthly.reindex(range(1, 13), fill_value=0)
-            spark = [(round(r.az / r.mkt * 100, 1) if r.mkt > 0 else 0.0) for _, r in monthly.iterrows()]
+            ).reindex(range(1, 13), fill_value=0)
+            spark = _share_sparkline(monthly)
 
-            # Get brand name from products
-            name_row = prods[prods.brand_id == brand_id]
-            name = name_row.brand_name.values[0] if len(name_row) > 0 else brand_id
+            name = brand_names.get(brand_id, brand_id)
 
             brand_children.append(TreeNode(
                 id=f"{category}_{brand_id}",
                 name=name,
                 values=TreeNodeValues(
-                    actual=round(az_rev, 1),
-                    budget=round(mkt_size, 1),
+                    actual=_safe_round(az_rev),
+                    budget=_safe_round(mkt_size),
                     variance_pct=share_delta,  # Share Δ vs PY (pp)
                     py_variance_pct=growth,     # Market growth %
                     sparkline=spark,            # Monthly share %
@@ -102,24 +114,23 @@ def get_market_view(year: int = 2025, quarter: str | None = None, market_id: str
         else:
             cat_py_share = 0.0
 
-        cat_share_delta = round(cat_share - cat_py_share, 1)
-        cat_growth = round(cat_data.market_growth_pct.mean(), 1)
+        cat_share_delta = _safe_round(cat_share - cat_py_share)
+        cat_growth = _safe_round(cat_data.market_growth_pct.mean())
 
-        # Category monthly share sparkline
+        # Category monthly share sparkline (vectorized)
         cf = c_full[c_full.category == category]
         cm = cf.groupby(cf.period_date.dt.month).agg(
             az=("az_revenue_usd_m", "sum"),
             mkt=("total_market_size_usd_m", "sum"),
-        )
-        cm = cm.reindex(range(1, 13), fill_value=0)
-        cat_spark = [(round(r.az / r.mkt * 100, 1) if r.mkt > 0 else 0.0) for _, r in cm.iterrows()]
+        ).reindex(range(1, 13), fill_value=0)
+        cat_spark = _share_sparkline(cm)
 
         cat_children.append(TreeNode(
             id=category,
             name=category,
             values=TreeNodeValues(
-                actual=round(cat_az, 1),
-                budget=round(cat_mkt, 1),
+                actual=_safe_round(cat_az),
+                budget=_safe_round(cat_mkt),
                 variance_pct=cat_share_delta,
                 py_variance_pct=cat_growth,
                 sparkline=cat_spark,
@@ -135,28 +146,25 @@ def get_market_view(year: int = 2025, quarter: str | None = None, market_id: str
 
     grand_py_rev = c_py.az_revenue_usd_m.sum()
     grand_py_mkt = c_py.total_market_size_usd_m.sum()
-    grand_py_share = round(grand_py_rev / grand_py_mkt * 100, 1) if grand_py_mkt > 0 else 0.0
-    grand_share_delta = round(grand_share - grand_py_share, 1)
-    grand_growth = round(c.market_growth_pct.mean(), 1)
+    grand_py_share = _safe_round(grand_py_rev / grand_py_mkt * 100) if grand_py_mkt > 0 else 0.0
+    grand_share_delta = _safe_round(grand_share - grand_py_share)
+    grand_growth = _safe_round(c.market_growth_pct.mean())
 
     gf = c_full.groupby(c_full.period_date.dt.month).agg(
         az=("az_revenue_usd_m", "sum"),
         mkt=("total_market_size_usd_m", "sum"),
-    )
-    gf = gf.reindex(range(1, 13), fill_value=0)
-    grand_spark = [(round(r.az / r.mkt * 100, 1) if r.mkt > 0 else 0.0) for _, r in gf.iterrows()]
-
-    period_label = f"{'Q' + quarter[1] + ' ' if quarter else 'FY '}{year}"
+    ).reindex(range(1, 13), fill_value=0)
+    grand_spark = _share_sparkline(gf)
 
     return TreeTableSpec(
-        period_label=period_label,
+        period_label=period_label(year, quarter),
         columns=["Name", "AZ Rev", "Shr Δ", "Mkt Grw", "Share", "Trend"],
         tree=TreeNode(
             id="TOTAL_AZ_MARKET",
             name="Total AZ",
             values=TreeNodeValues(
-                actual=round(grand_az, 1),
-                budget=round(grand_mkt, 1),
+                actual=_safe_round(grand_az),
+                budget=_safe_round(grand_mkt),
                 variance_pct=grand_share_delta,
                 py_variance_pct=grand_growth,
                 sparkline=grand_spark,

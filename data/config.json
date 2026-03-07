@@ -1,0 +1,69 @@
+{
+  "comparators": [
+    {"id": "BUD", "label": "Budget", "field": "budget_amount"},
+    {"id": "MTP", "label": "Mid-Term Plan", "field": "mtp_amount"},
+    {"id": "RBU2", "label": "Reforecast", "field": "rbu2_amount"},
+    {"id": "PYACT", "label": "Prior Year", "field": null}
+  ],
+  "period_types": [
+    {"id": "MTD", "label": "Month to Date"},
+    {"id": "QTD", "label": "Quarter to Date"},
+    {"id": "YTD", "label": "Year to Date"},
+    {"id": "FY", "label": "Full Year"}
+  ],
+  "accounts": [
+    {"id": "gross_product_sales", "label": "Gross Product Sales", "category": "revenue"},
+    {"id": "returns", "label": "Returns", "category": "gtn"},
+    {"id": "rebates_negotiable", "label": "Negotiable Rebates", "category": "gtn"},
+    {"id": "rebates_non_negotiable", "label": "Non Negotiable", "category": "gtn"},
+    {"id": "early_payment_discount", "label": "Early Payment Discount", "category": "gtn"},
+    {"id": "patient_programs", "label": "Patient Programs", "category": "gtn"},
+    {"id": "tax_and_clawbacks", "label": "Tax & Clawbacks", "category": "gtn"},
+    {"id": "revenue", "label": "Net Product Sales", "category": "revenue"},
+    {"id": "cost_of_sales", "label": "Cost of Sales", "category": "cost"},
+    {"id": "gross_profit", "label": "Gross Profit", "category": "profit"}
+  ],
+  "scales": [
+    {"id": "M", "label": "$M", "divisor": 1},
+    {"id": "K", "label": "$K", "divisor": 0.001},
+    {"id": "B", "label": "$B", "divisor": 1000}
+  ],
+  "column_groups": {
+    "period": {
+      "mtd": ["act", "comparator", "var_amt", "var_pct"],
+      "qtd": ["act", "comparator", "var_amt", "var_pct"],
+      "ytd": ["act", "comparator", "var_amt", "var_pct"],
+      "fy":  ["budget", "mtp", "py", "mtp_growth"]
+    },
+    "landing": {
+      "columns": ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec", "fy_total"],
+      "description": "Actuals for closed months, forecast for future months"
+    },
+    "phased": {
+      "toggle": ["month", "quarter", "year"],
+      "scenarios": ["act", "bud", "mtp", "rbu2", "py"]
+    },
+    "run_rates": ["ytd", "ytg_bud", "ytg_mtp", "ytg_growth"]
+  },
+  "gtn_order": [
+    "gross_product_sales",
+    "returns",
+    "rebates_negotiable",
+    "rebates_non_negotiable",
+    "early_payment_discount",
+    "patient_programs",
+    "tax_and_clawbacks",
+    "revenue"
+  ],
+  "defaults": {
+    "comparator": "BUD",
+    "period_type": "YTD",
+    "scale": "M",
+    "month": null,
+    "account": "revenue"
+  },
+  "data_freshness": {
+    "description": "Timestamp of last data refresh, shown in TopBar",
+    "format": "YYYY-MM-DD HH:mm"
+  }
+}

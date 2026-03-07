@@ -35,10 +35,14 @@ interface Props {
   spec: TreeTableSpec;
   invertColor?: boolean;
   onAssistantTrigger?: (ctx: AssistantContext) => void;
+  drillPath?: { id: string; name: string }[];
+  onDrillPathChange?: (path: { id: string; name: string }[]) => void;
 }
 
-export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger }: Props) {
-  const [drillPath, setDrillPath] = useState<{ id: string; name: string }[]>([]);
+export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger, drillPath: externalDrillPath, onDrillPathChange }: Props) {
+  const [internalDrillPath, setInternalDrillPath] = useState<{ id: string; name: string }[]>([]);
+  const drillPath = externalDrillPath ?? internalDrillPath;
+  const setDrillPath = onDrillPathChange ?? setInternalDrillPath;
   const chartRef = useRef<ReactEChartsCore>(null);
 
   const currentNode = useMemo(() => {
@@ -60,9 +64,10 @@ export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger }: 
   const option = useMemo(() => {
     const names = items.map((n) => n.name);
     const actuals = items.map((n) => Math.abs(n.values.actual));
-    const budgets = items.map((n) => Math.abs(n.values.budget));
-    const variances = items.map((n) => n.values.variance_pct);
+    const budgets = items.map((n) => Math.abs(n.values.comparator_value ?? n.values.budget));
+    const variances = items.map((n) => n.values.comparator_variance_pct ?? n.values.variance_pct);
     const ids = items.map((n) => n.id);
+    const compLabel = items[0]?.values.comparator_label ?? "Budget";
 
     return {
       animation: true,
@@ -85,7 +90,7 @@ export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger }: 
                     <span style="color:#9ca3af">Actual</span><span style="font-weight:500">${fmtValue(actuals[idx])}</span>
                   </div>
                   <div style="display:flex;justify-content:space-between;gap:16px">
-                    <span style="color:#9ca3af">Budget</span><span style="font-weight:500">${fmtValue(budgets[idx])}</span>
+                    <span style="color:#9ca3af">${compLabel}</span><span style="font-weight:500">${fmtValue(budgets[idx])}</span>
                   </div>
                   <div style="color:${color};font-weight:600;margin-top:4px;font-size:13px">${sign}${variances[idx].toFixed(1)}%</div>
                   ${canDrill ? '<div style="color:#9ca3af;font-size:10px;margin-top:4px">Click to drill down</div>' : ""}`;
@@ -158,7 +163,7 @@ export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger }: 
           },
         },
         {
-          name: "Budget",
+          name: compLabel,
           type: "bar",
           data: budgets,
           barMaxWidth: 32,
@@ -199,9 +204,10 @@ export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger }: 
       const node = items[idx];
       onAssistantTrigger({
         source: "treemap_bar",
-        view: "Brand",
-        period: { year: 2025, quarter: null },
-        filters: { market_id: [], ta: [] },
+        page: "overview",
+        dimension: "brand",
+        period: { year: 0, quarter: null },
+        filters: { market_id: [], ta: [], comparator: "BUD", scale: "M" },
         dataPoint: {
           node_id: node.id,
           node_name: node.name,
