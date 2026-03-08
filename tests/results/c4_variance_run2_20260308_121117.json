@@ -1,0 +1,125 @@
+{
+  "test": "c4_variance",
+  "run_label": "run2",
+  "timestamp": "20260308_121117",
+  "duration_ms": 31231,
+  "facts": "- **Total AZ** misses budget by **-$693M (-1.4%)**, though still up +6.9% vs prior year\n- **CVRM** is the only TA beating budget: **+$294M (+2.7%)**, driven by Farxiga (+$249M) and Brilinta (+$43M)\n- **Oncology** is the biggest drag: **-$706M (-2.8%)** \u2014 Imfinzi (-$311M), Tagrisso (-$171M), Enhertu (-$187M), and Calquence (-$106M) all miss; only Lynparza beats (+$143M)\n- **Rare Disease** misses by **-$152M (-2.3%)**, primarily Ultomiris (-$151M)\n- **V&I** misses by **-$77M (-7.9%)** \u2014 Beyfortus underperforms across both US and CN\n- **R&I** is nearly flat: **-$52M (-0.7%)** \u2014 Tezspire (-$78M) and Saphnelo (-$38M) offset by Symbicort (+$77M) and Fasenra (+$38M)",
+  "interpretation": "- The budget miss is almost entirely concentrated in **Oncology**, which accounts for ~102% of the total shortfall \u2014 CVRM's outperformance is the only thing keeping the company-level miss from being worse\n- Oncology's miss is broad-based (5 of 7 brands below budget), suggesting either pricing pressure, slower-than-expected uptake, or market share headwinds rather than a single brand-specific issue\n- Rare Disease's -$152M miss is notable given it's also down -16.5% vs prior year \u2014 Ultomiris is not growing fast enough to offset Soliris erosion at the portfolio level",
+  "hypothesis": null,
+  "recommendations": "- **Drill into Oncology brand-level drivers** \u2014 particularly Imfinzi (-$311M, -4.8%) and Enhertu (-$187M, -6.3%) to determine if the miss is US market share loss or CN pricing/access issues\n- **Investigate Tezspire R&I miss** (-$78M, -7.3%) \u2014 the largest single-brand miss in R&I, in a fast-growing market (+40.5% category growth), which suggests an execution or access gap\n- **Review Rare Disease trajectory**: Ultomiris is growing +12.5% YoY but still -$151M vs budget \u2014 validate whether the budget was set too aggressively or if patient conversion is lagging",
+  "visuals": [
+    {
+      "tool": "decompose_variance",
+      "title": "FY 2025 Revenue Variance vs Budget: -$693M",
+      "total_label": "Total AZ",
+      "total_value": -693.2,
+      "unit": "$M",
+      "factors": [
+        {
+          "label": "CVRM",
+          "value": 293.6,
+          "detail": "Farxiga +$248.8M, Brilinta +$43.2M, Crestor +$22.9M offset by Lokelma -$21.3M"
+        },
+        {
+          "label": "R&I",
+          "value": -51.8,
+          "detail": "Tezspire -$78.4M and Saphnelo -$37.6M partially offset by Symbicort +$77.0M and Fasenra +$37.8M"
+        },
+        {
+          "label": "Rare Disease",
+          "value": -151.7,
+          "detail": "Ultomiris -$151.3M and Strensiq -$29.0M, partially offset by Soliris +$28.6M"
+        },
+        {
+          "label": "V&I",
+          "value": -76.9,
+          "detail": "Beyfortus -$76.9M, sole brand in TA"
+        },
+        {
+          "label": "Oncology",
+          "value": -706.4,
+          "detail": "Imfinzi -$310.7M, Enhertu -$187.3M, Calquence -$106.1M, Tagrisso -$170.6M, Truqap -$37.1M, offset by Lynparza +$142.6M"
+        }
+      ]
+    },
+    {
+      "tool": "render_table",
+      "title": "FY 2025 Revenue vs Budget by Therapeutic Area",
+      "headers": [
+        "TA",
+        "Actual ($M)",
+        "Budget ($M)",
+        "Variance ($M)",
+        "Variance %",
+        "vs PY %"
+      ],
+      "rows": [
+        [
+          "Oncology",
+          "24,277",
+          "24,983",
+          "-706",
+          "-2.8%",
+          "+15.9%"
+        ],
+        [
+          "CVRM",
+          "11,131",
+          "10,837",
+          "+294",
+          "+2.7%",
+          "+4.4%"
+        ],
+        [
+          "R&I",
+          "7,312",
+          "7,363",
+          "-52",
+          "-0.7%",
+          "+7.6%"
+        ],
+        [
+          "Rare Disease",
+          "6,579",
+          "6,731",
+          "-152",
+          "-2.3%",
+          "-16.5%"
+        ],
+        [
+          "V&I",
+          "897",
+          "974",
+          "-77",
+          "-7.9%",
+          "+29.1%"
+        ],
+        [
+          "Total AZ",
+          "50,196",
+          "50,889",
+          "-693",
+          "-1.4%",
+          "+6.9%"
+        ]
+      ]
+    }
+  ],
+  "config_proposal": null,
+  "clarification": null,
+  "tools_used": [
+    "Querying brand revenue data..."
+  ],
+  "tool_count": 1,
+  "thinking_steps": [
+    {
+      "step": "plan",
+      "content": "I need to query total revenue by TA to understand variance vs budget, then decompose the total variance into TA-level contributions."
+    },
+    {
+      "step": "finding",
+      "content": "Total AZ is -$693.2M vs budget (-1.4%). Breaking down by TA: Oncology -$706.4M, CVRM +$293.6M, R&I -$51.8M, Rare Disease -$151.7M, V&I -$76.9M. CVRM is the only TA beating budget, while Oncology is the biggest drag."
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,83 @@
+{
+  "test": "c2_ranking",
+  "run_label": "run2",
+  "timestamp": "20260308_120657",
+  "duration_ms": 17918,
+  "facts": "- **#1 Farxiga (CVRM)** \u2014 $8,427M, the only top-5 brand beating budget (+3.0%), up +10.1% vs prior year\n- **#2 Tagrisso (Oncology)** \u2014 $7,289M, slightly below budget (-2.3%), but solid +10.2% YoY growth\n- **#3 Imfinzi (Oncology)** \u2014 $6,102M, the biggest budget miss in the group (-4.8%), yet the strongest YoY growth at +30.2%\n- **#4 Ultomiris (Rare Disease)** \u2014 $4,378M, -3.3% vs budget, +12.5% YoY\n- **#5 Calquence (Oncology)** \u2014 $3,494M, -2.9% vs budget, +12.4% YoY",
+  "interpretation": "- **Farxiga** is the standout \u2014 the only top-5 brand on or above plan, driven by strong SGLT2 demand in both US ($6,586M) and CN ($1,840M).\n- **Oncology dominates** with 3 of the top 5 brands (Tagrisso, Imfinzi, Calquence), but all three are running below budget.\n- **Imfinzi's +30.2% YoY** is the most impressive growth story \u2014 its budget miss likely reflects an ambitious plan rather than weak execution.\n- Total AZ revenue is $50,196M, so these 5 brands account for ~59% of company revenue.",
+  "hypothesis": null,
+  "recommendations": null,
+  "visuals": [
+    {
+      "tool": "render_table",
+      "title": "Top 5 Brands by Revenue \u2014 FY 2025",
+      "headers": [
+        "Rank",
+        "Brand",
+        "TA",
+        "Revenue ($M)",
+        "vs Budget",
+        "vs Prior Year"
+      ],
+      "rows": [
+        [
+          "1",
+          "Farxiga",
+          "CVRM",
+          "$8,427M",
+          "+3.0% \u2705",
+          "+10.1% \u2705"
+        ],
+        [
+          "2",
+          "Tagrisso",
+          "Oncology",
+          "$7,289M",
+          "-2.3% \u274c",
+          "+10.2% \u2705"
+        ],
+        [
+          "3",
+          "Imfinzi",
+          "Oncology",
+          "$6,102M",
+          "-4.8% \u274c",
+          "+30.2% \u2705"
+        ],
+        [
+          "4",
+          "Ultomiris",
+          "Rare Disease",
+          "$4,378M",
+          "-3.3% \u274c",
+          "+12.5% \u2705"
+        ],
+        [
+          "5",
+          "Calquence",
+          "Oncology",
+          "$3,494M",
+          "-2.9% \u274c",
+          "+12.4% \u2705"
+        ]
+      ]
+    }
+  ],
+  "config_proposal": null,
+  "clarification": null,
+  "tools_used": [
+    "Querying brand revenue data..."
+  ],
+  "tool_count": 1,
+  "thinking_steps": [
+    {
+      "step": "plan",
+      "content": "Query the full brand revenue tree for 2025 without any TA or market filters to get a complete cross-portfolio ranking."
+    },
+    {
+      "step": "finding",
+      "content": "Top 5 brands by 2025 actual revenue: Farxiga $8,426.5M, Tagrisso $7,289.4M, Imfinzi $6,102.0M, Ultomiris $4,377.6M, Calquence $3,494.2M. Farxiga leads comfortably, beating budget by 3.0%; Tagrisso and Imfinzi are both below budget."
+    }
+  ],
+  "error": null
+}

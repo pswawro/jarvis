@@ -76,7 +76,7 @@ export interface UseAssistantChat {
   loading: boolean;
   liveTools: ToolStatus[];
   liveVisuals: Visual[];
-  liveResponse: { facts: string; interpretation: string; hypothesis: string };
+  liveResponse: { facts: string; interpretation: string; hypothesis: string; recommendations: string };
   liveConfigProposal: ConfigProposal | null;
   liveClarification: Clarification | null;
   liveThinking: ThinkingStep[];
@@ -105,7 +105,7 @@ export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void):
   const [loading, setLoading] = useState(false);
   const [liveTools, setLiveTools] = useState<ToolStatus[]>([]);
   const [liveVisuals, setLiveVisuals] = useState<Visual[]>([]);
-  const [liveResponse, setLiveResponse] = useState({ facts: "", interpretation: "", hypothesis: "" });
+  const [liveResponse, setLiveResponse] = useState({ facts: "", interpretation: "", hypothesis: "", recommendations: "" });
   const [liveConfigProposal, setLiveConfigProposal] = useState<ConfigProposal | null>(null);
   const [liveClarification, setLiveClarification] = useState<Clarification | null>(null);
   const [liveThinking, setLiveThinking] = useState<ThinkingStep[]>([]);
@@ -166,7 +166,7 @@ export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void):
   const resetLive = useCallback(() => {
     setLiveTools([]);
     setLiveVisuals([]);
-    setLiveResponse({ facts: "", interpretation: "", hypothesis: "" });
+    setLiveResponse({ facts: "", interpretation: "", hypothesis: "", recommendations: "" });
     setLiveConfigProposal(null);
     setLiveClarification(null);
     setLiveThinking([]);
@@ -208,18 +208,44 @@ export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void):
       (async () => {
         try {
           // Build conversation history from previous messages
+          // Keep last 3 exchanges (6 msgs) in full; compress older ones into a summary
+          const RECENT_EXCHANGE_COUNT = 3;
+          const allPrev = messagesRef.current.slice(0, -1); // exclude the just-added user msg
+          const recentCutoff = Math.max(0, allPrev.length - RECENT_EXCHANGE_COUNT * 2);
+          const olderMsgs = allPrev.slice(0, recentCutoff);
+          const recentMsgs = allPrev.slice(recentCutoff);
+
           const history: { role: string; content: string }[] = [];
-          for (const msg of messagesRef.current.slice(0, -1)) {  // exclude the just-added user msg
+
+          // Compress older messages into a single summary
+          if (olderMsgs.length > 0) {
+            const summaryLines: string[] = [];
+            for (const msg of olderMsgs) {
+              if (msg.role === "user" && msg.question) {
+                summaryLines.push(`User: ${msg.question.slice(0, 80)}`);
+              } else if (msg.role === "assistant") {
+                if (msg.configProposal) summaryLines.push(`Assistant: [Config: ${msg.configProposal.summary}]`);
+                else if (msg.clarification) summaryLines.push(`Assistant: [Asked: ${msg.clarification.question}]`);
+                else if (msg.facts) summaryLines.push(`Assistant: ${msg.facts.slice(0, 100)}...`);
+              }
+            }
+            if (summaryLines.length > 0) {
+              history.push({ role: "user", content: `[Earlier in this conversation:\n${summaryLines.join("\n")}]` });
+              history.push({ role: "assistant", content: "Understood, I have context from our earlier discussion." });
+            }
+          }
+
+          // Recent messages in full
+          for (const msg of recentMsgs) {
             if (msg.role === "user" && msg.question) {
               history.push({ role: "user", content: msg.question });
             } else if (msg.role === "assistant") {
-              // Summarize assistant response for context
               const parts: string[] = [];
               if (msg.configProposal) parts.push(`[Proposed config: ${msg.configProposal.summary}]`);
               if (msg.clarification) parts.push(`[Asked: ${msg.clarification.question}]`);
-              if (msg.facts) parts.push(msg.facts);
-              if (msg.interpretation) parts.push(msg.interpretation);
-              if (msg.hypothesis) parts.push(msg.hypothesis);
+              if (msg.facts) parts.push(msg.facts.length > 500 ? msg.facts.slice(0, 500) + "..." : msg.facts);
+              if (msg.interpretation) parts.push(msg.interpretation.length > 300 ? msg.interpretation.slice(0, 300) + "..." : msg.interpretation);
+              if (msg.hypothesis) parts.push(msg.hypothesis.length > 300 ? msg.hypothesis.slice(0, 300) + "..." : msg.hypothesis);
               if (parts.length > 0) {
                 history.push({ role: "assistant", content: parts.join("\n") });
               }
@@ -233,10 +259,14 @@ export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void):
             signal: controller.signal,
           });
 
-          const reader = res.body!.getReader();
+          if (!res.ok || !res.body) {
+            throw new Error(`Server error (${res.status})`);
+          }
+
+          const reader = res.body.getReader();
           const decoder = new TextDecoder();
           let buffer = "";
-          const accumulated = { facts: "", interpretation: "", hypothesis: "" };
+          const accumulated = { facts: "", interpretation: "", hypothesis: "", recommendations: "" };
           const accVisuals: Visual[] = [];
           const accTools: ToolStatus[] = [];
           let accConfigProposal: ConfigProposal | null = null;
@@ -291,6 +321,10 @@ export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void):
                     accumulated.hypothesis = data.content;
                     setLiveResponse({ ...accumulated });
                     break;
+                  case "recommendations":
+                    accumulated.recommendations = data.content;
+                    setLiveResponse({ ...accumulated });
+                    break;
                   case "visual":
                     accVisuals.push(JSON.parse(data.content));
                     setLiveVisuals([...accVisuals]);
@@ -317,6 +351,7 @@ export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void):
                       facts: accumulated.facts,
                       interpretation: accumulated.interpretation,
                       hypothesis: accumulated.hypothesis,
+                      recommendations: accumulated.recommendations || undefined,
                       tools: [...accTools],
                       visuals: [...accVisuals],
                       configProposal: accConfigProposal || undefined,

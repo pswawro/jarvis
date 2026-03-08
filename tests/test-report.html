@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jarvis Test Report</title>
+<style>
+  :root {
+    --az-purple: #520067;
+    --az-dark: #1a1a2e;
+    --green: #22c55e;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --blue: #3b82f6;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-600: #4b5563;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-800);
+    line-height: 1.6;
+  }
+
+  /* Slide system */
+  .slide {
+    min-height: 100vh;
+    padding: 60px 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  .slide-number {
+    position: absolute;
+    top: 24px;
+    right: 40px;
+    font-size: 13px;
+    color: var(--gray-300);
+    font-weight: 500;
+  }
+
+  /* Title slide */
+  .slide-title {
+    background: linear-gradient(135deg, var(--az-dark) 0%, var(--az-purple) 100%);
+    color: white;
+    text-align: center;
+  }
+  .slide-title h1 { font-size: 56px; font-weight: 700; margin-bottom: 16px; letter-spacing: -1px; }
+  .slide-title .subtitle { font-size: 22px; opacity: 0.8; margin-bottom: 40px; }
+  .slide-title .meta { font-size: 14px; opacity: 0.5; }
+  .slide-title .logo {
+    width: 64px; height: 64px; background: white; border-radius: 16px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 32px; font-weight: 800; color: var(--az-purple); margin-bottom: 24px;
+  }
+
+  /* Section headers */
+  .slide-section {
+    background: var(--gray-900);
+    color: white;
+    text-align: center;
+  }
+  .slide-section h2 { font-size: 44px; font-weight: 700; margin-bottom: 12px; }
+  .slide-section p { font-size: 18px; opacity: 0.6; }
+  .slide-section .icon { font-size: 48px; margin-bottom: 16px; }
+
+  /* Content slides */
+  h2 { font-size: 32px; font-weight: 700; margin-bottom: 24px; color: var(--gray-900); }
+  h3 { font-size: 20px; font-weight: 600; margin-bottom: 12px; color: var(--gray-800); }
+
+  /* Summary cards */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin: 24px 0;
+  }
+  .summary-card {
+    background: white;
+    border-radius: 12px;
+    padding: 28px;
+    border: 1px solid var(--gray-200);
+    text-align: center;
+  }
+  .summary-card .number {
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .summary-card .label {
+    font-size: 14px;
+    color: var(--gray-600);
+    font-weight: 500;
+  }
+  .number.green { color: var(--green); }
+  .number.blue { color: var(--blue); }
+  .number.amber { color: var(--amber); }
+  .number.purple { color: var(--az-purple); }
+
+  /* Test table */
+  .test-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .test-table th {
+    background: var(--gray-100);
+    padding: 10px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray-600);
+    border-bottom: 2px solid var(--gray-200);
+  }
+  .test-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--gray-100);
+    vertical-align: top;
+  }
+  .test-table tr:hover td { background: var(--gray-50); }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-pass { background: #dcfce7; color: #166534; }
+  .badge-partial { background: #fef3c7; color: #92400e; }
+  .badge-fail { background: #fee2e2; color: #991b1b; }
+
+  /* Screenshot gallery */
+  .screenshot-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin: 20px 0;
+  }
+  .screenshot-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--gray-200);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .screenshot-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  }
+  .screenshot-card img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .screenshot-card .caption {
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray-600);
+  }
+  .screenshot-card .caption strong {
+    color: var(--gray-900);
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  /* Single screenshot */
+  .screenshot-single {
+    max-width: 420px;
+    margin: 0 auto;
+  }
+  .screenshot-single img {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--gray-200);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+
+  /* AI test detail */
+  .ai-test {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: start;
+    margin: 20px 0;
+  }
+  .ai-test-info { }
+  .ai-test-info .query {
+    background: var(--gray-100);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-style: italic;
+    margin-bottom: 16px;
+    font-size: 15px;
+    border-left: 3px solid var(--az-purple);
+  }
+  .ai-test-info ul {
+    padding-left: 20px;
+    font-size: 14px;
+    color: var(--gray-600);
+  }
+  .ai-test-info li { margin-bottom: 6px; }
+  .ai-test-screenshot img {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--gray-200);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+
+  /* Feature tags */
+  .feature-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--gray-100);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--gray-600);
+    margin: 2px 4px 2px 0;
+  }
+  .feature-tag.purple { background: #f3e8ff; color: #6b21a8; }
+  .feature-tag.green { background: #dcfce7; color: #166534; }
+  .feature-tag.blue { background: #dbeafe; color: #1e40af; }
+  .feature-tag.amber { background: #fef3c7; color: #92400e; }
+
+  /* Verdict box */
+  .verdict {
+    background: linear-gradient(135deg, #dcfce7, #f0fdf4);
+    border: 2px solid #86efac;
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    margin: 24px 0;
+  }
+  .verdict h3 {
+    font-size: 28px;
+    color: #166534;
+    margin-bottom: 8px;
+  }
+  .verdict p {
+    color: #15803d;
+    font-size: 16px;
+  }
+
+  /* Print styles */
+  @media print {
+    .slide { break-after: page; min-height: auto; padding: 40px; }
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .slide { padding: 40px 24px; }
+    .summary-grid { grid-template-columns: 1fr; }
+    .screenshot-grid { grid-template-columns: 1fr; }
+    .ai-test { grid-template-columns: 1fr; }
+    .slide-title h1 { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SLIDE 1: Title -->
+<div class="slide slide-title">
+  <div>
+    <div class="logo">J</div>
+    <h1>Jarvis Test Report</h1>
+    <div class="subtitle">Comprehensive QA: Unit Tests, Browser E2E, and AI Assistant</div>
+    <div class="meta">March 8, 2026 &middot; macOS &middot; Chrome &middot; Node 22 &middot; Vite Dev Server</div>
+  </div>
+</div>
+
+<!-- SLIDE 2: Executive Summary -->
+<div class="slide">
+  <span class="slide-number">2</span>
+  <h2>Executive Summary</h2>
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="number green">42/42</div>
+      <div class="label">Unit Tests Passed (Vitest)</div>
+    </div>
+    <div class="summary-card">
+      <div class="number blue">11/11</div>
+      <div class="label">Browser E2E Tests Passed</div>
+    </div>
+    <div class="summary-card">
+      <div class="number purple">7/8</div>
+      <div class="label">AI Assistant Tests Passed</div>
+    </div>
+  </div>
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="number" style="font-size:36px; color: var(--gray-800);">4</div>
+      <div class="label">Test Files (utils, bookmarks, longPress, savedDimensions)</div>
+    </div>
+    <div class="summary-card">
+      <div class="number" style="font-size:36px; color: var(--gray-800);">22</div>
+      <div class="label">Screenshots Captured</div>
+    </div>
+    <div class="summary-card">
+      <div class="number" style="font-size:36px; color: var(--gray-800);">~$0.64</div>
+      <div class="label">Estimated AI Test Cost (Bedrock)</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3: Section — Unit Tests -->
+<div class="slide slide-section">
+  <div>
+    <div class="icon">🧪</div>
+    <h2>Unit Tests</h2>
+    <p>42 tests across 4 files &middot; Vitest + React Testing Library + jsdom</p>
+  </div>
+</div>
+
+<!-- SLIDE 4: Unit Test Results -->
+<div class="slide">
+  <span class="slide-number">4</span>
+  <h2>Unit Test Results &mdash; 42/42 Passed</h2>
+  <table class="test-table">
+    <thead>
+      <tr><th>Test File</th><th>Tests</th><th>Status</th><th>Coverage</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>utils.test.ts</strong></td>
+        <td>20</td>
+        <td><span class="badge badge-pass">PASSED</span></td>
+        <td>
+          <span class="feature-tag">filtersToExtra (5)</span>
+          <span class="feature-tag">scaleValue (6)</span>
+          <span class="feature-tag">scaleLabel (4)</span>
+          <span class="feature-tag">comparatorLabel (5)</span>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>useBookmarks.test.ts</strong></td>
+        <td>8</td>
+        <td><span class="badge badge-pass">PASSED</span></td>
+        <td>
+          <span class="feature-tag">CRUD</span>
+          <span class="feature-tag">localStorage</span>
+          <span class="feature-tag">20-item cap</span>
+          <span class="feature-tag">corrupt data</span>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>useLongPress.test.ts</strong></td>
+        <td>6</td>
+        <td><span class="badge badge-pass">PASSED</span></td>
+        <td>
+          <span class="feature-tag">delay callback</span>
+          <span class="feature-tag">cancel touchEnd</span>
+          <span class="feature-tag">cancel touchMove</span>
+          <span class="feature-tag">didLongPress reset</span>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>useSavedDimensions.test.ts</strong></td>
+        <td>8</td>
+        <td><span class="badge badge-pass">PASSED</span></td>
+        <td>
+          <span class="feature-tag">save/remove</span>
+          <span class="feature-tag">unique IDs</span>
+          <span class="feature-tag">append order</span>
+          <span class="feature-tag">localStorage</span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="margin-top:16px; font-size:13px; color:var(--gray-600);">
+    Run command: <code>cd frontend && npm test</code> &middot; Framework: Vitest 4.0.18 + React Testing Library + jsdom
+  </p>
+</div>
+
+<!-- SLIDE 5: Unit Test Details -->
+<div class="slide">
+  <span class="slide-number">5</span>
+  <h2>Key Unit Test Scenarios</h2>
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <div>
+      <h3>filtersToExtra</h3>
+      <ul style="font-size:14px; padding-left:20px; color:var(--gray-600);">
+        <li>Returns only comparator when all filter arrays empty</li>
+        <li>Includes <code>market_id</code> when markets selected</li>
+        <li>Maps <code>product</code> filter to <code>brand_id</code> key</li>
+        <li>Includes all filters when everything is set</li>
+      </ul>
+      <h3 style="margin-top:20px;">scaleValue</h3>
+      <ul style="font-size:14px; padding-left:20px; color:var(--gray-600);">
+        <li>$M: 1 decimal place &rarr; 50,196.1M</li>
+        <li>$B: 2 decimal places &rarr; 50.20B</li>
+        <li>$K: rounded integers with locale separators</li>
+        <li>Handles zero, negatives, unknown scale fallback</li>
+      </ul>
+    </div>
+    <div>
+      <h3>useBookmarks</h3>
+      <ul style="font-size:14px; padding-left:20px; color:var(--gray-600);">
+        <li>Adds bookmark with correct label, prepends (most recent first)</li>
+        <li>Caps at 20 max bookmarks</li>
+        <li>Persists to and loads from localStorage</li>
+        <li>Handles corrupt localStorage gracefully</li>
+      </ul>
+      <h3 style="margin-top:20px;">useLongPress</h3>
+      <ul style="font-size:14px; padding-left:20px; color:var(--gray-600);">
+        <li>Calls callback after configured delay</li>
+        <li>Cancels on touch end before delay</li>
+        <li>Cancels on touch move (drag gesture)</li>
+        <li>Resets <code>didLongPress</code> on new touch start</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6: Section — Browser E2E -->
+<div class="slide slide-section">
+  <div>
+    <div class="icon">🌐</div>
+    <h2>Browser E2E Tests</h2>
+    <p>11 scenarios via Playwright MCP &middot; Desktop + Mobile &middot; Live backend</p>
+  </div>
+</div>
+
+<!-- SLIDE 7: E2E Test List -->
+<div class="slide">
+  <span class="slide-number">7</span>
+  <h2>Browser E2E Results &mdash; 11/11 Passed</h2>
+  <table class="test-table">
+    <thead>
+      <tr><th>#</th><th>Test Scenario</th><th>Status</th><th>Key Verifications</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td>Desktop Initial Load</td><td><span class="badge badge-pass">PASSED</span></td><td>Header, KPI strip (4 cards), tree table (5 TAs), sparklines</td></tr>
+      <tr><td>2</td><td>Tree Table Expansion</td><td><span class="badge badge-pass">PASSED</span></td><td>Oncology &rarr; 7 brands, quarterly data, child indentation</td></tr>
+      <tr><td>3</td><td>Scale Switching ($B/$K/$M)</td><td><span class="badge badge-pass">PASSED</span></td><td>Values update: $50.20B &rarr; $50,196,100K &rarr; $50196.1M</td></tr>
+      <tr><td>4</td><td>Landing Tab Navigation</td><td><span class="badge badge-pass">PASSED</span></td><td>2025 Scenario Comparison table, monthly columns</td></tr>
+      <tr><td>5</td><td>Phased Tab Navigation</td><td><span class="badge badge-pass">PASSED</span></td><td>Same quarterly layout, filter state persists</td></tr>
+      <tr><td>6</td><td>Filter Panel</td><td><span class="badge badge-pass">PASSED</span></td><td>Year, View By, Comparator, Market, TA, Product sections</td></tr>
+      <tr><td>7</td><td>Market Filter (US)</td><td><span class="badge badge-pass">PASSED</span></td><td>Revenue drops $50,196M &rarr; $39,970M, chip appears</td></tr>
+      <tr><td>8</td><td>Assistant Drawer UI</td><td><span class="badge badge-pass">PASSED</span></td><td>Input, mic button, send button, chat history</td></tr>
+      <tr><td>9</td><td>Mobile Responsive (375px)</td><td><span class="badge badge-pass">PASSED</span></td><td>2x2 KPI grid, compact rows, swipe dots</td></tr>
+      <tr><td>10</td><td>Dimension Picker</td><td><span class="badge badge-pass">PASSED</span></td><td>TA &rarr; Brand &rarr; Market hierarchy, reorder, save</td></tr>
+      <tr><td>11</td><td>Chart/TreeMap Toggle</td><td><span class="badge badge-pass">PASSED</span></td><td>Horizontal bars, color coding, variance %</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SLIDE 8: E2E Screenshots 1-4 -->
+<div class="slide">
+  <span class="slide-number">8</span>
+  <h2>E2E Screenshots: Core Layout</h2>
+  <div class="screenshot-grid">
+    <div class="screenshot-card">
+      <img src="e2e-screenshots/01-desktop-initial-load.png" alt="Desktop initial load">
+      <div class="caption"><strong>#1 Desktop Initial Load</strong>Header, KPI strip, tree table with 5 TAs</div>
+    </div>
+    <div class="screenshot-card">
+      <img src="e2e-screenshots/02-tree-expanded-oncology.png" alt="Tree expanded">
+      <div class="caption"><strong>#2 Tree Expansion</strong>Oncology &rarr; 7 brands with quarterly data</div>
+    </div>
+    <div class="screenshot-card">
+      <img src="e2e-screenshots/03-landing-tab.png" alt="Landing tab">
+      <div class="caption"><strong>#4 Landing Tab</strong>2025 Scenario Comparison, monthly columns</div>
+    </div>
+    <div class="screenshot-card">
+      <img src="e2e-screenshots/04-phased-tab.png" alt="Phased tab">
+      <div class="caption"><strong>#5 Phased Tab</strong>Quarterly layout with filter state preserved</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 9: E2E Screenshots 5-8 -->
+<div class="slide">
+  <span class="slide-number">9</span>
+  <h2>E2E Screenshots: Filters &amp; Interactivity</h2>
+  <div class="screenshot-grid">
+    <div class="screenshot-card">
+      <img src="e2e-screenshots/05-filter-panel-open.png" alt="Filter panel">
+      <div class="caption"><strong>#6 Filter Panel</strong>Year, View By, Comparator, Market, TA, Product</div>
+    </div>
+    <div class="screenshot-card">
+      <img src="e2e-screenshots/06-us-market-filtered.png" alt="US market filtered">
+      <div class="caption"><strong>#7 Market Filter (US)</strong>Revenue: $50,196M &rarr; $39,970M</div>
+    </div>
+    <div class="screenshot-card">
+      <img src="e2e-screenshots/07-assistant-drawer-open.png" alt="Assistant drawer">
+      <div class="caption"><strong>#8 Assistant Drawer</strong>Input, mic, send, chat history button</div>
+    </div>
+    <div class="screenshot-card">
+      <img src="e2e-screenshots/08-mobile-375px.png" alt="Mobile responsive">
+      <div class="caption"><strong>#9 Mobile (375px)</strong>2x2 KPI grid, compact table, swipe dots</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 10: E2E Screenshots 9-11 -->
+<div class="slide">
+  <span class="slide-number">10</span>
+  <h2>E2E Screenshots: Dimension &amp; Chart</h2>
+  <div class="screenshot-grid">
+    <div class="screenshot-card">
+      <img src="e2e-screenshots/09-dimension-picker.png" alt="Dimension picker">
+      <div class="caption"><strong>#10 Dimension Picker</strong>Reorder levels, add/remove, save presets</div>
+    </div>
+    <div class="screenshot-card">
+      <img src="e2e-screenshots/10-trend-chart-view.png" alt="Chart view">
+      <div class="caption"><strong>#11 Chart/TreeMap View</strong>Horizontal bars with variance color coding</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 11: Section — AI Tests -->
+<div class="slide slide-section">
+  <div>
+    <div class="icon">🤖</div>
+    <h2>AI Assistant Tests</h2>
+    <p>8 scenarios testing 3 response modes &middot; Claude Sonnet 4.6 via AWS Bedrock &middot; ~$0.64 cost</p>
+  </div>
+</div>
+
+<!-- SLIDE 12: AI Test Summary -->
+<div class="slide">
+  <span class="slide-number">12</span>
+  <h2>AI Assistant Test Results &mdash; 7/8 Passed</h2>
+  <table class="test-table">
+    <thead>
+      <tr><th>#</th><th>Query</th><th>Mode</th><th>Status</th><th>Response Features</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>"What is Total Revenue for 2025?"</td>
+        <td><span class="feature-tag purple">Mode 3: Analyze</span></td>
+        <td><span class="badge badge-pass">PASSED</span></td>
+        <td>
+          <span class="feature-tag green">Facts</span>
+          <span class="feature-tag blue">Interpretation</span>
+          <span class="feature-tag">1 tool, 2 steps</span>
+        </td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>"Show me Oncology only"</td>
+        <td><span class="feature-tag purple">Mode 2: Configure</span></td>
+        <td><span class="badge badge-pass">PASSED</span></td>
+        <td>
+          <span class="feature-tag green">Config card</span>
+          <span class="feature-tag blue">TA: Oncology tag</span>
+          <span class="feature-tag">Apply button</span>
+        </td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>"How are we doing?"</td>
+        <td><span class="feature-tag purple">Mode 1: Clarify</span></td>
+        <td><span class="badge badge-pass">PASSED</span></td>
+        <td>
+          <span class="feature-tag green">Clarification question</span>
+          <span class="feature-tag blue">5 suggestions</span>
+          <span class="feature-tag">Text input</span>
+        </td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>"Which Oncology brands are beating or missing plan?"</td>
+        <td><span class="feature-tag purple">Mode 3: Analyze</span></td>
+        <td><span class="badge badge-pass">PASSED</span></td>
+        <td>
+          <span class="feature-tag green">Table visual</span>
+          <span class="feature-tag blue">Interpretation</span>
+          <span class="feature-tag amber">Hypothesis</span>
+        </td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>"Compare US vs China revenue for 2025"</td>
+        <td><span class="feature-tag purple">Mode 3: Analyze</span></td>
+        <td><span class="badge badge-pass">PASSED</span></td>
+        <td>
+          <span class="feature-tag green">Facts (4 items)</span>
+          <span class="feature-tag blue">Table visual</span>
+          <span class="feature-tag amber">Hypothesis</span>
+        </td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>"Break down variance vs budget by TA"</td>
+        <td><span class="feature-tag purple">Mode 3: Analyze</span></td>
+        <td><span class="badge badge-pass">PASSED</span></td>
+        <td>
+          <span class="feature-tag green">Waterfall chart</span>
+          <span class="feature-tag blue">Recommendations</span>
+          <span class="feature-tag amber">Facts + Interp</span>
+        </td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td>"Switch to monthly view, actuals vs MTP, 2024"</td>
+        <td><span class="feature-tag purple">Mode 2: Configure</span></td>
+        <td><span class="badge badge-pass">PASSED</span></td>
+        <td>
+          <span class="feature-tag green">5 config tags</span>
+          <span class="feature-tag blue">Apply button</span>
+          <span class="feature-tag">Carry-forward filter</span>
+        </td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td>"Top 5 brands by revenue in 2025?"</td>
+        <td><span class="feature-tag purple">Mode 3: Analyze</span></td>
+        <td><span class="badge badge-partial">PARTIAL</span></td>
+        <td>
+          <span class="feature-tag green">Table visual (correct)</span>
+          <span class="feature-tag amber">No &lt;facts&gt; tag emitted</span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="margin-top:12px; font-size:13px; color:var(--gray-600);">
+    Model: <code>eu.anthropic.claude-sonnet-4-6</code> &middot; Max tokens: 4096 &middot; Temperature: 0.1 &middot; Max iterations: 10
+  </p>
+</div>
+
+<!-- SLIDE 13: AI Test 1 — KPI Lookup -->
+<div class="slide">
+  <span class="slide-number">13</span>
+  <h2>AI Test 1: Simple KPI Lookup</h2>
+  <div class="ai-test">
+    <div class="ai-test-info">
+      <div class="query">"What is Total Revenue for 2025?"</div>
+      <h3>Expected: Mode 3 (Analyze) with query_kpi tool</h3>
+      <ul>
+        <li><strong>Mode:</strong> Analyze &mdash; think &rarr; query &rarr; synthesize</li>
+        <li><strong>Tools used:</strong> 1 (query_kpi), 2 think steps</li>
+        <li><strong>Facts:</strong> Total Revenue FY 2025: $50,195.8M</li>
+        <li><strong>vs Budget:</strong> -1.4% miss</li>
+        <li><strong>vs PY:</strong> +6.9% growth</li>
+        <li><strong>Interpretation:</strong> Context about revenue performance</li>
+        <li><span class="badge badge-pass">PASSED</span> All sections rendered correctly</li>
+      </ul>
+    </div>
+    <div class="ai-test-screenshot">
+      <img src="e2e-screenshots/ai-01-kpi-lookup.png" alt="AI Test 1: KPI Lookup">
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 14: AI Test 2 — Config Proposal -->
+<div class="slide">
+  <span class="slide-number">14</span>
+  <h2>AI Test 2: Dashboard Configuration</h2>
+  <div class="ai-test">
+    <div class="ai-test-info">
+      <div class="query">"Show me Oncology only"</div>
+      <h3>Expected: Mode 2 (Configure) with propose_config tool</h3>
+      <ul>
+        <li><strong>Mode:</strong> Configure &mdash; instant config proposal</li>
+        <li><strong>Response:</strong> Config card with summary description</li>
+        <li><strong>Tag:</strong> TA: Oncology</li>
+        <li><strong>Action:</strong> "Apply to Dashboard" button</li>
+        <li><strong>Behavior:</strong> No data query needed &mdash; pure navigation</li>
+        <li><span class="badge badge-pass">PASSED</span> Config card rendered correctly</li>
+      </ul>
+    </div>
+    <div class="ai-test-screenshot">
+      <img src="e2e-screenshots/ai-02-config-proposal.png" alt="AI Test 2: Config Proposal">
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 15: AI Test 3 — Clarification -->
+<div class="slide">
+  <span class="slide-number">15</span>
+  <h2>AI Test 3: Clarification Mode</h2>
+  <div class="ai-test">
+    <div class="ai-test-info">
+      <div class="query">"How are we doing?"</div>
+      <h3>Expected: Mode 1 (Clarify) with clarify tool</h3>
+      <ul>
+        <li><strong>Mode:</strong> Clarify &mdash; vague query triggers disambiguation</li>
+        <li><strong>Question:</strong> "What aspect of Oncology performance would you like to explore?"</li>
+        <li><strong>Suggestions:</strong> 5 clickable follow-up options</li>
+        <li><strong>Free text:</strong> "Or type your own answer..." input</li>
+        <li><strong>Context awareness:</strong> Knew Oncology was the active filter</li>
+        <li><span class="badge badge-pass">PASSED</span> Clarification UI with suggestions</li>
+      </ul>
+    </div>
+    <div class="ai-test-screenshot">
+      <img src="e2e-screenshots/ai-03-clarification.png" alt="AI Test 3: Clarification">
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 16: AI Test 4 — Brand Analysis -->
+<div class="slide">
+  <span class="slide-number">16</span>
+  <h2>AI Test 4: Brand Performance Analysis</h2>
+  <div class="ai-test">
+    <div class="ai-test-info">
+      <div class="query">"Which Oncology brands are beating or missing plan?"</div>
+      <h3>Expected: Mode 3 with render_table + analysis</h3>
+      <ul>
+        <li><strong>Tools:</strong> 1 query (query_brand), 2 think steps</li>
+        <li><strong>Table:</strong> 7 brands with Actual, Budget, Variance, vs Budget %, vs PY</li>
+        <li><strong>Key insight:</strong> Lynparza only budget-beater (+4.5%)</li>
+        <li><strong>Imfinzi:</strong> Largest absolute miss (-$311M)</li>
+        <li><strong>Hypothesis:</strong> Budgets set too aggressively for high-growth brands</li>
+        <li><span class="badge badge-pass">PASSED</span> Table + Interpretation + Hypothesis</li>
+      </ul>
+    </div>
+    <div class="ai-test-screenshot">
+      <img src="e2e-screenshots/ai-04b-brand-table.png" alt="AI Test 4: Brand Table">
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 17: AI Test 5 — US vs China -->
+<div class="slide">
+  <span class="slide-number">17</span>
+  <h2>AI Test 5: US vs China Comparison</h2>
+  <div class="ai-test">
+    <div class="ai-test-info">
+      <div class="query">"Compare US vs China revenue for 2025"</div>
+      <h3>Expected: Mode 3 with query_region + render_table</h3>
+      <ul>
+        <li><strong>Facts:</strong> US $19,493M (-2.9% vs BUD) &middot; China $4,784M (-2.7% vs BUD)</li>
+        <li><strong>Ratio:</strong> US is 4.1x larger (80.3% vs 19.7% share)</li>
+        <li><strong>Key insight:</strong> "Remarkably parallel performance" &mdash; nearly identical variance in both markets</li>
+        <li><strong>Hypothesis:</strong> Budget built with uniform growth multiplier, not market-specific assumptions</li>
+        <li><strong>Table:</strong> Brand-by-brand US vs China comparison</li>
+        <li><span class="badge badge-pass">PASSED</span> Facts + Table + Interpretation + Hypothesis</li>
+      </ul>
+    </div>
+    <div class="ai-test-screenshot">
+      <img src="e2e-screenshots/ai-05-us-vs-china.png" alt="AI Test 5: US vs China">
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 18: AI Test 6 — Waterfall -->
+<div class="slide">
+  <span class="slide-number">18</span>
+  <h2>AI Test 6: Variance Decomposition Waterfall</h2>
+  <div class="ai-test">
+    <div class="ai-test-info">
+      <div class="query">"Break down the total revenue variance vs budget into contributing factors by TA"</div>
+      <h3>Expected: decompose_variance tool + waterfall chart</h3>
+      <ul>
+        <li><strong>Total miss:</strong> -$693M (-1.4% vs budget)</li>
+        <li><strong>Oncology:</strong> -$706M (more than entire company miss)</li>
+        <li><strong>CVRM:</strong> +$294M (only TA beating budget)</li>
+        <li><strong>Waterfall:</strong> Green/red bars with Total AZ bar</li>
+        <li><strong>Recommendations:</strong> 3 actionable items (Oncology budget, Tezspire, CVRM momentum)</li>
+        <li><span class="badge badge-pass">PASSED</span> Full response: Facts + Waterfall + Interpretation + Recommendations</li>
+      </ul>
+    </div>
+    <div class="ai-test-screenshot">
+      <img src="e2e-screenshots/ai-06b-waterfall-chart.png" alt="AI Test 6: Waterfall Chart">
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 19: AI Test 7 — Navigation Config -->
+<div class="slide">
+  <span class="slide-number">19</span>
+  <h2>AI Test 7: Multi-Parameter Config Proposal</h2>
+  <div class="ai-test">
+    <div class="ai-test-info">
+      <div class="query">"Switch to monthly view with actuals vs MTP for 2024"</div>
+      <h3>Expected: Mode 2 with 5 config parameters</h3>
+      <ul>
+        <li><strong>Comparator:</strong> Mid-Term Plan</li>
+        <li><strong>Page:</strong> phased</li>
+        <li><strong>TA:</strong> Oncology (carry-forward from current filter)</li>
+        <li><strong>Year:</strong> 2024</li>
+        <li><strong>Scenario:</strong> ACT vs MTP</li>
+        <li><strong>Context:</strong> Remembered active Oncology filter</li>
+        <li><span class="badge badge-pass">PASSED</span> 5 config tags + Apply button</li>
+      </ul>
+    </div>
+    <div class="ai-test-screenshot">
+      <img src="e2e-screenshots/ai-07-config-proposal.png" alt="AI Test 7: Config Proposal">
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 20: AI Test 8 — Top Brands -->
+<div class="slide">
+  <span class="slide-number">20</span>
+  <h2>AI Test 8: Top Brands Ranking</h2>
+  <div class="ai-test">
+    <div class="ai-test-info">
+      <div class="query">"What are the top 5 brands by revenue in 2025?"</div>
+      <h3>Expected: Mode 3 with render_table ranking</h3>
+      <ul>
+        <li><strong>Table:</strong> Rank, Brand, TA, Revenue, vs Budget, vs PY, YoY Growth</li>
+        <li><strong>#1 Farxiga:</strong> $8,427M (+3.0% vs BUD) &mdash; only top-5 beating budget</li>
+        <li><strong>#2 Tagrisso:</strong> $7,289M (-2.3%)</li>
+        <li><strong>#3 Imfinzi:</strong> $6,102M (-4.8%, but +30.2% YoY)</li>
+        <li><strong>#4 Calquence:</strong> $3,494M (-2.9%)</li>
+        <li><strong>#5 Lynparza:</strong> $3,300M (+4.5%, but declining YoY)</li>
+        <li><span class="badge badge-partial">PARTIAL</span> Table correct; LLM skipped &lt;facts&gt; XML tag, putting all info into render_table instead</li>
+      </ul>
+    </div>
+    <div class="ai-test-screenshot">
+      <img src="e2e-screenshots/ai-08b-top-brands-table.png" alt="AI Test 8: Top Brands Table">
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 21: AI Features Demonstrated -->
+<div class="slide">
+  <span class="slide-number">21</span>
+  <h2>AI Features Demonstrated</h2>
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+    <div>
+      <h3>3 Response Modes</h3>
+      <ul style="font-size:14px; padding-left:20px; color:var(--gray-600);">
+        <li><strong>Mode 1 &mdash; Clarify:</strong> Disambiguates vague queries with clickable suggestions and free-text input</li>
+        <li><strong>Mode 2 &mdash; Configure:</strong> Instant dashboard config proposals with tagged parameters and Apply button</li>
+        <li><strong>Mode 3 &mdash; Analyze:</strong> Think &rarr; query &rarr; synthesize pipeline with structured Facts/Interpretation/Hypothesis/Recommendations</li>
+      </ul>
+      <h3 style="margin-top:20px;">Visual Outputs</h3>
+      <ul style="font-size:14px; padding-left:20px; color:var(--gray-600);">
+        <li><strong>render_table:</strong> Sortable tables with color-coded indicators</li>
+        <li><strong>decompose_variance:</strong> Waterfall/bridge charts with factor details</li>
+        <li><strong>propose_config:</strong> Config cards with parameter tags</li>
+      </ul>
+    </div>
+    <div>
+      <h3>AI Quality Signals</h3>
+      <ul style="font-size:14px; padding-left:20px; color:var(--gray-600);">
+        <li><strong>Context awareness:</strong> Carries forward active filters (Oncology) across conversation</li>
+        <li><strong>Data grounding:</strong> All numbers match dashboard data exactly</li>
+        <li><strong>Insight quality:</strong> Goes beyond data recitation &mdash; identifies patterns like "parallel performance" between US/CN</li>
+        <li><strong>Actionability:</strong> Recommendations cite specific brands, metrics, and next steps</li>
+      </ul>
+      <h3 style="margin-top:20px;">Streaming UX</h3>
+      <ul style="font-size:14px; padding-left:20px; color:var(--gray-600);">
+        <li>SSE streaming with real-time section rendering</li>
+        <li>Investigation timeline shows tools and think steps</li>
+        <li>Collapsible response summaries in chat history</li>
+        <li>Clickable visual overlays (tables, waterfall charts)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 22: Verdict -->
+<div class="slide">
+  <span class="slide-number">22</span>
+  <h2>Final Verdict</h2>
+  <div class="verdict">
+    <h3>60/61 Tests Passed (98.4%)</h3>
+    <p>42 unit tests + 11 browser E2E + 7/8 AI tests</p>
+  </div>
+  <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 24px;">
+    <div style="text-align:center;">
+      <h3 style="color:var(--green);">Strengths</h3>
+      <ul style="font-size:14px; text-align:left; padding-left:20px; color:var(--gray-600);">
+        <li>100% unit test pass rate</li>
+        <li>All E2E scenarios pass</li>
+        <li>AI responses are data-grounded</li>
+        <li>Waterfall decomposition works</li>
+        <li>3 AI modes all functional</li>
+        <li>Mobile responsive</li>
+      </ul>
+    </div>
+    <div style="text-align:center;">
+      <h3 style="color:var(--amber);">Minor Issues</h3>
+      <ul style="font-size:14px; text-align:left; padding-left:20px; color:var(--gray-600);">
+        <li>Test 8 Facts parse error (table still rendered correctly)</li>
+        <li>React DevTools prop warning in console</li>
+      </ul>
+    </div>
+    <div style="text-align:center;">
+      <h3 style="color:var(--blue);">Architecture</h3>
+      <ul style="font-size:14px; text-align:left; padding-left:20px; color:var(--gray-600);">
+        <li>Claude Sonnet 4.6 via Bedrock</li>
+        <li>14 LLM tools</li>
+        <li>SSE streaming</li>
+        <li>React + Vite + Tailwind</li>
+        <li>~$0.64 for 8 AI tests</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

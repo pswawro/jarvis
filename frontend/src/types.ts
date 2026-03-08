@@ -189,13 +189,20 @@ export interface ToolStatus {
 }
 
 export interface Visual {
-  tool: "render_table" | "render_chart";
+  tool: "render_table" | "render_chart" | "decompose_variance";
   title: string;
+  // render_table
   headers?: string[];
   rows?: string[][];
+  // render_chart
   type?: "bar" | "line";
   labels?: string[];
   datasets?: { name: string; values: number[]; color?: string }[];
+  // decompose_variance
+  total_label?: string;
+  total_value?: number;
+  unit?: string;
+  factors?: { label: string; value: number; detail?: string }[];
 }
 
 export interface ConfigProposal {
@@ -232,6 +239,7 @@ export interface Message {
   facts?: string;
   interpretation?: string;
   hypothesis?: string;
+  recommendations?: string;
   tools?: ToolStatus[];
   visuals?: Visual[];
   configProposal?: ConfigProposal;

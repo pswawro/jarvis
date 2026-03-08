@@ -1,0 +1,169 @@
+{
+  "test": "c4_oncology_analysis",
+  "run_label": "run3",
+  "timestamp": "20260308_121016",
+  "duration_ms": 49555,
+  "facts": "- **Oncology total: $24,277M vs budget $24,983M \u2192 \u2013$706M (\u20132.8%)**\n- **6 of 7 brands missed budget**; only Lynparza beat (+$143M, +4.5%)\n- Biggest dollar misses: **Imfinzi \u2013$311M (\u20134.8%)**, **Enhertu \u2013$187M (\u20136.3%)**, **Tagrisso \u2013$171M (\u20132.3%)**\n- Biggest % miss: **Truqap \u20138.5%** ($37M), followed by Enhertu \u20136.3%\n- US is the primary drag \u2014 Imfinzi US alone missed by \u2013$252M, Tagrisso US \u2013$129M, Enhertu US \u2013$156M",
+  "interpretation": "- **Imfinzi is the #1 culprit** in dollar terms. At only 17.6% share in the PD-1/PD-L1 checkpoint inhibitor market \u2014 the most competitive oncology category \u2014 budget assumptions appear to have been too aggressive. Share is up +1.9pp vs PY, so this is a **market penetration shortfall**, not competitive share loss.\n- **Enhertu's \u20136.3% miss** is notable given it's growing +38.7% YoY and gaining +3.4pp share in HER2-targeted ADCs. The budget was set too high relative to actual market ramp speed \u2014 a **pacing issue**, not a structural problem.\n- **Tagrisso's miss is broad-based** (US \u20132.3%, CN \u20132.2%) but modest in % terms. At 57.3% EGFR TKI share, it's the dominant player \u2014 the miss likely reflects modest pricing or volume headwinds.\n- **Truqap's \u20138.5% miss** is the steepest percentage shortfall, but at $37M it's small in absolute terms. The AKT inhibitor market is still nascent; budget expectations outpaced actual market development.\n- **Lynparza is the bright spot**: +$143M above budget despite losing \u20139.0pp share in PARP inhibitors, suggesting the overall PARP market grew faster than expected.",
+  "hypothesis": "- The Oncology budget was set with **overly optimistic ramp assumptions** for newer/growth brands (Enhertu, Truqap, Imfinzi) \u2014 all are growing strongly YoY but not fast enough to hit plan.\n- The miss is **not a competitive share loss story** \u2014 most brands are holding or gaining share. It's a **market size/penetration timing issue**.\n- Lynparza's outperformance despite share loss suggests the PARP market is expanding faster than modeled \u2014 worth checking if similar market growth tailwinds exist for Imfinzi's checkpoint inhibitor category.",
+  "recommendations": "- **Drill into Imfinzi US by quarter** (`query_brand_chart` drill on IMFINZI, US market) to identify if the miss is front-loaded or accelerating \u2014 this will determine if H2 recovery is realistic.\n- **Compare Enhertu vs RBU2** (switch comparator to RBU2) \u2014 if Enhertu is beating reforecast, the original budget was the problem, not execution.\n- **Investigate Truqap's AKT inhibitor market size** via `query_market` to assess whether the total addressable market is developing slower than planned, which would require a budget revision.",
+  "visuals": [
+    {
+      "tool": "decompose_variance",
+      "title": "Oncology Revenue vs Budget: \u2013$706M (\u20132.8%)",
+      "total_label": "Total Miss",
+      "total_value": -706,
+      "unit": "$M",
+      "factors": [
+        {
+          "label": "Imfinzi",
+          "value": -310.7,
+          "detail": "\u20134.8% vs BUD; US miss \u2013$252.5M, CN miss \u2013$58.1M"
+        },
+        {
+          "label": "Enhertu",
+          "value": -187.3,
+          "detail": "\u20136.3% vs BUD; largest % miss among major brands"
+        },
+        {
+          "label": "Tagrisso",
+          "value": -170.6,
+          "detail": "\u20132.3% vs BUD; US \u2013$128.6M, CN \u2013$42.0M"
+        },
+        {
+          "label": "Calquence",
+          "value": -106.1,
+          "detail": "\u20132.9% vs BUD; US \u2013$90.0M, CN \u2013$16.0M"
+        },
+        {
+          "label": "Truqap",
+          "value": -37.1,
+          "detail": "\u20138.5% vs BUD; largest % miss in portfolio"
+        },
+        {
+          "label": "Koselugo",
+          "value": -37.2,
+          "detail": "\u20133.9% vs BUD; US \u2013$32.8M, CN \u2013$4.3M"
+        },
+        {
+          "label": "Lynparza",
+          "value": 142.6,
+          "detail": "+4.5% vs BUD; only brand beating budget"
+        }
+      ]
+    },
+    {
+      "tool": "render_table",
+      "title": "Oncology Brand Performance vs Budget \u2014 FY 2025",
+      "headers": [
+        "Brand",
+        "Actual ($M)",
+        "Budget ($M)",
+        "Var ($M)",
+        "Var %",
+        "Mkt Share",
+        "Share \u0394 vs PY",
+        "vs PY %"
+      ],
+      "rows": [
+        [
+          "Imfinzi",
+          "6,102",
+          "6,413",
+          "\u2013311",
+          "\u20134.8%",
+          "17.6%",
+          "+1.9pp",
+          "+30.2%"
+        ],
+        [
+          "Enhertu",
+          "2,790",
+          "2,977",
+          "\u2013187",
+          "\u20136.3%",
+          "30.0%",
+          "+3.4pp",
+          "+38.7%"
+        ],
+        [
+          "Tagrisso",
+          "7,289",
+          "7,460",
+          "\u2013171",
+          "\u20132.3%",
+          "57.3%",
+          "0.0pp",
+          "+10.2%"
+        ],
+        [
+          "Calquence",
+          "3,494",
+          "3,600",
+          "\u2013106",
+          "\u20132.9%",
+          "29.3%",
+          "+0.5pp",
+          "+12.4%"
+        ],
+        [
+          "Koselugo",
+          "903",
+          "940",
+          "\u201337",
+          "\u20133.9%",
+          "50.3%",
+          "+10.4pp",
+          "+50.0%"
+        ],
+        [
+          "Truqap",
+          "399",
+          "436",
+          "\u201337",
+          "\u20138.5%",
+          "33.7%",
+          "+11.3pp",
+          "+98.7%"
+        ],
+        [
+          "Lynparza \u2705",
+          "3,300",
+          "3,158",
+          "+143",
+          "+4.5%",
+          "43.9%",
+          "\u20139.0pp",
+          "\u201311.2%"
+        ]
+      ]
+    }
+  ],
+  "config_proposal": null,
+  "clarification": null,
+  "tools_used": [
+    "Querying KPI summary...",
+    "Querying brand revenue data...",
+    "Querying market share data..."
+  ],
+  "tool_count": 3,
+  "thinking_steps": [
+    {
+      "step": "plan",
+      "content": "I'll investigate Oncology's underperformance vs budget by first querying the KPI summary and brand-level breakdown for Oncology to identify which brands and markets are driving the miss."
+    },
+    {
+      "step": "finding",
+      "content": "Oncology is -$706M vs budget (-2.8%). The biggest absolute misses are: Imfinzi -$310.7M (-4.8%), Enhertu -$187.3M (-6.3%), Tagrisso -$170.6M (-2.3%), Calquence -$106.1M (-2.9%), Truqap -$37.1M (-8.5%), Koselugo -$37.2M (-3.9%). Lynparza is the only bright spot at +$142.6M (+4.5%). Imfinzi and Enhertu are the largest dollar contributors to the miss."
+    },
+    {
+      "step": "plan",
+      "content": "Now I'll check market share data for the key underperformers (Imfinzi, Enhertu, Truqap) to understand if the miss is driven by competitive pressure or market dynamics, and look at the competitive landscape."
+    },
+    {
+      "step": "finding",
+      "content": "Key competitive insight: Imfinzi holds only 17.6% share in PD-1/PD-L1 checkpoint inhibitors \u2014 a massive, competitive market. Enhertu holds 30.0% in HER2-targeted ADCs with +3.4pp share gain vs PY, and Truqap holds 33.7% in AKT inhibitors with +11.3pp share gain. The revenue misses for Imfinzi and Enhertu appear to be driven by market penetration shortfalls vs budget expectations, not share loss \u2014 both are actually gaining share. Lynparza is losing share (-9.0pp) in PARP inhibitors but beating revenue budget, suggesting the market is growing faster than expected."
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,17 @@
+{
+  "test": "c1_kpi_revenue",
+  "run_label": "run2",
+  "timestamp": "20260308_120123",
+  "duration_ms": 14,
+  "facts": null,
+  "interpretation": null,
+  "hypothesis": null,
+  "recommendations": null,
+  "visuals": [],
+  "config_proposal": null,
+  "clarification": null,
+  "tools_used": [],
+  "tool_count": 0,
+  "thinking_steps": [],
+  "error": null
+}

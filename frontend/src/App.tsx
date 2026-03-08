@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import type { Period, Filters, PageType, DimensionConfig, LevelId, KpiStripSpec, ChartInteraction, AssistantContext, ConfigProposal } from "./types";
 import { useApi } from "./hooks/useApi";
 import { useAssistantChat } from "./hooks/useAssistantChat";
@@ -28,7 +28,7 @@ export default function App() {
   const [page, setPage] = useState<PageType>("overview");
   const [dimConfig, setDimConfig] = useState<DimensionConfig>({ levels: ["ta", "brand", "market"] });
   const [scenarioPreset, setScenarioPreset] = useState("all");
-  const [lastInteraction, setLastInteraction] = useState<ChartInteraction | null>(null);
+  const lastInteractionRef = useRef<ChartInteraction | null>(null);
   const [assistantOpen, setAssistantOpen] = useState(false);
 
   // Derive Period from filters for API calls
@@ -75,7 +75,7 @@ export default function App() {
   }, [assistantOpen]);
 
   const handleInteraction = useCallback((interaction: ChartInteraction) => {
-    setLastInteraction(interaction);
+    lastInteractionRef.current = interaction;
     (window as any).__chartInteraction = interaction;
   }, []);
 

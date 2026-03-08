@@ -1,0 +1,152 @@
+{
+  "test": "c4_oncology_analysis",
+  "run_label": "run1",
+  "timestamp": "20260308_120839",
+  "duration_ms": 33391,
+  "facts": "- Oncology is **$706M below budget (-2.8%)** for FY 2025, despite strong +15.9% YoY growth\n- **6 of 7 brands** are missing budget; only Lynparza is beating (+$143M, +4.5%)\n- Top 3 absolute misses: **Imfinzi -$311M (-4.8%)**, **Enhertu -$187M (-6.3%)**, **Tagrisso -$171M (-2.3%)**\n- Worst % miss: **Truqap -8.5%** \u2014 the newest launch is ramping slower than planned\n- The US is the primary drag: Imfinzi US alone is -$252M vs budget",
+  "interpretation": "- **Imfinzi** is the single biggest problem \u2014 a -$311M miss despite 30% YoY growth suggests the budget was set too aggressively, or competitive pressure in PD-L1 checkpoint inhibitors is limiting share capture\n- **Enhertu** (-6.3%) is the sharpest % miss among established brands; at $2.8B actual vs $3.0B budget, the HER2-ADC ramp in both US and CN is lagging plan\n- **Truqap** (-8.5%) is an early-stage launch miss \u2014 the AKT inhibitor market penetration in HR+/HER2- breast cancer is behind expectations\n- **Lynparza's outperformance (+$143M)** partially offsets the portfolio drag, but it's declining vs prior year (-11.2%), suggesting it's benefiting from a low budget baseline rather than genuine growth\n- The breadth of misses (6/7 brands) points to a **systemic over-budgeting issue** rather than isolated brand-specific problems",
+  "hypothesis": "- Imfinzi and Enhertu misses may reflect **competitive share loss** in PD-L1 and HER2-ADC categories \u2014 worth checking market share trends to confirm\n- Truqap's ramp lag could indicate **slower-than-expected label expansion** or payer access challenges in the AKT inhibitor space",
+  "recommendations": "- **Drill into Imfinzi market share** in PD-L1/PD-L1 checkpoint inhibitors (US) to determine if the miss is volume-driven or pricing/rebate-driven\n- **Investigate Enhertu US Q3\u2013Q4 trend** \u2014 the sparkline shows deceleration; check if HER2-ADC competitive dynamics (e.g. Kadcyla, Dato-DXd) are eroding share\n- **Review Truqap launch KPIs** \u2014 compare RBU2 ($393M) vs actual ($399M), which shows it's on reforecast but well below original budget ($436M), suggesting the budget needs revision",
+  "visuals": [
+    {
+      "tool": "decompose_variance",
+      "title": "Oncology Revenue vs Budget: -$706M (-2.8%)",
+      "total_label": "Total Miss",
+      "total_value": -706.4,
+      "unit": "$M",
+      "factors": [
+        {
+          "label": "Imfinzi",
+          "value": -310.7,
+          "detail": "-4.8% vs BUD; US miss of -$252.5M is the core drag"
+        },
+        {
+          "label": "Enhertu",
+          "value": -187.3,
+          "detail": "-6.3% vs BUD; largest % miss among major brands"
+        },
+        {
+          "label": "Tagrisso",
+          "value": -170.6,
+          "detail": "-2.3% vs BUD; broad-based miss across US & CN"
+        },
+        {
+          "label": "Calquence",
+          "value": -106.1,
+          "detail": "-2.9% vs BUD; US -$90M, CN -$16M"
+        },
+        {
+          "label": "Truqap",
+          "value": -37.1,
+          "detail": "-8.5% vs BUD; early-launch ramp slower than plan"
+        },
+        {
+          "label": "Koselugo",
+          "value": -37.2,
+          "detail": "-3.9% vs BUD; US -$32.8M"
+        },
+        {
+          "label": "Lynparza",
+          "value": 142.6,
+          "detail": "+4.5% vs BUD; only brand beating budget"
+        }
+      ]
+    },
+    {
+      "tool": "render_table",
+      "title": "Oncology Brand Performance vs Budget \u2014 FY 2025",
+      "headers": [
+        "Brand",
+        "Actual ($M)",
+        "Budget ($M)",
+        "Variance ($M)",
+        "vs BUD %",
+        "vs PY %"
+      ],
+      "rows": [
+        [
+          "Imfinzi",
+          "6,102",
+          "6,413",
+          "-311",
+          "-4.8%",
+          "+30.2%"
+        ],
+        [
+          "Tagrisso",
+          "7,289",
+          "7,460",
+          "-171",
+          "-2.3%",
+          "+10.2%"
+        ],
+        [
+          "Enhertu",
+          "2,790",
+          "2,977",
+          "-187",
+          "-6.3%",
+          "+38.7%"
+        ],
+        [
+          "Calquence",
+          "3,494",
+          "3,600",
+          "-106",
+          "-2.9%",
+          "+12.4%"
+        ],
+        [
+          "Truqap",
+          "399",
+          "436",
+          "-37",
+          "-8.5%",
+          "+98.7%"
+        ],
+        [
+          "Koselugo",
+          "903",
+          "940",
+          "-37",
+          "-3.9%",
+          "+50.0%"
+        ],
+        [
+          "Lynparza \u2705",
+          "3,300",
+          "3,158",
+          "+143",
+          "+4.5%",
+          "-11.2%"
+        ],
+        [
+          "TOTAL",
+          "24,277",
+          "24,983",
+          "-706",
+          "-2.8%",
+          "+15.9%"
+        ]
+      ]
+    }
+  ],
+  "config_proposal": null,
+  "clarification": null,
+  "tools_used": [
+    "Querying KPI summary...",
+    "Querying brand revenue data..."
+  ],
+  "tool_count": 2,
+  "thinking_steps": [
+    {
+      "step": "plan",
+      "content": "I'll investigate Oncology's underperformance vs budget by first querying KPIs and brand-level revenue data for Oncology to identify the key drivers of the variance."
+    },
+    {
+      "step": "finding",
+      "content": "Oncology is $706M below budget (-2.8%). The biggest absolute misses are: Imfinzi -$310.7M (-4.8%), Tagrisso -$170.6M (-2.3%), Enhertu -$187.3M (-6.3%), Calquence -$106.1M (-2.9%), Truqap -$37.1M (-8.5%), Koselugo -$37.2M (-3.9%). Lynparza is the only bright spot at +$142.6M (+4.5%). Imfinzi and Enhertu are the largest drag by both absolute and percentage terms."
+    }
+  ],
+  "error": null
+}

@@ -408,6 +408,37 @@ TOOLS = [
         },
     },
     {
+        "name": "decompose_variance",
+        "description": (
+            "Decompose a total variance into contributing factors. Call AFTER querying data to break down "
+            "WHY a metric is above/below target. Each factor should be a specific driver (brand, market, category) "
+            "with its contribution to the total variance in $M or pp. The result renders as a waterfall chart."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Chart title, e.g. 'Revenue variance vs Budget: +$320M'"},
+                "total_label": {"type": "string", "description": "Label for the total bar, e.g. 'Total Variance'"},
+                "total_value": {"type": "number", "description": "Total variance value (positive = favorable)"},
+                "unit": {"type": "string", "enum": ["$M", "$B", "$K", "pp", "%"], "description": "Unit for display"},
+                "factors": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {"type": "string", "description": "Driver name, e.g. 'TAGRISSO US'"},
+                            "value": {"type": "number", "description": "Contribution (positive = favorable, negative = unfavorable)"},
+                            "detail": {"type": "string", "description": "Optional 1-line explanation"},
+                        },
+                        "required": ["label", "value"],
+                    },
+                    "description": "Ordered list of contributing factors. Should roughly sum to total_value.",
+                },
+            },
+            "required": ["title", "total_label", "total_value", "unit", "factors"],
+        },
+    },
+    {
         "name": "think",
         "description": (
             "Record your investigation reasoning. Call this BEFORE querying data to state your plan, "
@@ -461,6 +492,7 @@ TOOL_LABELS = {
     "clarify": "clarification",
     "render_table": "table",
     "render_chart": "chart",
+    "decompose_variance": "variance decomposition",
     "think": "reasoning",
 }
 
@@ -589,13 +621,27 @@ def _build_system_prompt(ctx: dict) -> str:
         "- For complex questions (trends, drivers, comparisons), investigate 2-4 angles",
         "- Never exceed 4 investigation steps — synthesize what you have",
         "- Each think content must be 1-2 sentences, specific, with numbers when available",
-        "- Use XML tags for final response: <facts>...</facts>, <interpretation>...</interpretation>, <hypothesis>...</hypothesis>",
-        "- You do NOT need all three sections. Simple questions may only need <facts>.",
+        "- Use XML tags for final response: <facts>...</facts>, <interpretation>...</interpretation>, <hypothesis>...</hypothesis>, <recommendations>...</recommendations>",
+        "- You do NOT need all four sections. Simple questions may only need <facts>.",
+        "- <recommendations> is OPTIONAL — only include when you have specific, actionable next steps grounded in the data.",
+        "- Each recommendation should be a concrete action: 'Investigate Brand X Q3 pipeline delay', 'Compare RBU2 vs BUD for Oncology to validate forecast gap'.",
+        "- Do NOT give generic advice like 'monitor closely' or 'keep tracking'. Be specific with brand/market/metric names.",
         "- Keep each section to 2-4 bullet points. Be dense with information, not verbose.",
         "- Use render_table when comparing 3+ items side-by-side. Use render_chart for trends or distributions.",
+        "- When explaining WHY a metric is above/below target, use `decompose_variance` to show a waterfall of contributing factors.",
+        "- To build a decomposition: query tree data (brand/region/unit), identify top 5-8 drivers by absolute variance contribution, then call decompose_variance.",
+        "- Each factor should be a specific entity (brand, market, unit) with its dollar or percentage-point contribution.",
         "- Always query data first — never fabricate or estimate numbers.",
         "- NEVER output a table of numbers in text. Use render_table for tables.",
         "- NEVER describe what the dashboard shows — you don't see the screen. Only use queried data.",
+        "",
+        "**CRITICAL — Query scope vs. dashboard filters:**",
+        "- The dashboard may have active filters (e.g. TA: Oncology). These are listed in 'Current Dashboard State' above.",
+        "- When the user asks a SCOPED question ('How is Oncology doing?', 'Oncology brands vs budget'), KEEP the active TA/market filter in your query.",
+        "- When the user asks a CROSS-SCOPE question ('top 5 brands overall', 'compare all TAs', 'total AZ revenue', 'which TA is biggest?'), you MUST OMIT the TA/market filter to get the full dataset — even if the dashboard currently has a filter active.",
+        "- Look for scope signals: 'overall', 'across all', 'total', 'company-wide', 'by TA', 'all brands' → omit filters. Absence of a specific TA/market name in the question when asking for rankings or totals → omit filters.",
+        "- When in doubt, query WITHOUT filters first to get the complete picture, then drill into specifics.",
+        "",
         "- When the user asks about a specific brand/TA, use the right filters to get precise data.",
         "- Match the period and filters from the dashboard context unless the user asks for something different.",
     ])
@@ -606,7 +652,7 @@ def _build_system_prompt(ctx: dict) -> str:
 def _parse_sections(text: str) -> list[tuple[str, str]]:
     """Parse XML-tagged sections from model output."""
     sections = []
-    for tag in ("facts", "interpretation", "hypothesis"):
+    for tag in ("facts", "interpretation", "hypothesis", "recommendations"):
         pattern = f"<{tag}>(.*?)</{tag}>"
         match = re.search(pattern, text, re.DOTALL)
         if match:
@@ -630,16 +676,22 @@ async def assistant_chat(req: AssistantRequest):
             messages.append({"role": h.role, "content": h.content})
         messages.append({"role": "user", "content": req.question})
 
-        log.info("Assistant request: question=%r history_len=%d context_view=%s", req.question, len(req.history), req.context.get("view"))
+        log.info("Assistant request: question=%r history_len=%d context_page=%s", req.question, len(req.history), req.context.get("page"))
+        if config.LLM_DEBUG:
+            log.info("[DEBUG] system_prompt=\n%s", system)
+            log.info("[DEBUG] messages=%s", json.dumps(messages, default=str)[:2000])
 
         sent_done = False
+        used_tools = False  # Track if tools were used in prior iterations
         try:
             for iteration in range(config.LLM_MAX_ITERATIONS):
-                log.info("Iteration %d — calling Claude...", iteration)
+                # Use heavy model from iteration 2+ (multi-step Mode 3 analysis)
+                model = config.LLM_MODEL_ID_HEAVY if iteration >= 2 else config.LLM_MODEL_ID
+                log.info("Iteration %d — calling Claude (%s)...", iteration, model)
                 # Run blocking API call in thread so SSE events flush immediately
                 response = await asyncio.to_thread(
                     client.messages.create,
-                    model=config.LLM_MODEL_ID,
+                    model=model,
                     max_tokens=config.LLM_MAX_TOKENS,
                     temperature=config.LLM_TEMPERATURE,
                     system=system,
@@ -658,9 +710,13 @@ async def assistant_chat(req: AssistantRequest):
 
                 if not tool_uses:
                     log.info("Final response (%d chars)", len(text_content))
+                    if config.LLM_DEBUG:
+                        log.info("[DEBUG] final_text=\n%s", text_content[:2000])
                     # Guard: if text has no XML tags and looks like fabricated data (many $/ B values),
-                    # the LLM probably failed to use a tool — log and send minimal error
-                    if not any(f"<{t}>" in text_content for t in ("facts", "interpretation", "hypothesis")) and \
+                    # the LLM probably failed to use a tool — log and send minimal error.
+                    # Skip this guard if tools were already used in prior iterations (data is real).
+                    if not used_tools and \
+                       not any(f"<{t}>" in text_content for t in ("facts", "interpretation", "hypothesis")) and \
                        text_content.count("B0.") + text_content.count("B1.") + text_content.count("$") > 5:
                         log.warning("LLM returned fabricated table data instead of using tools — suppressing")
                         yield _sse("error", "I wasn't able to process that correctly. Could you rephrase your question?")
@@ -675,13 +731,16 @@ async def assistant_chat(req: AssistantRequest):
                     break
 
                 # Execute tool calls — yield SSE events immediately
+                used_tools = True
                 tool_results = []
                 for tool_block in tool_uses:
                     name = tool_block.name
                     label = TOOL_LABELS.get(name, name)
                     log.info("Tool call: %s params=%r", name, tool_block.input)
+                    if config.LLM_DEBUG:
+                        log.info("[DEBUG] iter=%d tool=%s full_input=%s", iteration, name, json.dumps(tool_block.input, default=str))
 
-                    if name in ("render_table", "render_chart", "propose_config", "clarify", "think"):
+                    if name in ("render_table", "render_chart", "propose_config", "clarify", "think", "decompose_variance"):
                         # UI-only tools — no "Querying..." status, just emit the visual/event
                         if name == "think":
                             yield _sse("thinking", json.dumps(tool_block.input))
@@ -720,6 +779,8 @@ async def assistant_chat(req: AssistantRequest):
                         try:
                             result = TOOL_DISPATCH[name](params)
                             log.info("Tool %s returned %d chars", name, len(result))
+                            if config.LLM_DEBUG:
+                                log.info("[DEBUG] tool=%s result_preview=%s", name, result[:500])
                             tool_results.append({
                                 "type": "tool_result",
                                 "tool_use_id": tool_block.id,

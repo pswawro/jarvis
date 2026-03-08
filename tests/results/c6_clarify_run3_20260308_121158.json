@@ -1,0 +1,26 @@
+{
+  "test": "c6_clarify",
+  "run_label": "run3",
+  "timestamp": "20260308_121158",
+  "duration_ms": 2558,
+  "facts": null,
+  "interpretation": null,
+  "hypothesis": null,
+  "recommendations": null,
+  "visuals": [],
+  "config_proposal": null,
+  "clarification": {
+    "question": "What would you like to focus on?",
+    "options": [
+      "Overall company revenue vs budget",
+      "Performance by therapeutic area",
+      "Operating expenses vs plan",
+      "Competitive market share trends",
+      "Regional breakdown: US vs China"
+    ]
+  },
+  "tools_used": [],
+  "tool_count": 0,
+  "thinking_steps": [],
+  "error": null
+}

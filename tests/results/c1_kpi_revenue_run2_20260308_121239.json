@@ -1,0 +1,28 @@
+{
+  "test": "c1_kpi_revenue",
+  "run_label": "run2",
+  "timestamp": "20260308_121239",
+  "duration_ms": 8905,
+  "facts": "- **Total Revenue FY 2025: $50,195.8M**\n- **vs Budget**: \u20131.4% miss\n- **vs Prior Year**: +6.9% growth\n\nSupporting metrics:\n- **Gross Profit**: $40,924.9M (\u20131.4% vs Budget, +6.8% vs PY)\n- **Total OpEx**: $25,601.2M (+2.3% above budget \u2014 unfavorable)\n- **Operating Margin**: 30.5% (\u20131.8pp vs Budget, +0.1pp vs PY)",
+  "interpretation": "- Revenue is growing solidly year-over-year (+6.9%), but is slightly short of the annual plan (\u20131.4%), suggesting the budget was set aggressively.\n- OpEx running 2.3% over budget is compressing the operating margin, which misses budget by 1.8pp despite the top-line growth.",
+  "hypothesis": null,
+  "recommendations": null,
+  "visuals": [],
+  "config_proposal": null,
+  "clarification": null,
+  "tools_used": [
+    "Querying KPI summary..."
+  ],
+  "tool_count": 1,
+  "thinking_steps": [
+    {
+      "step": "plan",
+      "content": "User wants total AZ revenue for 2025. I'll query the KPI cards which give top-level metrics including Total Revenue with budget and prior year variances."
+    },
+    {
+      "step": "finding",
+      "content": "Total Revenue for FY 2025 is $50,195.8M \u2014 1.4% below budget but 6.9% above prior year."
+    }
+  ],
+  "error": null
+}

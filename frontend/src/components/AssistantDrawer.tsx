@@ -24,7 +24,7 @@ interface Props {
   loading: boolean;
   liveTools: ToolStatus[];
   liveVisuals: Visual[];
-  liveResponse: { facts: string; interpretation: string; hypothesis: string };
+  liveResponse: { facts: string; interpretation: string; hypothesis: string; recommendations: string };
   liveConfigProposal: ConfigProposal | null;
   liveClarification: Clarification | null;
   liveThinking: ThinkingStep[];
@@ -47,7 +47,8 @@ const DIM_LABELS: Record<string, string> = { brand: "Brand", region: "Region", u
 function ContextChip({ context, onClear }: { context: AssistantContext; onClear: () => void }) {
   if (context.source === "header") return null;
   const dp = context.dataPoint;
-  const parts = [dp?.node_name || dp?.series_name || "", `${DIM_LABELS[context.dimension] || context.dimension} / ${PAGE_LABELS[context.page] || context.page}`, `${context.period.year}${context.period.quarter ? " " + context.period.quarter : ""}`].filter(Boolean);
+  const dimLabel = context.dimension ? (DIM_LABELS[context.dimension] || context.dimension) : context.levels?.join(" → ");
+  const parts = [dp?.node_name || dp?.series_name || "", dimLabel ? `${dimLabel} / ${PAGE_LABELS[context.page] || context.page}` : (PAGE_LABELS[context.page] || context.page), `${context.period.year}${context.period.quarter ? " " + context.period.quarter : ""}`].filter(Boolean);
   return (
     <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-lg text-[12px] text-gray-600">
       <span className="text-gray-400">&#x1f4cd;</span>
@@ -247,6 +248,7 @@ function CollapsedMessage({ msg, index, onApply, applied }: { msg: Message; inde
           {msg.facts && <Section label="Facts" color="border-green-500" content={msg.facts} />}
           {msg.interpretation && <Section label="Interpretation" color="border-blue-500" content={msg.interpretation} />}
           {msg.hypothesis && <Section label="Hypothesis" color="border-purple-500" content={msg.hypothesis} />}
+          {msg.recommendations && <Section label="Suggested Actions" color="border-amber-500" content={msg.recommendations} />}
         </div>
       )}
       <div className="border-b border-gray-100" />
@@ -264,15 +266,19 @@ function Section({ label, color, content }: { label: string; color: string; cont
 }
 
 function ConfigProposalCard({ proposal, onApply, applied }: { proposal: ConfigProposal; onApply: () => void; applied: boolean }) {
+  const LEVEL_LABELS: Record<string, string> = { ta: "TA", brand: "Brand", market: "Market", region: "Region", unit: "Unit", sub_unit: "Sub-unit", category: "Category" };
+  const PRESET_LABELS: Record<string, string> = { all: "All Scenarios", bud: "ACT vs Budget", mtp: "ACT vs MTP", rbu2: "ACT vs RBU2", py: "ACT vs PY", bud_mtp: "ACT vs BUD & MTP", bud_py: "ACT vs BUD & PY" };
   const changes: string[] = [];
   if (proposal.comparator) changes.push(`Comparator: ${COMPARATOR_LABELS[proposal.comparator] || proposal.comparator}`);
   if (proposal.page) changes.push(`Page: ${PAGE_LABELS[proposal.page] || proposal.page}`);
-  if (proposal.dimension) changes.push(`Dimension: ${DIM_LABELS[proposal.dimension] || proposal.dimension}`);
+  if (proposal.levels?.length) changes.push(`Levels: ${proposal.levels.map((l) => LEVEL_LABELS[l] || l).join(" → ")}`);
+  else if (proposal.dimension) changes.push(`Dimension: ${DIM_LABELS[proposal.dimension] || proposal.dimension}`);
   if (proposal.market_id?.length) changes.push(`Market: ${proposal.market_id.join(", ")}`);
   if (proposal.ta?.length) changes.push(`TA: ${proposal.ta.join(", ")}`);
   if (proposal.year) changes.push(`Year: ${proposal.year}`);
   if (proposal.quarter) changes.push(`Quarter: ${proposal.quarter}`);
   if (proposal.scale) changes.push(`Scale: $${proposal.scale}`);
+  if (proposal.scenario_preset) changes.push(`Scenario: ${PRESET_LABELS[proposal.scenario_preset] || proposal.scenario_preset}`);
 
   return (
     <div className="rounded-lg border border-az-navy/20 bg-az-navy/5 p-3 space-y-2">
@@ -362,7 +368,7 @@ function ClarificationCard({ clarification, onSelect, disabled }: { clarificatio
 }
 
 function VisualIcon({ visual, onClick }: { visual: Visual; onClick: () => void }) {
-  const icon = visual.tool === "render_table" ? "\ud83d\udcca" : "\ud83d\udcc8";
+  const icon = visual.tool === "render_table" ? "\ud83d\udcca" : visual.tool === "decompose_variance" ? "\ud83d\udd0d" : "\ud83d\udcc8";
   return (
     <button
       onClick={onClick}
@@ -439,6 +445,66 @@ function VisualOverlay({ visual, onClose }: { visual: Visual; onClose: () => voi
           })}
         </div>
       );
+    } else if (visual.tool === "decompose_variance" && visual.factors) {
+      const factors = visual.factors;
+      const totalVal = visual.total_value || 0;
+      const maxAbs = factors.reduce((m, f) => Math.max(m, Math.abs(f.value)), Math.abs(totalVal));
+      const vUnit = visual.unit || "$M";
+      const maxBarW = 180; // max bar width in px
+
+      const fmtVal = (v: number) => `${v >= 0 ? "+" : ""}${Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(1)}${vUnit}`;
+
+      content = (
+        <div className="space-y-1">
+          {factors.map((f, i) => {
+            const w = maxAbs > 0 ? (Math.abs(f.value) / maxAbs) * maxBarW : 0;
+            const isPositive = f.value >= 0;
+            return (
+              <div key={i} className="flex items-center gap-2">
+                <div className="w-[90px] shrink-0 text-right text-[11px] text-gray-600 truncate">{f.label}</div>
+                <div className="flex-1 flex items-center" style={{ minHeight: 24 }}>
+                  <div
+                    className="rounded-sm h-[18px]"
+                    style={{
+                      width: Math.max(w, 3),
+                      backgroundColor: isPositive ? "#22c55e" : "#ef4444",
+                    }}
+                  />
+                  <span className={`ml-1.5 text-[10px] font-medium whitespace-nowrap ${isPositive ? "text-green-700" : "text-red-700"}`}>
+                    {fmtVal(f.value)}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+          {/* Total row */}
+          <div className="flex items-center gap-2 border-t border-gray-200 pt-1.5 mt-1.5">
+            <div className="w-[90px] shrink-0 text-right text-[11px] font-semibold text-gray-800">{visual.total_label}</div>
+            <div className="flex-1 flex items-center" style={{ minHeight: 24 }}>
+              <div
+                className="rounded-sm h-[18px]"
+                style={{
+                  width: Math.max(maxAbs > 0 ? (Math.abs(totalVal) / maxAbs) * maxBarW : 0, 3),
+                  backgroundColor: totalVal >= 0 ? "#003366" : "#991b1b",
+                }}
+              />
+              <span className={`ml-1.5 text-[10px] font-bold whitespace-nowrap ${totalVal >= 0 ? "text-gray-800" : "text-red-800"}`}>
+                {fmtVal(totalVal)}
+              </span>
+            </div>
+          </div>
+          {/* Detail annotations */}
+          {factors.some((f) => f.detail) && (
+            <div className="space-y-0.5 pt-2 border-t border-gray-100 mt-2">
+              {factors.filter((f) => f.detail).map((f, i) => (
+                <div key={i} className="text-[10px] text-gray-500">
+                  <span className="font-medium text-gray-600">{f.label}:</span> {f.detail}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
     }
   } catch {
     content = <div className="text-[12px] text-red-500">Unable to render this visual.</div>;
@@ -488,12 +554,47 @@ export function AssistantDrawer({
   const [appliedProposals, setAppliedProposals] = useState<Set<number>>(new Set());
   const [expandedVisual, setExpandedVisual] = useState<Visual | null>(null);
   const [showChatList, setShowChatList] = useState(false);
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll when new content arrives
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages.length, liveTimeline.length, liveResponse.facts, liveResponse.interpretation, liveResponse.hypothesis, liveConfigProposal, liveClarification]);
+  }, [messages.length, liveTimeline.length, liveResponse.facts, liveResponse.interpretation, liveResponse.hypothesis, liveResponse.recommendations, liveConfigProposal, liveClarification]);
+
+  const hasSpeech = typeof window !== "undefined" && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+
+  const toggleVoice = useCallback(() => {
+    if (!hasSpeech) {
+      alert("Voice input requires Chrome, Edge, or Safari. Please switch browsers to use this feature.");
+      return;
+    }
+
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognitionRef.current = recognition;
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      sendQuestion(transcript);
+      setListening(false);
+    };
+    recognition.onerror = () => setListening(false);
+    recognition.onend = () => setListening(false);
+
+    recognition.start();
+    setListening(true);
+  }, [listening, sendQuestion, hasSpeech]);
 
   const questionRef = useRef(question);
   questionRef.current = question;
@@ -655,6 +756,7 @@ export function AssistantDrawer({
                     )}
                     {msg.interpretation && <Section label="Interpretation" color="border-blue-500" content={msg.interpretation} />}
                     {msg.hypothesis && <Section label="Hypothesis" color="border-purple-500" content={msg.hypothesis} />}
+                    {msg.recommendations && <Section label="Suggested Actions" color="border-amber-500" content={msg.recommendations} />}
                     {i < messages.length - 1 && <div className="border-b border-gray-100" />}
                   </div>
                 );
@@ -665,7 +767,7 @@ export function AssistantDrawer({
                 <InvestigationTimeline timeline={liveTimeline} defaultExpanded />
               )}
               {liveConfigProposal && (
-                <ConfigProposalCard proposal={liveConfigProposal} onApply={() => {}} applied={false} />
+                <ConfigProposalCard proposal={liveConfigProposal} onApply={() => { onApplyConfig?.(liveConfigProposal); onClose(); }} applied={false} />
               )}
               {liveClarification && (
                 <ClarificationCard clarification={liveClarification} onSelect={() => {}} disabled />
@@ -680,6 +782,7 @@ export function AssistantDrawer({
               )}
               {liveResponse.interpretation && <Section label="Interpretation" color="border-blue-500" content={liveResponse.interpretation} />}
               {liveResponse.hypothesis && <Section label="Hypothesis" color="border-purple-500" content={liveResponse.hypothesis} />}
+              {liveResponse.recommendations && <Section label="Suggested Actions" color="border-amber-500" content={liveResponse.recommendations} />}
 
               {/* Empty state */}
               {!hasAnyContent && !loading && (
@@ -708,6 +811,21 @@ export function AssistantDrawer({
                   className="flex-1 px-3 py-2 text-[13px] bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:border-az-navy/30 focus:ring-1 focus:ring-az-navy/20"
                   disabled={loading}
                 />
+                <button
+                  type="button"
+                  onClick={toggleVoice}
+                  disabled={loading}
+                  className={`px-2 py-2 rounded-lg text-[13px] transition-all ${
+                    listening
+                      ? "bg-red-500 text-white animate-pulse"
+                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                  }`}
+                  title={listening ? "Stop listening" : "Voice input"}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-14 0m7 7v4m-4 0h8M12 1a3 3 0 00-3 3v7a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                  </svg>
+                </button>
                 <button
                   type="submit"
                   disabled={loading || !question.trim()}

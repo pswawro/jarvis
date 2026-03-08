@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Jarvis — Hackathon Presentation</title>
+  <title>Jarvis — Team Progress Review</title>
   <style>
     :root {
       --az-purple: #6b2fa0;
@@ -11,6 +11,9 @@
       --az-dark:   #1a1a2e;
       --az-light:  #f4f0f9;
       --az-accent: #e63888;
+      --green:     #16a34a;
+      --amber:     #d97706;
+      --red:       #dc2626;
       --white:     #ffffff;
       --text:      #2d2d2d;
     }
@@ -28,230 +31,188 @@
       padding: 20px;
     }
 
-    /* ── Deck container ── */
-    .deck {
-      width: 100%;
-      max-width: 960px;
-      position: relative;
-    }
+    .deck { width: 100%; max-width: 1000px; position: relative; }
 
-    /* ── Individual slide ── */
     .slide {
       display: none;
       background: var(--white);
       border-radius: 16px;
       overflow: hidden;
       box-shadow: 0 20px 60px rgba(0,0,0,.5);
-      min-height: 540px;
+      min-height: 560px;
     }
     .slide.active { display: flex; flex-direction: column; }
 
-    /* ── Slide header bar ── */
     .slide-header {
       background: linear-gradient(135deg, var(--az-purple) 0%, var(--az-teal) 100%);
-      padding: 28px 40px 24px;
+      padding: 24px 40px 20px;
       color: var(--white);
     }
     .slide-header .eyebrow {
-      font-size: 11px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      opacity: .75;
-      margin-bottom: 6px;
+      font-size: 11px; letter-spacing: 3px;
+      text-transform: uppercase; opacity: .75; margin-bottom: 4px;
     }
-    .slide-header h1 { font-size: 2rem; font-weight: 700; line-height: 1.2; }
-    .slide-header p  { font-size: .95rem; opacity: .9; margin-top: 6px; }
+    .slide-header h1 { font-size: 1.8rem; font-weight: 700; line-height: 1.2; }
+    .slide-header p  { font-size: .9rem; opacity: .9; margin-top: 4px; }
 
-    /* ── Slide body ── */
+    .progress-bar {
+      height: 3px; background: rgba(255,255,255,.2);
+      border-radius: 2px; margin-top: 6px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; background: var(--az-accent);
+      border-radius: 2px; transition: width .4s ease;
+    }
+
     .slide-body {
-      flex: 1;
-      padding: 32px 40px;
+      flex: 1; padding: 24px 40px 28px;
       background: var(--white);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 20px;
-    }
-
-    /* ── Card grid ── */
-    .cards {
-      display: grid;
+      display: flex; flex-direction: column;
       gap: 16px;
     }
+
+    /* Cards */
+    .cards { display: grid; gap: 14px; }
     .cards.col2 { grid-template-columns: 1fr 1fr; }
     .cards.col3 { grid-template-columns: repeat(3, 1fr); }
+    .cards.col4 { grid-template-columns: repeat(4, 1fr); }
 
     .card {
-      border-radius: 10px;
-      padding: 18px 20px;
-      background: var(--az-light);
-      border-left: 4px solid var(--az-purple);
+      border-radius: 10px; padding: 16px 18px;
+      background: var(--az-light); border-left: 4px solid var(--az-purple);
     }
-    .card.teal  { border-left-color: var(--az-teal); }
-    .card.accent{ border-left-color: var(--az-accent); }
-    .card.dark  { border-left-color: var(--az-dark); }
+    .card.teal   { border-left-color: var(--az-teal); }
+    .card.accent  { border-left-color: var(--az-accent); }
+    .card.dark    { border-left-color: var(--az-dark); }
+    .card.green   { border-left-color: var(--green); background: #f0fdf4; }
+    .card.amber   { border-left-color: var(--amber); background: #fffbeb; }
+    .card.red     { border-left-color: var(--red); background: #fef2f2; }
 
     .card h3 {
-      font-size: .85rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--az-purple);
-      margin-bottom: 8px;
+      font-size: .8rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--az-purple); margin-bottom: 6px;
     }
-    .card.teal  h3 { color: var(--az-teal); }
-    .card.accent h3{ color: var(--az-accent); }
-    .card.dark  h3 { color: var(--az-dark); }
+    .card.teal h3   { color: var(--az-teal); }
+    .card.accent h3 { color: var(--az-accent); }
+    .card.dark h3   { color: var(--az-dark); }
+    .card.green h3  { color: var(--green); }
+    .card.amber h3  { color: var(--amber); }
+    .card.red h3    { color: var(--red); }
 
     .card ul { list-style: none; padding: 0; }
     .card ul li {
-      font-size: .88rem;
-      color: var(--text);
-      padding: 3px 0 3px 14px;
-      position: relative;
-      line-height: 1.45;
+      font-size: .82rem; color: var(--text);
+      padding: 2px 0 2px 14px; position: relative; line-height: 1.4;
     }
     .card ul li::before {
-      content: '▸';
-      position: absolute;
-      left: 0;
-      color: var(--az-teal);
-      font-size: .7rem;
-      top: 5px;
+      content: ''; position: absolute; left: 0; top: 7px;
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--az-teal);
     }
+    .card p { font-size: .82rem; color: var(--text); line-height: 1.45; }
 
-    /* ── Tension table (slide 3) ── */
-    .tension-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: .9rem;
-    }
-    .tension-table th {
-      background: linear-gradient(135deg, var(--az-purple), var(--az-teal));
-      color: var(--white);
-      padding: 12px 18px;
-      text-align: left;
-      font-weight: 600;
-    }
-    .tension-table td {
-      padding: 11px 18px;
-      border-bottom: 1px solid #e8e0f0;
-      color: var(--text);
-    }
-    .tension-table tr:nth-child(even) td { background: var(--az-light); }
-    .tension-table .arrow {
-      text-align: center;
-      font-size: 1.2rem;
-      color: var(--az-accent);
-      font-weight: 700;
-    }
-
-    /* ── Challenge pills ── */
-    .challenge-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 14px;
-    }
-    .challenge-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 14px;
-      background: var(--az-light);
-      border-radius: 10px;
-      padding: 16px 18px;
-    }
-    .challenge-icon {
-      font-size: 1.6rem;
-      flex-shrink: 0;
-      line-height: 1;
-    }
-    .challenge-item h4 {
-      font-size: .83rem;
-      font-weight: 700;
-      color: var(--az-purple);
+    /* Status badges */
+    .badge {
+      display: inline-block; padding: 2px 10px; border-radius: 10px;
+      font-size: .72rem; font-weight: 700; letter-spacing: .5px;
       text-transform: uppercase;
-      letter-spacing: .8px;
-      margin-bottom: 4px;
     }
-    .challenge-item p {
-      font-size: .83rem;
-      color: var(--text);
-      line-height: 1.45;
-    }
+    .badge.done    { background: #dcfce7; color: var(--green); }
+    .badge.partial { background: #fef3c7; color: var(--amber); }
+    .badge.todo    { background: #fee2e2; color: var(--red); }
 
-    /* ── Vision slide big quote ── */
+    /* Feature matrix table */
+    .matrix {
+      width: 100%; border-collapse: collapse; font-size: .82rem;
+    }
+    .matrix th {
+      background: linear-gradient(135deg, var(--az-purple), var(--az-teal));
+      color: var(--white); padding: 10px 14px; text-align: left; font-weight: 600;
+    }
+    .matrix td {
+      padding: 9px 14px; border-bottom: 1px solid #e8e0f0; color: var(--text);
+    }
+    .matrix tr:nth-child(even) td { background: var(--az-light); }
+    .matrix td:last-child { text-align: center; }
+
+    /* Big quote */
     .big-quote {
-      font-size: 1.15rem;
-      font-style: italic;
-      color: var(--az-purple);
-      border-left: 4px solid var(--az-teal);
-      padding: 12px 20px;
-      background: var(--az-light);
-      border-radius: 0 8px 8px 0;
-      line-height: 1.6;
+      font-size: 1.05rem; font-style: italic; color: var(--az-purple);
+      border-left: 4px solid var(--az-teal); padding: 10px 18px;
+      background: var(--az-light); border-radius: 0 8px 8px 0; line-height: 1.55;
     }
 
-    /* ── Progress bar ── */
-    .progress-bar {
-      height: 4px;
-      background: rgba(255,255,255,.2);
-      border-radius: 2px;
-      margin-top: 4px;
-      overflow: hidden;
+    /* Test results bar */
+    .test-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; background: var(--az-light);
+      border-radius: 8px; margin-bottom: 4px;
     }
-    .progress-fill {
-      height: 100%;
-      background: var(--az-accent);
-      border-radius: 2px;
-      transition: width .4s ease;
+    .test-bar .label { font-size: .82rem; font-weight: 600; color: var(--text); min-width: 180px; }
+    .test-bar .bar-track {
+      flex: 1; height: 18px; background: #e5e7eb; border-radius: 9px; overflow: hidden;
+    }
+    .test-bar .bar-fill {
+      height: 100%; border-radius: 9px; transition: width .6s ease;
+    }
+    .test-bar .bar-fill.green { background: var(--green); }
+    .test-bar .bar-fill.amber { background: var(--amber); }
+    .test-bar .count { font-size: .8rem; font-weight: 700; color: var(--text); min-width: 70px; text-align: right; }
+
+    /* Discussion callout */
+    .discuss {
+      display: flex; gap: 10px; padding: 12px 16px;
+      background: #fffbeb; border: 1px solid #fcd34d;
+      border-radius: 8px;
+    }
+    .discuss-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .discuss p { font-size: .82rem; color: var(--text); line-height: 1.45; }
+    .discuss strong { color: var(--amber); }
+
+    /* Numbered list */
+    .numbered { counter-reset: item; padding: 0; list-style: none; }
+    .numbered li {
+      counter-increment: item; padding: 6px 0 6px 28px; position: relative;
+      font-size: .82rem; color: var(--text); line-height: 1.4;
+    }
+    .numbered li::before {
+      content: counter(item); position: absolute; left: 0; top: 5px;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--az-purple); color: white; font-size: .7rem;
+      font-weight: 700; display: flex; align-items: center; justify-content: center;
     }
 
     /* ── Navigation ── */
     nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 20px;
-      width: 100%;
-      max-width: 960px;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 20px; width: 100%; max-width: 1000px;
     }
     nav button {
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.25);
-      color: var(--white);
-      padding: 10px 28px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: .9rem;
-      font-weight: 600;
-      transition: background .2s;
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25);
+      color: var(--white); padding: 10px 28px; border-radius: 8px;
+      cursor: pointer; font-size: .9rem; font-weight: 600; transition: background .2s;
     }
     nav button:hover  { background: rgba(255,255,255,.22); }
     nav button:disabled { opacity: .3; cursor: default; }
 
     .slide-counter {
-      color: rgba(255,255,255,.7);
-      font-size: .9rem;
-      font-weight: 600;
-      letter-spacing: 1px;
+      color: rgba(255,255,255,.7); font-size: .9rem;
+      font-weight: 600; letter-spacing: 1px;
     }
 
-    /* ── Dot indicators ── */
-    .dots {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
+    .dots { display: flex; gap: 8px; align-items: center; }
     .dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: rgba(255,255,255,.3);
-      transition: background .2s, transform .2s;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(255,255,255,.3); transition: background .2s, transform .2s;
       cursor: pointer;
     }
-    .dot.active {
-      background: var(--az-teal);
-      transform: scale(1.3);
+    .dot.active { background: var(--az-teal); transform: scale(1.3); }
+
+    /* Section label */
+    .section-label {
+      font-size: .7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 2px; color: #999; margin-bottom: -8px;
     }
   </style>
 </head>
@@ -259,257 +220,526 @@
 
 <div class="deck" id="deck">
 
-  <!-- ════════════════════════════════════════════
-       SLIDE 1 — Title / Vision
-  ════════════════════════════════════════════ -->
+  <!-- ═══════ SLIDE 1 — Title ═══════ -->
   <div class="slide active" id="slide-1">
     <div class="slide-header">
-      <div class="eyebrow">AI30 Data to Insights Hackathon · 2026</div>
-      <h1>Jarvis — Next-Gen Enterprise Analytics</h1>
-      <p>Reimagining how AstraZeneca leaders consume, explore and act on data</p>
-      <div class="progress-bar"><div class="progress-fill" style="width:20%"></div></div>
+      <div class="eyebrow">Team Progress Review &middot; March 2026</div>
+      <h1>Jarvis — Hackathon Brief vs. Reality</h1>
+      <p>Where we are, what's working, and what still needs decisions</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:10%"></div></div>
     </div>
     <div class="slide-body">
       <p class="big-quote">
-        "What could a next-generation experience look like that puts trusted enterprise data in the hands
-        of our organisation — when they need it, how they need it — empowering robust decision-making
-        and surfacing the root causes that require management attention?"
+        "Create a bold and credible product concept that delivers a seamless balance between standardisation
+        and personalisation, clarity on true root causes, and AI-based augmentation that maintains clear
+        boundaries between facts, interpretations, and hypotheses."
       </p>
       <div class="cards col3">
+        <div class="card green">
+          <h3>Built & Working</h3>
+          <ul>
+            <li>Full-stack prototype (FastAPI + React)</li>
+            <li>AI assistant with 15 tools</li>
+            <li>3 hierarchy views + drill-down</li>
+            <li>Mobile-responsive design</li>
+            <li>Voice queries (Web Speech API)</li>
+            <li>Actionable recommendations in AI responses</li>
+            <li>Root cause waterfall decomposition</li>
+            <li>Model routing (Sonnet/Opus, env-configurable)</li>
+          </ul>
+        </div>
+        <div class="card amber">
+          <h3>Narrative / Roadmap</h3>
+          <ul>
+            <li>Role-based access control (RBAC)</li>
+            <li>Push notifications</li>
+            <li>External data integration</li>
+            <li>Scaling / deployment roadmap</li>
+          </ul>
+        </div>
         <div class="card">
-          <h3>Audience</h3>
+          <h3>Test Coverage</h3>
           <ul>
-            <li>SET / SET-1 / SET-2</li>
-            <li>~500 senior leaders</li>
-            <li>Designed to scale enterprise-wide</li>
-          </ul>
-        </div>
-        <div class="card teal">
-          <h3>Horizon</h3>
-          <ul>
-            <li>MVP deployable 2026</li>
-            <li>Full vision by 2028</li>
-            <li>Finance & commercial first, then R&D, HR, Ops</li>
-          </ul>
-        </div>
-        <div class="card accent">
-          <h3>Stack</h3>
-          <ul>
-            <li>FastAPI + React (Vite)</li>
-            <li>AWS Bedrock / Claude</li>
-            <li>Snowflake data layer</li>
+            <li>42 unit tests (all passing)</li>
+            <li>11 E2E browser tests</li>
+            <li>12 AI consistency tests</li>
+            <li>Ground truth validation</li>
           </ul>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ════════════════════════════════════════════
-       SLIDE 2 — Requirements
-  ════════════════════════════════════════════ -->
+  <!-- ═══════ SLIDE 2 — Requirement #1: Modes of Consumption ═══════ -->
   <div class="slide" id="slide-2">
     <div class="slide-header">
-      <div class="eyebrow">Slide 2 of 5 · Requirements</div>
-      <h1>What We Must Deliver</h1>
-      <p>Core capabilities the prototype must demonstrate</p>
-      <div class="progress-bar"><div class="progress-fill" style="width:40%"></div></div>
+      <div class="eyebrow">Requirement 1 of 5 &middot; Modes of Consumption</div>
+      <h1>Tables, Charts, Chat & Voice</h1>
+      <p>"How do users choose their preferred mode — table, visual, question prompt, chat?"</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:20%"></div></div>
     </div>
     <div class="slide-body">
-      <div class="cards col2">
-        <div class="card">
-          <h3>📊 Unified Data Access</h3>
-          <ul>
-            <li>Financial data: revenue, OPEX, margin (2023–2025)</li>
-            <li>Commercial: market share, growth by brand & market</li>
-            <li>Consistent hierarchies across all views (Brand→TA→Total AZ)</li>
-            <li>Budget vs. actuals vs. forecast vs. prior year</li>
-          </ul>
-        </div>
-        <div class="card teal">
-          <h3>🤖 AI Augmentation</h3>
-          <ul>
-            <li>Auto-detect significant variances & outliers</li>
-            <li>Contextual, data-grounded explanations</li>
-            <li>Natural language &amp; voice queries</li>
-            <li>Clear fact / interpretation / hypothesis separation</li>
-          </ul>
-        </div>
-        <div class="card accent">
-          <h3>🎨 Flexible UX</h3>
-          <ul>
-            <li>Table ↔ chart ↔ chat — seamless switching</li>
-            <li>Mobile-native &amp; web-responsive</li>
-            <li>Push notifications + pull analysis</li>
-            <li>Personalised views without breaking governance</li>
-          </ul>
-        </div>
-        <div class="card dark">
-          <h3>🔐 Governance & Trust</h3>
-          <ul>
-            <li>Role-based access control (CEO → market user)</li>
-            <li>Reconciled totals always visible</li>
-            <li>Transparency of data sources &amp; AI reasoning</li>
-            <li>No cherry-picking — full-hierarchy consistency</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ════════════════════════════════════════════
-       SLIDE 3 — The Core Tension
-  ════════════════════════════════════════════ -->
-  <div class="slide" id="slide-3">
-    <div class="slide-header">
-      <div class="eyebrow">Slide 3 of 5 · Core Tension</div>
-      <h1>Today vs. Tomorrow</h1>
-      <p>The fundamental design challenge: preserving trust while enabling exploration</p>
-      <div class="progress-bar"><div class="progress-fill" style="width:60%"></div></div>
-    </div>
-    <div class="slide-body">
-      <table class="tension-table">
+      <table class="matrix">
         <thead>
-          <tr>
-            <th>What We Value Today</th>
-            <th class="arrow">→</th>
-            <th>What We Want to Enable</th>
-          </tr>
+          <tr><th>Capability</th><th>Brief Requirement</th><th>Our Implementation</th><th>Status</th></tr>
         </thead>
         <tbody>
           <tr>
-            <td>Consistency &amp; control via pre-agreed tables</td>
-            <td class="arrow">⇄</td>
-            <td>Flexibility &amp; free exploration</td>
+            <td><strong>Tables</strong></td>
+            <td>Pre-agreed table views with drill-down</td>
+            <td>TreeTable component with expand/collapse, sparklines, variance coloring</td>
+            <td><span class="badge done">Done</span></td>
           </tr>
           <tr>
-            <td>Static dashboards — pull when needed</td>
-            <td class="arrow">⇄</td>
-            <td>Proactive, pushed insight notifications</td>
+            <td><strong>Charts</strong></td>
+            <td>Visual patterns & trends</td>
+            <td>Line charts with budget/forecast overlays, AI-generated charts via render_chart tool</td>
+            <td><span class="badge done">Done</span></td>
           </tr>
           <tr>
-            <td>Tables that show everything, reconcile cleanly</td>
-            <td class="arrow">⇄</td>
-            <td>Patterns, trends &amp; forward-looking signals</td>
+            <td><strong>NL Chat</strong></td>
+            <td>Natural language queries</td>
+            <td>SSE-streamed AI assistant, 15 data tools, context-aware responses</td>
+            <td><span class="badge done">Done</span></td>
           </tr>
           <tr>
-            <td>Standard views for governance</td>
-            <td class="arrow">⇄</td>
-            <td>Personalised, actionable discovery</td>
+            <td><strong>Voice</strong></td>
+            <td>Voice queries</td>
+            <td>Web Speech API mic button in AssistantDrawer — tap to speak, transcript auto-submitted</td>
+            <td><span class="badge done">Done</span></td>
           </tr>
           <tr>
-            <td>Structured drilldowns within rows/columns</td>
-            <td class="arrow">⇄</td>
-            <td>Natural language / voice intent queries</td>
+            <td><strong>Seamless switching</strong></td>
+            <td>Table &harr; chart &harr; chat without losing context</td>
+            <td>Dashboard state shared with AI; propose_config tool switches views</td>
+            <td><span class="badge done">Done</span></td>
           </tr>
         </tbody>
       </table>
-      <p style="font-size:.85rem;color:#666;text-align:center;margin-top:4px;">
-        ✅ Jarvis must make <strong>both sides coexist</strong> — not choose one over the other
-      </p>
+      <div class="discuss">
+        <div class="discuss-icon">💬</div>
+        <div>
+          <p><strong>Discussion:</strong> All 5 consumption modes are implemented and working (tables, charts, NL chat, voice, seamless switching).
+          Do we need to show push notifications for the demo, or is pull-only sufficient for the prototype?</p>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- ════════════════════════════════════════════
-       SLIDE 4 — Key Challenges
-  ════════════════════════════════════════════ -->
-  <div class="slide" id="slide-4">
+  <!-- ═══════ SLIDE 3 — Requirement #2: Standardisation vs. Personalisation ═══════ -->
+  <div class="slide" id="slide-3">
     <div class="slide-header">
-      <div class="eyebrow">Slide 4 of 5 · Challenges</div>
-      <h1>Hard Problems to Crack</h1>
-      <p>Technical and design challenges the team must tackle</p>
-      <div class="progress-bar"><div class="progress-fill" style="width:80%"></div></div>
+      <div class="eyebrow">Requirement 2 of 5 &middot; Standard vs. Personal</div>
+      <h1>Governance Meets Flexibility</h1>
+      <p>"What must remain standardised? Where does personalisation add real value?"</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:35%"></div></div>
     </div>
     <div class="slide-body">
-      <div class="challenge-grid">
-        <div class="challenge-item">
-          <div class="challenge-icon">🔍</div>
-          <div>
-            <h4>Root Cause, Not Surface Noise</h4>
-            <p>AI must explain <em>why</em> a variance happened — linking financial outcomes to commercial drivers — not just describe what the number is.</p>
-          </div>
+      <div class="cards col2">
+        <div class="card green">
+          <h3>Standardised (locked)</h3>
+          <ul>
+            <li><strong>3 hierarchy views:</strong> Brand&rarr;TA&rarr;Total, Market&rarr;Region&rarr;Total, Unit&rarr;Total</li>
+            <li><strong>Consistent columns:</strong> Actual, Budget, Variance%, Sparkline across all views</li>
+            <li><strong>Single data source:</strong> All views and AI query same API endpoints</li>
+            <li><strong>Reconciled totals:</strong> Root node always shows company-level aggregates</li>
+            <li><strong>Period standardisation:</strong> YTD/Monthly/Quarterly via shared toggle</li>
+          </ul>
         </div>
-        <div class="challenge-item">
-          <div class="challenge-icon">🏗️</div>
-          <div>
-            <h4>Hierarchy Integrity at Scale</h4>
-            <p>Brand→TA→Total AZ, Market→Region→Total AZ and Sub-unit→Unit→Total AZ must remain consistent across every view, drill and AI response.</p>
-          </div>
+        <div class="card teal">
+          <h3>Personalised (flexible)</h3>
+          <ul>
+            <li><strong>Bookmarks:</strong> Save & restore favorite filter/view combinations</li>
+            <li><strong>Comparator choice:</strong> Budget / Prior Year / Forecast / MTP / RBU2</li>
+            <li><strong>AI chat context:</strong> Assistant adapts to current dashboard state & filters</li>
+            <li><strong>Drill-down freedom:</strong> Expand any node to explore hierarchy depth</li>
+            <li><strong>Hub navigation:</strong> Role-specific entry points (CFO view, commercial view)</li>
+          </ul>
         </div>
-        <div class="challenge-item">
-          <div class="challenge-icon">🔒</div>
-          <div>
-            <h4>Fine-Grained Access Control</h4>
-            <p>CEO sees everything; a market lead sees only their market. RBAC must be enforced at query level, not just the UI — including AI-generated answers.</p>
-          </div>
+      </div>
+      <div class="discuss">
+        <div class="discuss-icon">💬</div>
+        <div>
+          <p><strong>Discussion:</strong> RBAC is required by the brief ("CEO sees everything, market user sees only their market").
+          We haven't implemented access control yet. For the demo, should we mock it with a user-switcher dropdown,
+          or explain it as a roadmap item? Also — bookmarks currently save to localStorage. Production would need server-side persistence.</p>
         </div>
-        <div class="challenge-item">
-          <div class="challenge-icon">⚖️</div>
-          <div>
-            <h4>Fact vs. AI Interpretation</h4>
-            <p>Every AI-generated insight must be clearly labelled: is it a confirmed data fact, a model interpretation, or a hypothesis? Trust depends on this boundary.</p>
-          </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ SLIDE 4 — Requirement #3: Root Cause Clarity ═══════ -->
+  <div class="slide" id="slide-4">
+    <div class="slide-header">
+      <div class="eyebrow">Requirement 3 of 5 &middot; Root Cause Clarity</div>
+      <h1>Beyond Surface-Level Variance</h1>
+      <p>"How do we help users uncover the underlying business reason behind a variance?"</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:50%"></div></div>
+    </div>
+    <div class="slide-body">
+      <div class="cards col2">
+        <div class="card green">
+          <h3>What Works Today</h3>
+          <ul>
+            <li>AI queries multiple data levels to build explanations (TA &rarr; brand &rarr; market)</li>
+            <li>Uses <code>think</code> tool for multi-step reasoning before answering</li>
+            <li>Cites specific brands, markets, and dollar amounts from real data</li>
+            <li>Cross-references financial outcomes with commercial performance</li>
+            <li>Tested: 3/3 runs consistently identify same top underperformers</li>
+          </ul>
         </div>
-        <div class="challenge-item">
-          <div class="challenge-icon">📱</div>
-          <div>
-            <h4>Mobile-First, Table-First Culture</h4>
-            <p>Users expect reconciled totals and full-hierarchy tables. The mobile UX must preserve that trust while not becoming a cramped spreadsheet.</p>
-          </div>
+        <div class="card green">
+          <h3>Waterfall Decomposition</h3>
+          <ul>
+            <li><code>decompose_variance</code> tool — AI builds structured breakdowns</li>
+            <li>Visual waterfall/bridge chart: green bars (positive) + red bars (negative) = total</li>
+            <li>Each factor = specific entity (brand, market, unit) with $ contribution</li>
+            <li>Connects "what happened" to "why" — e.g., TAGRISSO US -$120M due to patent cliff</li>
+            <li>Renders as clickable overlay in chat, same as tables/charts</li>
+          </ul>
         </div>
-        <div class="challenge-item">
-          <div class="challenge-icon">🔔</div>
+      </div>
+      <div class="cards col2" style="margin-top: 2px;">
+        <div class="card" style="border-left-color: var(--az-purple);">
+          <h3>Example: "Why is Oncology underperforming?"</h3>
+          <p>AI correctly identifies Imfinzi, Enhertu, and Truqap as key drivers across all 3 test runs.
+          Cross-references market share data with revenue variance. Distinguishes between volume decline
+          and pricing pressure.</p>
+        </div>
+        <div class="discuss" style="flex: 1;">
+          <div class="discuss-icon">💬</div>
           <div>
-            <h4>Push Without Alert Fatigue</h4>
-            <p>Deciding which variances are worth surfacing proactively — and when — without overwhelming leaders with irrelevant noise.</p>
+            <p><strong>Discussion:</strong> Both waterfall decomposition and actionable recommendations are implemented.
+            Should we highlight these in the demo flow as separate moments, or let them emerge naturally from questions?
+            The recommendations section is a direct answer to the brief's "recommendation of actions" requirement.</p>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ════════════════════════════════════════════
-       SLIDE 5 — Success Criteria & Next Steps
-  ════════════════════════════════════════════ -->
+  <!-- ═══════ SLIDE 5 — Requirement #4: AI Augmentation ═══════ -->
   <div class="slide" id="slide-5">
     <div class="slide-header">
-      <div class="eyebrow">Slide 5 of 5 · Success</div>
-      <h1>What "Done" Looks Like</h1>
-      <p>Criteria the judges will use to evaluate the prototype</p>
+      <div class="eyebrow">Requirement 4 of 5 &middot; AI Augmentation</div>
+      <h1>AI That Augments, Not Replaces</h1>
+      <p>"Maintaining clear boundaries between facts, interpretations, and hypotheses"</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:65%"></div></div>
+    </div>
+    <div class="slide-body">
+      <div class="cards col3">
+        <div class="card green">
+          <h3>Facts</h3>
+          <p>Data-grounded statements with specific numbers from API queries. Always sourced from real data tools.</p>
+          <p style="margin-top: 6px; font-style: italic; font-size: .78rem; color: #666;">
+            "Total Revenue for 2025 YTD is $50,195.8M, +2.3% vs budget."
+          </p>
+        </div>
+        <div class="card teal">
+          <h3>Interpretation</h3>
+          <p>AI analysis connecting data points. Explains patterns and relationships the user should know about.</p>
+          <p style="margin-top: 6px; font-style: italic; font-size: .78rem; color: #666;">
+            "CVRM is driving the positive variance, compensating for Oncology's miss."
+          </p>
+        </div>
+        <div class="card accent">
+          <h3>Hypothesis</h3>
+          <p>Forward-looking suggestions or theories that go beyond the data. Explicitly marked as uncertain.</p>
+          <p style="margin-top: 6px; font-style: italic; font-size: .78rem; color: #666;">
+            "If Enhertu's Q3 pipeline issues persist, FY could miss by ~$200M."
+          </p>
+        </div>
+      </div>
+      <div class="section-label">AI Architecture</div>
+      <div class="cards col2">
+        <div class="card">
+          <h3>Tool-Grounded Responses</h3>
+          <ul>
+            <li><strong>15 LLM tools:</strong> query_kpi, query_brand, query_region, query_unit, query_market + chart variants</li>
+            <li><strong>Fabrication guard:</strong> Detects and blocks hallucinated tables</li>
+            <li><strong>Scope awareness:</strong> Distinguishes "top 5 overall" from "top 5 in current TA filter"</li>
+            <li><strong>Clarification mode:</strong> Asks follow-up for vague queries instead of guessing</li>
+          </ul>
+        </div>
+        <div class="card teal">
+          <h3>Transparency Features</h3>
+          <ul>
+            <li><strong>Thinking steps:</strong> Shows AI reasoning chain (which tools called, why)</li>
+            <li><strong>XML tag separation:</strong> &lt;facts&gt;, &lt;interpretation&gt;, &lt;hypothesis&gt;, &lt;recommendations&gt;</li>
+            <li><strong>Visual overlays:</strong> Tables and charts rendered with source attribution</li>
+            <li><strong>Config proposals:</strong> AI suggests dashboard changes, user confirms</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ SLIDE 6 — Requirement #5: Mobile & Responsive ═══════ -->
+  <div class="slide" id="slide-6">
+    <div class="slide-header">
+      <div class="eyebrow">Requirement 5 of 5 &middot; Mobile & Responsive</div>
+      <h1>Mobile-Native, Web-Responsive</h1>
+      <p>"Product that is mobile native and web responsive"</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:75%"></div></div>
+    </div>
+    <div class="slide-body">
+      <div class="cards col2">
+        <div class="card green">
+          <h3>Desktop Experience</h3>
+          <ul>
+            <li>Full tree table with nested hierarchy expansion</li>
+            <li>Inline sparkline charts in table cells</li>
+            <li>Side-by-side comparator columns (Actual vs Budget/PY/Forecast)</li>
+            <li>AI assistant as slide-over drawer (right side)</li>
+            <li>Hub navigation bar with page switching</li>
+          </ul>
+        </div>
+        <div class="card teal">
+          <h3>Mobile Experience</h3>
+          <ul>
+            <li>Card-based KPI strip at top (swipeable)</li>
+            <li>Simplified table with horizontal scroll</li>
+            <li>Full-screen AI drawer with large touch targets</li>
+            <li>Bottom-sheet visual overlays for tables/charts</li>
+            <li>Long-press bookmark save gesture</li>
+          </ul>
+        </div>
+      </div>
+      <div class="cards col2">
+        <div class="card">
+          <h3>Responsive Hooks</h3>
+          <ul>
+            <li><code>useSavedDimensions</code> — persists collapsed/expanded column state</li>
+            <li><code>useBookmarks</code> — save favorite views with filters</li>
+            <li><code>useLongPress</code> — mobile gesture support</li>
+            <li>Tailwind breakpoints: mobile-first design</li>
+          </ul>
+        </div>
+        <div class="discuss" style="flex: 1;">
+          <div class="discuss-icon">💬</div>
+          <div>
+            <p><strong>Discussion:</strong> The brief says "mobile native." Our solution is web-responsive, not a native app.
+            Should we frame this as progressive web app (PWA) potential, or is the responsive web approach sufficient
+            for the hackathon demo?</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ SLIDE 7 — Test Results ═══════ -->
+  <div class="slide" id="slide-7">
+    <div class="slide-header">
+      <div class="eyebrow">Quality Assurance</div>
+      <h1>Test Results Summary</h1>
+      <p>Three layers of testing: unit, E2E browser, and AI consistency</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:85%"></div></div>
+    </div>
+    <div class="slide-body">
+      <div class="test-bar">
+        <div class="label">Unit Tests (Frontend)</div>
+        <div class="bar-track"><div class="bar-fill green" style="width:100%"></div></div>
+        <div class="count">42 / 42</div>
+      </div>
+      <div class="test-bar">
+        <div class="label">E2E Browser Tests</div>
+        <div class="bar-track"><div class="bar-fill green" style="width:100%"></div></div>
+        <div class="count">11 / 11</div>
+      </div>
+      <div class="test-bar">
+        <div class="label">AI Consistency Tests</div>
+        <div class="bar-track"><div class="bar-fill green" style="width:100%"></div></div>
+        <div class="count">12 / 12</div>
+      </div>
+
+      <div class="cards col3" style="margin-top: 4px;">
+        <div class="card green">
+          <h3>Unit Tests (42)</h3>
+          <ul>
+            <li>filtersToExtra conversion</li>
+            <li>scaleValue / scaleLabel</li>
+            <li>comparatorLabel</li>
+            <li>useBookmarks hook</li>
+            <li>useLongPress hook</li>
+            <li>useSavedDimensions hook</li>
+          </ul>
+        </div>
+        <div class="card teal">
+          <h3>E2E Browser (11)</h3>
+          <ul>
+            <li>Dashboard loads with data</li>
+            <li>Tree table drill-down</li>
+            <li>Chart rendering</li>
+            <li>AI assistant open/close</li>
+            <li>AI Q&A with visuals</li>
+            <li>Mobile layout</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>AI Consistency (12)</h3>
+          <ul>
+            <li>KPI numbers identical x3 runs</li>
+            <li>Brand rankings stable x3</li>
+            <li>Config proposals stable x3</li>
+            <li>No hallucinated numbers</li>
+            <li>Vague queries trigger clarification</li>
+            <li>Ground truth validation</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ SLIDE 8 — AI Testing Deep Dive ═══════ -->
+  <div class="slide" id="slide-8">
+    <div class="slide-header">
+      <div class="eyebrow">Testing &middot; AI Quality</div>
+      <h1>AI Consistency & Accuracy</h1>
+      <p>Bugs found, fixed, and validated through systematic testing</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:90%"></div></div>
+    </div>
+    <div class="slide-body">
+      <div class="cards col2">
+        <div class="card red">
+          <h3>Bug Found: Filter Leak</h3>
+          <p>Asking "top 5 brands overall" while Oncology filter was active — AI passed TA filter to query,
+          returning only Oncology brands instead of cross-company ranking.</p>
+          <p style="margin-top: 6px; font-weight: 600; color: var(--green);">
+            Fix: Added scope awareness to system prompt — AI now distinguishes scoped vs. cross-scope queries. Verified across 3 runs.</p>
+        </div>
+        <div class="card red">
+          <h3>Bug Found: False Error Message</h3>
+          <p>Fabrication guard triggered "Error: I wasn't able to process that" even when the AI had correctly
+          used render_table tool — because guard didn't know tools had been called in prior iterations.</p>
+          <p style="margin-top: 6px; font-weight: 600; color: var(--green);">
+            Fix: Added <code>used_tools</code> flag to skip guard when tools were previously invoked. Zero false positives since.</p>
+        </div>
+      </div>
+      <div class="cards col2">
+        <div class="card green">
+          <h3>Model Configuration (Implemented)</h3>
+          <ul>
+            <li><strong>Temperature:</strong> 0.1 (low for analytical accuracy)</li>
+            <li><strong>Default model:</strong> Claude Sonnet 4.6 via LLM_MODEL_ID env var</li>
+            <li><strong>Heavy model:</strong> Claude Opus 4.6 via LLM_MODEL_ID_HEAVY env var</li>
+            <li><strong>Auto-routing:</strong> Iterations 0-1 use Sonnet, 2+ use heavy model</li>
+            <li><strong>Debug mode:</strong> LLM_DEBUG=true logs all tool parameters</li>
+          </ul>
+        </div>
+        <div class="card teal">
+          <h3>Test Infrastructure</h3>
+          <ul>
+            <li><strong>API-level tests:</strong> pytest suite hits /api/assistant directly</li>
+            <li><strong>Ground truth validation:</strong> Cross-checks LLM numbers against data API</li>
+            <li><strong>Multi-run consistency:</strong> Each test runs 3x to catch non-determinism</li>
+            <li><strong>Model comparison:</strong> compare_runs.py diffs Sonnet vs. Opus results</li>
+            <li><strong>Results saved as JSON</strong> for cross-run analysis</li>
+          </ul>
+        </div>
+      </div>
+      <div class="discuss">
+        <div class="discuss-icon">💬</div>
+        <div>
+          <p><strong>Discussion:</strong> Should we run the full test suite with Opus and compare accuracy/cost? Current tests pass with Sonnet,
+          but Opus may handle edge cases better. Cost estimate: ~$2-3 per full test run with Opus vs. ~$0.30 with Sonnet.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ SLIDE 9 — Gaps & Decisions ═══════ -->
+  <div class="slide" id="slide-9">
+    <div class="slide-header">
+      <div class="eyebrow">Gaps &amp; Decisions</div>
+      <h1>What Still Needs Work</h1>
+      <p>Items from the brief we haven't fully addressed yet</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:95%"></div></div>
+    </div>
+    <div class="slide-body">
+      <table class="matrix">
+        <thead>
+          <tr><th>Gap</th><th>Brief Requirement</th><th>Effort</th><th>Priority</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>RBAC / Access Control</strong></td>
+            <td>"Grant different access to different people"</td>
+            <td>Large (~1 week)</td>
+            <td><span class="badge todo">Roadmap</span></td>
+          </tr>
+          <tr>
+            <td><strong>Push Notifications</strong></td>
+            <td>"Should insights be pushed or pulled?"</td>
+            <td>Large (~1 week)</td>
+            <td><span class="badge todo">Roadmap</span></td>
+          </tr>
+          <tr>
+            <td><strong>External Data</strong></td>
+            <td>"Integration of external signals from AZ and competitors"</td>
+            <td>Large</td>
+            <td><span class="badge todo">Roadmap</span></td>
+          </tr>
+          <tr>
+            <td><strong>Scale & Rollout Plan</strong></td>
+            <td>"What it would take to scale and maintain"</td>
+            <td>Narrative only</td>
+            <td><span class="badge partial">Demo Day</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="discuss">
+        <div class="discuss-icon">💬</div>
+        <div>
+          <p><strong>Key decisions needed:</strong> (1) For RBAC — mock with a user-switcher dropdown for the demo, or explain as post-hackathon roadmap?
+          (2) Push notifications — include in narrative/roadmap slide, or skip entirely?
+          (3) Do we need a scaling/cost narrative for the demo, or is the working prototype enough?</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ SLIDE 10 — Next Steps ═══════ -->
+  <div class="slide" id="slide-10">
+    <div class="slide-header">
+      <div class="eyebrow">Next Steps</div>
+      <h1>Closing the Gaps</h1>
+      <p>Proposed priority order for remaining work</p>
       <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
     </div>
     <div class="slide-body">
       <div class="cards col2">
-        <div class="card">
-          <h3>✅ Must-Have</h3>
-          <ul>
-            <li>Clickable web + mobile prototype (not prod-ready)</li>
-            <li>AI assistant that answers NL queries with cited data</li>
-            <li>Consistent hierarchies across all views</li>
-            <li>Role-based data access demonstrated</li>
-            <li>Reconciled totals always visible</li>
-          </ul>
+        <div class="card green">
+          <h3>Completed Features</h3>
+          <ol class="numbered">
+            <li><strong>Voice input</strong> — Web Speech API mic button in AssistantDrawer. Working.</li>
+            <li><strong>Recommendations</strong> — 4th response section with actionable next steps. Working.</li>
+            <li><strong>Waterfall decomposition</strong> — decompose_variance tool + bridge chart renderer. Working.</li>
+            <li><strong>Model routing</strong> — Sonnet/Opus configurable via env vars. Auto-routing by iteration. Working.</li>
+          </ol>
         </div>
         <div class="card teal">
-          <h3>⭐ Differentiators</h3>
-          <ul>
-            <li>Root-cause explanation, not just variance labels</li>
-            <li>Seamless table ↔ chart ↔ chat switching</li>
-            <li>Push insight with signal-to-noise control</li>
-            <li>Fact / interpretation / hypothesis tagging on AI output</li>
-            <li>Credible scale &amp; rollout roadmap</li>
-          </ul>
+          <h3>Demo Narrative (No Code Needed)</h3>
+          <ol class="numbered">
+            <li><strong>RBAC story</strong> — Explain query-level filtering architecture. Show how endpoints already accept filter params.</li>
+            <li><strong>Push notifications concept</strong> — Describe anomaly detection pipeline: nightly scan &rarr; threshold check &rarr; alert.</li>
+            <li><strong>Scale roadmap</strong> — Domino/Snowflake deployment, horizontal API scaling, prompt caching for cost.</li>
+            <li><strong>Data governance</strong> — Audit logging, no data download, prompt guardrails already in place.</li>
+          </ol>
         </div>
       </div>
-      <div class="card accent" style="margin-top:4px;">
-        <h3>🚀 Jarvis Prototype — Current State</h3>
-        <ul style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">
-          <li>FastAPI backend with SSE streaming AI assistant</li>
-          <li>KPI, Revenue, Market &amp; Expense endpoints live</li>
-          <li>React + Vite frontend with chart &amp; table views</li>
-          <li>AWS Bedrock / Claude Sonnet 4 for NL queries</li>
-          <li>2023–2025 financial &amp; commercial data loaded</li>
-          <li>Next: RBAC, push notifications, voice input</li>
-        </ul>
+      <div class="card accent" style="margin-top: 4px;">
+        <h3>Success Criteria Scorecard (from brief section 9)</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px; font-size: .82rem;">
+          <div>✅ Make data easily accessible (tables, charts, NL, voice)</div>
+          <div>✅ Maintain transparency &amp; reconciliation</div>
+          <div>✅ Credible leap from tables + AI analytics</div>
+          <div>✅ Show how AI augments human judgment</div>
+          <div>✅ Bold yet realistic for regulated org</div>
+          <div>✅ Working clickable prototype (web + mobile)</div>
+          <div>✅ Root cause clarity (waterfall + recommendations)</div>
+          <div>⚠️ Easily adjustable access control (roadmap)</div>
+          <div>⚠️ Scalable at affordable cost (narrative needed)</div>
+        </div>
       </div>
     </div>
   </div>
@@ -518,16 +748,16 @@
 
 <!-- Navigation -->
 <nav>
-  <button id="prev" onclick="navigate(-1)" disabled>← Previous</button>
+  <button id="prev" onclick="navigate(-1)" disabled>&larr; Previous</button>
   <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
     <div class="dots" id="dots"></div>
-    <span class="slide-counter" id="counter">1 / 5</span>
+    <span class="slide-counter" id="counter">1 / 10</span>
   </div>
-  <button id="next" onclick="navigate(1)">Next →</button>
+  <button id="next" onclick="navigate(1)">Next &rarr;</button>
 </nav>
 
 <script>
-  const TOTAL = 5;
+  const TOTAL = 10;
   let current = 1;
 
   const dotsEl = document.getElementById('dots');
