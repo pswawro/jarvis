@@ -178,6 +178,8 @@ Marks an insight as read. Uses `POST` to stay consistent with the existing CORS 
 
 Returns the insight formatted as an `AssistantContext`-compatible object with `source: "insight"`. Includes the insight summary, raw stats, and AI analysis (if available) as the `dataPoint` field. Used by the frontend to seed a new chat thread via the existing `useAssistantChat` hook.
 
+Requires extending the `AssistantContext` type union in `types.ts` to include `"insight"` as a valid `source`. The `page` field defaults to `"overview"`, `period` is derived from the insight's detection time range. Fields like `dimension`, `levels`, and `filters` are set to defaults.
+
 ### `POST /api/push/subscribe`
 
 Registers a push subscription for the authenticated user. Body: `{ "subscription": { "endpoint": "...", "keys": {...} } }`.
@@ -312,6 +314,17 @@ Instructions added to QUICKSTART.md.
 - Push API (browser native)
 - Notification API (browser native)
 
+## Required Changes to Existing Files
+
+- `backend/main.py` — Add `X-User-Id` to CORS `allow_headers`, mount new insights router
+- `frontend/src/types.ts` — Extend `AssistantContext.source` union to include `"insight"`
+- `frontend/src/components/TopBar.tsx` — Add lightbulb icon with badge
+- `frontend/src/App.tsx` — Add insights panel state management, wire up "Add to chat" flow
+- `backend/assistant/roles/*.json` — Add `insight_scope` field to each role config
+- `backend/requirements.txt` — Add `pywebpush`
+- `.env.example` — Add VAPID and sensitivity env vars
+- `QUICKSTART.md` — Add trigger script instructions
+
 ## File Structure
 
 ```
@@ -339,7 +352,7 @@ frontend/
       InsightsPanel.tsx    # Slide-out insights panel
       InsightCard.tsx      # Individual insight card
     hooks/
-      useInsights.ts       # Fetch + polling (30s interval), follows useApi abort pattern
+      useInsights.ts       # Standalone hook with 30s polling via setInterval; uses same cancelled-flag cleanup pattern as useApi but does not wrap it
   public/
     sw.js                  # Service Worker for push
 ```
