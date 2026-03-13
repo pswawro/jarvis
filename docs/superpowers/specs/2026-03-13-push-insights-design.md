@@ -86,6 +86,8 @@ The AI prompt instructs Claude:
 - May lower severity if the anomaly has a benign explanation (e.g., seasonal pattern, known business cycle)
 - Set `push: true` only for genuinely urgent findings requiring immediate attention
 
+**Bedrock failure handling**: If Bedrock is unavailable or returns an error, the insight is stored with `ai_analysis: null`, severity based on statistical score mapping (above `zscore_critical` → critical, above `zscore_notable` → notable), and `push: false`. A warning is logged. The insight can be re-analyzed on the next run if its fingerprint is still active.
+
 ## Deduplication
 
 Each anomaly gets a fingerprint hash based on: entity identifier + metric + detection type (e.g., `brand_Tagrisso_US_revenue_outlier`).
@@ -104,15 +106,19 @@ After each detection run, any active insight whose fingerprint was NOT detected 
 
 File: `data/insights.json` — flat JSON array, readable and clearable.
 
+All writes to `insights.json` use atomic file replacement (write to a temp file, then `os.replace`) to prevent corruption from concurrent access between the trigger script and the API server.
+
 ### Insight Schema
+
+IDs are generated as UUID4 prefixed with `ins_` (e.g., `ins_a1b2c3d4`) to avoid collisions between the trigger script and API server.
 
 ```json
 {
-  "id": "ins_001",
+  "id": "ins_a1b2c3d4",
   "fingerprint": "brand_Tagrisso_US_revenue_outlier",
   "detected_at": "2026-03-13T10:00:00Z",
   "last_seen": "2026-03-13T10:00:00Z",
-  "run_id": "run_20260313_100000",
+  "run_id": "run_20260313_100000",    // diagnostic: correlates insights from the same detection run in logs
   "entity": {
     "type": "brand",
     "brand_id": "TAGRISSO",
@@ -162,14 +168,15 @@ File: `data/push_subscriptions.json` — array of subscription objects keyed by 
 Returns insights filtered by the requesting user's role scope. Supports query params:
 - `sort=date|severity` (default: date descending)
 - `status=active|inactive|all` (default: active)
+- `limit=N` (default: 50) — pagination deferred to post-prototype, but response size is bounded
 
-### `PATCH /api/insights/{id}/read`
+### `POST /api/insights/{id}/read`
 
-Marks an insight as read. Body: `{ "read": true }`.
+Marks an insight as read. Uses `POST` to stay consistent with the existing CORS config (`GET`/`POST` only).
 
 ### `POST /api/insights/{id}/chat`
 
-Returns the insight formatted as an assistant conversation starter context. Used by the frontend to seed a new chat thread. Response includes the insight summary, raw stats, and AI analysis (if available) formatted for the assistant system prompt.
+Returns the insight formatted as an `AssistantContext`-compatible object with `source: "insight"`. Includes the insight summary, raw stats, and AI analysis (if available) as the `dataPoint` field. Used by the frontend to seed a new chat thread via the existing `useAssistantChat` hook.
 
 ### `POST /api/push/subscribe`
 
@@ -187,7 +194,7 @@ All endpoints receive an authenticated user context with `user_id` and `role`. R
 
 ### Mock Implementation (Hackathon)
 
-A middleware reads `X-User-Id` header (defaults to a configured demo user). Role resolved from user-to-role mapping in config. Designed for Entra ID swap: replace the middleware with MSAL token validation, everything downstream stays the same.
+A middleware reads `X-User-Id` header (defaults to a configured demo user). Role resolved from user-to-role mapping in config. Designed for Entra ID swap: replace the middleware with MSAL token validation, everything downstream stays the same. Requires adding `X-User-Id` to the CORS `allow_headers` list in `main.py`.
 
 ### Entra ID Integration Path
 
@@ -209,6 +216,13 @@ Each role config (`backend/assistant/roles/*.json`) gains an `insight_scope` fie
 ```
 
 Detection runs on all levels. `GET /api/insights` filters by the requesting user's role scope. Configurable per role without code changes.
+
+**Filtering rules**: An insight is visible to a role if its `entity.type` matches one of the values in the corresponding scope category. The scope categories map to data domains:
+- `revenue` — covers insights from revenue-related detection (outlier/drift/target_miss on revenue data). Entity types: `brand`, `ta`, `total`.
+- `expenses` — covers insights from expense-related detection. Entity types: `sub_unit`, `unit`, `total`.
+- `market` — covers insights from competitive shift detection. Entity types: `brand_market`.
+
+Example: A CFO with `"revenue": ["total", "ta"]` sees revenue insights at the TA and total level, but not individual brand-level revenue insights. A commercial lead with `"revenue": ["brand", "ta"]` sees brand and TA level but not the portfolio total.
 
 ## Frontend
 
@@ -319,12 +333,13 @@ data/
 backend/routes/
   insights_route.py     # API endpoints for insights + push
 
-frontend/src/
-  components/
-    InsightsPanel.tsx    # Slide-out insights panel
-    InsightCard.tsx      # Individual insight card
-  hooks/
-    useInsights.ts       # Fetch + polling for insights
+frontend/
+  src/
+    components/
+      InsightsPanel.tsx    # Slide-out insights panel
+      InsightCard.tsx      # Individual insight card
+    hooks/
+      useInsights.ts       # Fetch + polling (30s interval), follows useApi abort pattern
   public/
-    sw.js               # Service Worker for push
+    sw.js                  # Service Worker for push
 ```
