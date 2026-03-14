@@ -1,0 +1,26 @@
+{
+  "active_profile": "medium",
+  "profiles": {
+    "high": {
+      "zscore_critical": 2.5,
+      "zscore_notable": 1.5,
+      "rolling_window_months": 3,
+      "target_miss_pct": 0.08,
+      "market_share_delta_pct": 1.5
+    },
+    "medium": {
+      "zscore_critical": 3.0,
+      "zscore_notable": 2.0,
+      "rolling_window_months": 3,
+      "target_miss_pct": 0.12,
+      "market_share_delta_pct": 2.5
+    },
+    "low": {
+      "zscore_critical": 3.5,
+      "zscore_notable": 2.5,
+      "rolling_window_months": 3,
+      "target_miss_pct": 0.15,
+      "market_share_delta_pct": 3.5
+    }
+  }
+}
