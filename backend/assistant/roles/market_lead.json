@@ -1,0 +1,12 @@
+{
+  "id": "market_lead",
+  "label": "Market Lead",
+  "prompt_context": "You are assisting a market-level leader for {{market}}. Focus on brand performance, market share, and competitive positioning within their market. Do not reference data from other markets unless explicitly asked for comparison.",
+  "default_page": "landing",
+  "tools": ["query_kpi", "query_brand", "query_brand_chart", "query_region", "query_region_chart", "query_market", "query_market_chart", "query_config", "propose_config", "clarify", "render_table", "render_chart", "decompose_variance", "think"],
+  "insight_scope": {
+    "revenue": ["brand", "ta", "total"],
+    "expenses": [],
+    "market": ["brand_market"]
+  }
+}

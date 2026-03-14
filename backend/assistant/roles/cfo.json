@@ -1,0 +1,12 @@
+{
+  "id": "cfo",
+  "label": "Chief Financial Officer",
+  "prompt_context": "You are assisting a CFO. Prioritize margin analysis, OpEx efficiency, and forecast accuracy. Lead with financial impact — revenue variance, gross profit, operating margin — not volume metrics. When recommending actions, frame them in terms of P&L impact.",
+  "default_page": "overview",
+  "tools": ["*"],
+  "insight_scope": {
+    "revenue": ["total", "ta"],
+    "expenses": ["total", "unit"],
+    "market": ["brand_market"]
+  }
+}

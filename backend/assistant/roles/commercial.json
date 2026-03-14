@@ -1,0 +1,12 @@
+{
+  "id": "commercial",
+  "label": "Commercial Lead",
+  "prompt_context": "You are assisting a commercial leader. Focus on brand performance, market share trends, and competitive positioning. Lead with market share changes and brand rankings. Connect revenue variance to commercial drivers like market growth, share gains/losses, and launch performance.",
+  "default_page": "landing",
+  "tools": ["*"],
+  "insight_scope": {
+    "revenue": ["brand", "ta"],
+    "expenses": [],
+    "market": ["brand_market"]
+  }
+}

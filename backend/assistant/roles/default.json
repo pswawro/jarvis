@@ -1,0 +1,12 @@
+{
+  "id": "default",
+  "label": "Enterprise Analyst",
+  "prompt_context": "",
+  "default_page": "overview",
+  "tools": ["*"],
+  "insight_scope": {
+    "revenue": ["brand", "ta", "total"],
+    "expenses": ["sub_unit", "unit", "total"],
+    "market": ["brand_market"]
+  }
+}
