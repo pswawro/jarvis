@@ -1,0 +1,288 @@
+[
+  {
+    "name": "query_kpi",
+    "description": "Get top-level KPI cards: Total Revenue, Gross Profit, Total OpEx, Operating Margin. Each card shows the value plus vs Budget and vs Prior Year variance. Good starting point for understanding overall company performance.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "year": {"type": "integer", "description": "Fiscal year: 2023, 2024, or 2025", "default": 2025},
+        "quarter": {"type": "string", "description": "Quarter: Q1, Q2, Q3, Q4. Omit for full year.", "nullable": true},
+        "market_id": {"type": "string", "description": "Filter by market: 'US', 'CN', or 'US,CN'. Omit for all.", "nullable": true},
+        "ta": {"type": "string", "description": "Filter by therapeutic area: e.g. 'Oncology', 'CVRM,R&I'. Omit for all.", "nullable": true}
+      }
+    }
+  },
+  {
+    "name": "query_brand",
+    "description": "Get revenue breakdown by brand. Returns a hierarchical tree: Total AZ → Therapeutic Area → Brand → Market. Each node has: actual revenue ($M), budget, variance_pct (vs budget), prior_year, py_variance_pct (vs PY), 12-month sparkline, forecast, market_share_pct. Use this to compare brands, find top/bottom performers, or understand TA composition.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "year": {"type": "integer", "default": 2025},
+        "quarter": {"type": "string", "nullable": true},
+        "market_id": {"type": "string", "nullable": true},
+        "ta": {"type": "string", "description": "Filter to specific TA(s). Use exact names: Oncology, CVRM, R&I, Rare Disease, V&I", "nullable": true}
+      }
+    }
+  },
+  {
+    "name": "query_brand_chart",
+    "description": "Get cumulative monthly revenue trend by brand. Returns time series with x_labels (months) and series (one per TA or brand). Use drill param with a node ID to see children of a specific TA or brand. Good for tracking YTD trajectory vs budget/PY.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "year": {"type": "integer", "default": 2025},
+        "quarter": {"type": "string", "nullable": true},
+        "market_id": {"type": "string", "nullable": true},
+        "ta": {"type": "string", "nullable": true},
+        "drill": {"type": "string", "description": "Node ID to drill into (e.g. 'Oncology', 'TAGRISSO')", "nullable": true}
+      }
+    }
+  },
+  {
+    "name": "query_region",
+    "description": "Get revenue breakdown by geography. Hierarchy: Total AZ → Region (North America, International) → Market (US, CN) → Brand. Use this to compare regional performance or see which brands drive a specific market.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "year": {"type": "integer", "default": 2025},
+        "quarter": {"type": "string", "nullable": true},
+        "market_id": {"type": "string", "nullable": true},
+        "ta": {"type": "string", "nullable": true}
+      }
+    }
+  },
+  {
+    "name": "query_region_chart",
+    "description": "Get cumulative monthly revenue trend by region. Use drill to see brands within a region/market.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "year": {"type": "integer", "default": 2025},
+        "quarter": {"type": "string", "nullable": true},
+        "market_id": {"type": "string", "nullable": true},
+        "ta": {"type": "string", "nullable": true},
+        "drill": {"type": "string", "nullable": true}
+      }
+    }
+  },
+  {
+    "name": "query_unit",
+    "description": "Get operating expenses by organizational unit. Hierarchy: Total AZ → Unit (R&D, Commercial, Operations, Finance, Enabling) → Sub-unit. Each node has: actual spend ($M), budget, variance_pct, personnel_costs, external_costs, other_costs. Use this for cost analysis.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "year": {"type": "integer", "default": 2025},
+        "quarter": {"type": "string", "nullable": true}
+      }
+    }
+  },
+  {
+    "name": "query_unit_chart",
+    "description": "Get cumulative monthly expense trend by unit. Use drill to see sub-units.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "year": {"type": "integer", "default": 2025},
+        "quarter": {"type": "string", "nullable": true},
+        "drill": {"type": "string", "nullable": true}
+      }
+    }
+  },
+  {
+    "name": "query_market",
+    "description": "Get competitive market share data. Hierarchy: Total AZ → Drug Category (e.g. 'EGFR TKI inhibitors') → Brand. Metrics: AZ revenue, market_share_pct, variance_pct (share delta vs PY in pp), py_variance_pct (market growth %), 12-month share sparkline. Use this to assess competitive positioning.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "year": {"type": "integer", "default": 2025},
+        "quarter": {"type": "string", "nullable": true},
+        "market_id": {"type": "string", "nullable": true},
+        "ta": {"type": "string", "nullable": true}
+      }
+    }
+  },
+  {
+    "name": "query_market_chart",
+    "description": "Get monthly market share % trend (not cumulative). Shows how AZ's share in each category evolves month-over-month. Use drill to see individual brand share trends within a category.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "year": {"type": "integer", "default": 2025},
+        "quarter": {"type": "string", "nullable": true},
+        "market_id": {"type": "string", "nullable": true},
+        "ta": {"type": "string", "nullable": true},
+        "drill": {"type": "string", "nullable": true}
+      }
+    }
+  },
+  {
+    "name": "query_config",
+    "description": "Get the application configuration: available comparators (BUD/MTP/RBU2/PYACT), period types (MTD/QTD/YTD/FY), accounts (gross-to-net breakdown), scales ($M/$K/$B), column groups, and default settings. Use this to understand what dimensions and options are available in the dashboard.",
+    "input_schema": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "propose_config",
+    "description": "Propose a dashboard configuration change. Renders as an interactive card with an Apply button. Only include fields that differ from the current state.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "type": "string",
+          "description": "Plain-English explanation of what this config does (1-2 sentences)."
+        },
+        "comparator": {
+          "type": "string",
+          "enum": ["BUD", "MTP", "RBU2", "PYACT"],
+          "description": "See Comparator Guide in data model."
+        },
+        "year": {"type": "integer", "description": "Fiscal year: 2023, 2024, or 2025"},
+        "quarter": {"type": "string", "enum": ["Q1", "Q2", "Q3", "Q4"]},
+        "market_id": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Markets: ['US'], ['CN'], or ['US','CN']. Omit to keep current."
+        },
+        "ta": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Therapeutic areas: e.g. ['Oncology', 'CVRM']. Omit to keep current."
+        },
+        "page": {
+          "type": "string",
+          "enum": ["overview", "landing", "phased"],
+          "description": "Dashboard page to switch to. overview = tree table with KPI metrics (best for drill-down analysis). landing = actuals + forecast timeline with cumulative chart (best for YTD tracking). phased = scenario comparison table showing ACT vs BUD/MTP/RBU2/PY by period (best for plan variance). Omit to keep current."
+        },
+        "scenario_preset": {
+          "type": "string",
+          "enum": ["all", "bud", "mtp", "rbu2", "py", "bud_mtp", "bud_py"],
+          "description": "Phased tab preset: all/bud/mtp/rbu2/py/bud_mtp/bud_py. Only for page='phased'."
+        },
+        "dimension": {
+          "type": "string",
+          "enum": ["brand", "region", "unit", "market"],
+          "description": "DEPRECATED: Use 'levels' instead. Legacy dimension shortcut. Omit to keep current."
+        },
+        "levels": {
+          "type": "array",
+          "items": {"type": "string", "enum": ["ta", "brand", "market", "region", "unit", "sub_unit", "category"]},
+          "description": "Ordered drill levels, same domain. Revenue: ta/brand/market/region. Expense: unit/sub_unit. Competitive: category/brand."
+        },
+        "scale": {
+          "type": "string",
+          "enum": ["K", "M", "B"],
+          "description": "Number scale ($K/$M/$B). Omit to keep current."
+        }
+      },
+      "required": ["summary"]
+    }
+  },
+  {
+    "name": "clarify",
+    "description": "Ask the user a clarifying question with 2-5 clickable options. Each option must be concise (under 10 words) and directly actionable.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "question": {
+          "type": "string",
+          "description": "The clarifying question to ask (1 sentence)."
+        },
+        "options": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "2-5 concise options. Each should work as a standalone follow-up question.",
+          "minItems": 2,
+          "maxItems": 5
+        }
+      },
+      "required": ["question", "options"]
+    }
+  },
+  {
+    "name": "render_table",
+    "description": "Render a summary table for the user. The user sees a small clickable icon; tapping it opens the full table. Use for comparisons, rankings, or structured breakdowns.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "title": {"type": "string"},
+        "headers": {"type": "array", "items": {"type": "string"}},
+        "rows": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}}
+      },
+      "required": ["title", "headers", "rows"]
+    }
+  },
+  {
+    "name": "render_chart",
+    "description": "Render a chart for the user. The user sees a small clickable icon; tapping it opens the full chart. Use for trends, distributions, or visual comparisons.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "title": {"type": "string"},
+        "type": {"type": "string", "enum": ["bar", "line"]},
+        "labels": {"type": "array", "items": {"type": "string"}},
+        "datasets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "values": {"type": "array", "items": {"type": "number"}},
+              "color": {"type": "string"}
+            },
+            "required": ["name", "values"]
+          }
+        }
+      },
+      "required": ["title", "type", "labels", "datasets"]
+    }
+  },
+  {
+    "name": "decompose_variance",
+    "description": "Decompose a total variance into contributing factors. Call AFTER querying data to break down WHY a metric is above/below target. Each factor should be a specific driver (brand, market, category) with its contribution to the total variance in $M or pp. The result renders as a waterfall chart.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "title": {"type": "string", "description": "Chart title, e.g. 'Revenue variance vs Budget: +$320M'"},
+        "total_label": {"type": "string", "description": "Label for the total bar, e.g. 'Total Variance'"},
+        "total_value": {"type": "number", "description": "Total variance value (positive = favorable)"},
+        "unit": {"type": "string", "enum": ["$M", "$B", "$K", "pp", "%"], "description": "Unit for display"},
+        "factors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {"type": "string", "description": "Driver name, e.g. 'TAGRISSO US'"},
+              "value": {"type": "number", "description": "Contribution (positive = favorable, negative = unfavorable)"},
+              "detail": {"type": "string", "description": "Optional 1-line explanation"}
+            },
+            "required": ["label", "value"]
+          },
+          "description": "Ordered list of contributing factors. Should roughly sum to total_value."
+        }
+      },
+      "required": ["title", "total_label", "total_value", "unit", "factors"]
+    }
+  },
+  {
+    "name": "think",
+    "description": "Record your investigation reasoning. Call this BEFORE querying data to state your plan, and AFTER receiving results to record findings and decide next steps. The user sees these as investigation steps — be concise and specific.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "step": {
+          "type": "string",
+          "enum": ["plan", "finding", "pivot"],
+          "description": "plan = what you'll investigate next, finding = what you learned from data, pivot = changing direction based on findings"
+        },
+        "content": {
+          "type": "string",
+          "description": "1-2 sentences. For plan: what and why. For finding: the key insight from the data. For pivot: why you're changing approach."
+        }
+      },
+      "required": ["step", "content"]
+    }
+  }
+]

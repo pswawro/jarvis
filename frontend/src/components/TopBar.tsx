@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
+import clsx from "clsx";
 
 interface Props {
   onAssistantOpen?: () => void;
   onExport?: () => void;
+  onInsightsOpen?: () => void;
   hasNotification?: boolean;
+  unreadInsightCount?: number;
+  hasUnreadCritical?: boolean;
 }
 
-export function TopBar({ onAssistantOpen, onExport, hasNotification }: Props) {
+export function TopBar({ onAssistantOpen, onExport, onInsightsOpen, hasNotification, unreadInsightCount, hasUnreadCritical }: Props) {
   const [freshness, setFreshness] = useState<string | null>(null);
 
   useEffect(() => {
@@ -48,6 +52,33 @@ export function TopBar({ onAssistantOpen, onExport, hasNotification }: Props) {
               <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
               </svg>
+            </button>
+          )}
+          {onInsightsOpen && (
+            <button
+              onClick={onInsightsOpen}
+              className={clsx(
+                "relative w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
+                hasUnreadCritical
+                  ? "bg-amber-500/20 border border-amber-500/40 hover:bg-amber-500/30"
+                  : "bg-white/10 hover:bg-white/20"
+              )}
+              title="Push Insights"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5.002 5.002 0 117.072 0l.46 2.298a1 1 0 01-.981 1.197h-6.078a1 1 0 01-.981-1.197l.46-2.298z"
+                  className={hasUnreadCritical ? "text-amber-400" : "text-white/70"}
+                />
+              </svg>
+              {(unreadInsightCount ?? 0) > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full bg-red-500 flex items-center justify-center border-2 border-az-navy">
+                  <span className="text-white text-[8px] font-bold">{unreadInsightCount}</span>
+                </span>
+              )}
             </button>
           )}
           {onAssistantOpen && (

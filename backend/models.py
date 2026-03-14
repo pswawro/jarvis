@@ -106,3 +106,36 @@ class AssistantRequest(BaseModel):
 class AssistantChunk(BaseModel):
     type: str  # "tool_use" | "tool_done" | "facts" | "interpretation" | "hypothesis" | "visual" | "done" | "error"
     content: str
+
+
+class InsightEntity(BaseModel):
+    type: str
+    brand_id: str | None = None
+    market_id: str | None = None
+    ta: str | None = None
+    unit: str | None = None
+    sub_unit: str | None = None
+
+
+class InsightResponse(BaseModel):
+    id: str
+    fingerprint: str
+    detected_at: str
+    last_seen: str
+    run_id: str
+    entity: InsightEntity
+    detection_type: str
+    data_domain: str
+    statistical_score: float
+    status: str
+    read: bool
+    push: bool
+    severity: str
+    ai_analysis: dict | None = None
+    raw_stats: dict = {}
+
+
+class InsightsListResponse(BaseModel):
+    insights: list[InsightResponse]
+    unread_count: int
+    unread_critical_count: int

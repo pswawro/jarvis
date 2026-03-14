@@ -12,7 +12,7 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 import os
 import config  # noqa: E402 — must come after load_dotenv
 import data_loader
-from routes import kpi, brand, region, unit, chart, market, assistant, config_route, export, landing, phased, tree_generic
+from routes import kpi, brand, region, unit, chart, market, assistant, config_route, export, landing, phased, tree_generic, insights_route
 
 log = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
     log.info("AWS credentials source: %s", source)
     data_loader.load_all()
     # Pre-build semantic model so first assistant request is fast
-    from routes.assistant import get_semantic_model
+    from assistant.semantic_model import get_semantic_model
     get_semantic_model()
     yield
 
@@ -36,7 +36,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in CORS_ORIGINS],
     allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "X-User-Id"],
 )
 
 app.include_router(kpi.router, prefix="/api")
@@ -51,3 +51,4 @@ app.include_router(export.router, prefix="/api")
 app.include_router(landing.router, prefix="/api")
 app.include_router(phased.router, prefix="/api")
 app.include_router(tree_generic.router, prefix="/api")
+app.include_router(insights_route.router, prefix="/api")

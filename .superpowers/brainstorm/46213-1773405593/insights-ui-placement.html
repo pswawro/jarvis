@@ -1,0 +1,183 @@
+<h2>Where should the Insights panel live?</h2>
+<p class="subtitle">The TopBar currently has Export + Assistant buttons on the right. The lightbulb icon needs a home.</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Option A: Separate icon in TopBar</div>
+    <div class="mockup-body" style="background:#1a1f3a; padding:0;">
+      <!-- TopBar mockup -->
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg,rgba(255,255,255,0.95),rgba(255,255,255,0.8)); display:flex; align-items:center; justify-content:center;">
+            <span style="color:#1a1f3a; font-size:13px; font-weight:800;">J</span>
+          </div>
+          <div>
+            <div style="color:white; font-size:14px; font-weight:600;">Jarvis</div>
+            <div style="color:rgba(255,255,255,0.3); font-size:9px; letter-spacing:0.15em; text-transform:uppercase;">AstraZeneca</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <!-- Export -->
+          <div style="width:32px; height:32px; border-radius:8px; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center;">
+            <span style="color:rgba(255,255,255,0.7); font-size:12px;">↓</span>
+          </div>
+          <!-- Lightbulb with badge -->
+          <div style="position:relative; width:32px; height:32px; border-radius:8px; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; border:1px solid rgba(251,191,36,0.4);">
+            <span style="font-size:15px;">💡</span>
+            <div style="position:absolute; top:2px; right:2px; width:14px; height:14px; border-radius:50%; background:#ef4444; display:flex; align-items:center; justify-content:center; border:2px solid #1a1f3a;">
+              <span style="color:white; font-size:8px; font-weight:700;">3</span>
+            </div>
+          </div>
+          <!-- Chat -->
+          <div style="width:32px; height:32px; border-radius:8px; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center;">
+            <span style="color:rgba(255,255,255,0.7); font-size:13px;">💬</span>
+          </div>
+        </div>
+      </div>
+      <div style="height:1px; background:linear-gradient(to right,transparent,rgba(255,255,255,0.06),transparent);"></div>
+      <!-- Insight panel slides from right, like assistant -->
+      <div style="padding:16px; background:rgba(255,255,255,0.03); min-height:200px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+          <span style="color:white; font-size:14px; font-weight:600;">Push Insights</span>
+          <div style="display:flex; gap:6px;">
+            <span style="color:rgba(255,255,255,0.4); font-size:11px; padding:2px 8px; border:1px solid rgba(255,255,255,0.1); border-radius:12px; cursor:pointer;">Date ↓</span>
+            <span style="color:rgba(255,255,255,0.4); font-size:11px; padding:2px 8px; border:1px solid rgba(255,255,255,0.1); border-radius:12px; cursor:pointer;">Severity</span>
+          </div>
+        </div>
+        <!-- Insight card 1 -->
+        <div style="background:rgba(255,255,255,0.05); border-radius:10px; padding:12px; margin-bottom:8px; border-left:3px solid #ef4444;">
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+            <span style="font-size:9px; font-weight:700; color:#ef4444; background:rgba(239,68,68,0.15); padding:2px 6px; border-radius:4px; text-transform:uppercase;">Critical</span>
+            <span style="color:rgba(255,255,255,0.3); font-size:10px;">2h ago</span>
+            <div style="width:6px; height:6px; border-radius:50%; background:#60a5fa; margin-left:auto;" title="Unread"></div>
+          </div>
+          <div style="color:white; font-size:13px; font-weight:500; margin-bottom:4px;">Tagrisso US revenue dropped 18% below rolling average</div>
+          <div style="color:rgba(255,255,255,0.5); font-size:11px; line-height:1.4;">Revenue decline appears linked to new competitor entry in EGFR market. Market share also showing downward drift.</div>
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <span style="font-size:10px; color:rgba(96,165,250,0.8); cursor:pointer;">Add to chat →</span>
+            <span style="font-size:10px; color:rgba(255,255,255,0.3); cursor:pointer; margin-left:auto;">Close</span>
+          </div>
+        </div>
+        <!-- Insight card 2 -->
+        <div style="background:rgba(255,255,255,0.05); border-radius:10px; padding:12px; margin-bottom:8px; border-left:3px solid #f59e0b;">
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+            <span style="font-size:9px; font-weight:700; color:#f59e0b; background:rgba(245,158,11,0.15); padding:2px 6px; border-radius:4px; text-transform:uppercase;">Notable</span>
+            <span style="color:rgba(255,255,255,0.3); font-size:10px;">5h ago</span>
+            <div style="width:6px; height:6px; border-radius:50%; background:#60a5fa; margin-left:auto;" title="Unread"></div>
+          </div>
+          <div style="color:white; font-size:13px; font-weight:500; margin-bottom:4px;">COPD unit OpEx trending 8% above 3-month average</div>
+          <div style="color:rgba(255,255,255,0.5); font-size:11px; line-height:1.4;">Gradual drift in operating expenses. Driven primarily by headcount increases in Q1 hiring cycle.</div>
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <span style="font-size:10px; color:rgba(96,165,250,0.8); cursor:pointer;">Add to chat →</span>
+            <span style="font-size:10px; color:rgba(255,255,255,0.3); cursor:pointer; margin-left:auto;">Close</span>
+          </div>
+        </div>
+        <!-- Insight card 3 - informational, no AI analysis -->
+        <div style="background:rgba(255,255,255,0.03); border-radius:10px; padding:12px; border-left:3px solid rgba(255,255,255,0.2);">
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+            <span style="font-size:9px; font-weight:700; color:rgba(255,255,255,0.4); background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px; text-transform:uppercase;">Info</span>
+            <span style="color:rgba(255,255,255,0.3); font-size:10px;">1d ago</span>
+          </div>
+          <div style="color:rgba(255,255,255,0.7); font-size:13px; font-weight:500; margin-bottom:4px;">Fasenra JP market growth slowed to 2.1%</div>
+          <div style="color:rgba(255,255,255,0.35); font-size:11px;">Statistical detection only — no AI analysis</div>
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <span style="font-size:10px; color:rgba(96,165,250,0.8); cursor:pointer;">Add to chat & analyze →</span>
+            <span style="font-size:10px; color:rgba(255,255,255,0.3); cursor:pointer; margin-left:auto;">Close</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Option B: Combined with Assistant drawer</div>
+    <div class="mockup-body" style="background:#1a1f3a; padding:0;">
+      <!-- TopBar mockup - same but no lightbulb -->
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg,rgba(255,255,255,0.95),rgba(255,255,255,0.8)); display:flex; align-items:center; justify-content:center;">
+            <span style="color:#1a1f3a; font-size:13px; font-weight:800;">J</span>
+          </div>
+          <div>
+            <div style="color:white; font-size:14px; font-weight:600;">Jarvis</div>
+            <div style="color:rgba(255,255,255,0.3); font-size:9px; letter-spacing:0.15em; text-transform:uppercase;">AstraZeneca</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:32px; height:32px; border-radius:8px; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center;">
+            <span style="color:rgba(255,255,255,0.7); font-size:12px;">↓</span>
+          </div>
+          <!-- Chat with badge -->
+          <div style="position:relative; width:32px; height:32px; border-radius:8px; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center;">
+            <span style="color:rgba(255,255,255,0.7); font-size:13px;">💬</span>
+            <div style="position:absolute; top:2px; right:2px; width:14px; height:14px; border-radius:50%; background:#ef4444; display:flex; align-items:center; justify-content:center; border:2px solid #1a1f3a;">
+              <span style="color:white; font-size:8px; font-weight:700;">3</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="height:1px; background:linear-gradient(to right,transparent,rgba(255,255,255,0.06),transparent);"></div>
+      <!-- Assistant drawer with tabs -->
+      <div style="padding:0; background:rgba(255,255,255,0.03); min-height:200px;">
+        <!-- Tab bar inside drawer -->
+        <div style="display:flex; border-bottom:1px solid rgba(255,255,255,0.08);">
+          <div style="flex:1; padding:10px 16px; text-align:center; color:rgba(255,255,255,0.4); font-size:12px; font-weight:500; cursor:pointer;">Chat</div>
+          <div style="flex:1; padding:10px 16px; text-align:center; color:white; font-size:12px; font-weight:500; border-bottom:2px solid #60a5fa; cursor:pointer;">
+            Insights
+            <span style="margin-left:4px; font-size:9px; background:#ef4444; color:white; padding:1px 5px; border-radius:8px;">3</span>
+          </div>
+        </div>
+        <!-- Same insight cards -->
+        <div style="padding:12px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <div style="display:flex; gap:6px;">
+              <span style="color:rgba(255,255,255,0.4); font-size:11px; padding:2px 8px; border:1px solid rgba(255,255,255,0.1); border-radius:12px;">Date ↓</span>
+              <span style="color:rgba(255,255,255,0.4); font-size:11px; padding:2px 8px; border:1px solid rgba(255,255,255,0.1); border-radius:12px;">Severity</span>
+            </div>
+          </div>
+          <div style="background:rgba(255,255,255,0.05); border-radius:10px; padding:12px; margin-bottom:8px; border-left:3px solid #ef4444;">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+              <span style="font-size:9px; font-weight:700; color:#ef4444; background:rgba(239,68,68,0.15); padding:2px 6px; border-radius:4px; text-transform:uppercase;">Critical</span>
+              <span style="color:rgba(255,255,255,0.3); font-size:10px;">2h ago</span>
+              <div style="width:6px; height:6px; border-radius:50%; background:#60a5fa; margin-left:auto;"></div>
+            </div>
+            <div style="color:white; font-size:13px; font-weight:500; margin-bottom:4px;">Tagrisso US revenue dropped 18%</div>
+            <div style="color:rgba(255,255,255,0.5); font-size:11px;">Revenue decline linked to competitor entry...</div>
+            <div style="margin-top:8px;">
+              <span style="font-size:10px; color:rgba(96,165,250,0.8); cursor:pointer;">Add to chat →</span>
+            </div>
+          </div>
+          <div style="background:rgba(255,255,255,0.05); border-radius:10px; padding:12px; margin-bottom:8px; border-left:3px solid #f59e0b;">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+              <span style="font-size:9px; font-weight:700; color:#f59e0b; background:rgba(245,158,11,0.15); padding:2px 6px; border-radius:4px; text-transform:uppercase;">Notable</span>
+              <span style="color:rgba(255,255,255,0.3); font-size:10px;">5h ago</span>
+              <div style="width:6px; height:6px; border-radius:50%; background:#60a5fa; margin-left:auto;"></div>
+            </div>
+            <div style="color:white; font-size:13px; font-weight:500; margin-bottom:4px;">COPD unit OpEx trending above average</div>
+            <div style="color:rgba(255,255,255,0.5); font-size:11px;">Gradual drift in operating expenses...</div>
+            <div style="margin-top:8px;">
+              <span style="font-size:10px; color:rgba(96,165,250,0.8); cursor:pointer;">Add to chat →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="options" style="margin-top:24px;">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Separate lightbulb icon + own panel</h3>
+      <p>Dedicated entry point. Insights are their own surface, independent from chat. Lightbulb badge shows unread count. "Add to chat" bridges to assistant.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Tab inside the Assistant drawer</h3>
+      <p>Chat and Insights share the same panel with a tab switcher. Fewer icons in TopBar. "Add to chat" just switches tabs. Tighter integration but insights compete for space with chat.</p>
+    </div>
+  </div>
+</div>

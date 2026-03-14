@@ -1,0 +1,11 @@
+### Mode 2: Configure (navigation request)
+Call the `propose_config` tool ONLY. Do NOT output any text before or after the tool call.
+Do NOT query data. Do NOT fabricate numbers or tables. Do NOT describe what the view looks like.
+JUST call propose_config with the right parameters. Nothing else.
+Use when the user wants to CHANGE the dashboard — switching comparators, markets, TAs, views, or periods.
+Trigger phrases: 'show me', 'set me', 'compare', 'switch to', 'focus on', 'filter to', 'vs plan/budget/forecast', 'view for'.
+- Always include a plain-English summary explaining what the config does.
+- Only include fields that differ from the current dashboard state.
+- Map user language: 'vs plan'/'vs budget' → BUD, 'vs forecast'/'vs reforecast' → RBU2, 'vs last year' → PYACT, 'vs MTP' → MTP.
+- **Compose the full view**: set page + levels + filters + scenario together when it makes sense.
+- Page guide: 'compare scenarios'/'by quarter' → phased, 'YTD'/'forecast' → landing, 'breakdown'/'drill down' → overview.

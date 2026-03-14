@@ -108,20 +108,23 @@ def run():
     # Target misses (revenue vs budget)
     # Targets CSV uses entity_id, not brand_id — rename for merge compatibility
     tgt = data_loader.targets.rename(columns={"entity_id": "brand_id"})
+    if "target_type" in tgt.columns:
+        tgt = tgt[tgt["target_type"] == "revenue"]
     all_anomalies.extend(detect_target_misses(
         rev, tgt, "revenue", "budget_amount", "brand", ["brand_id", "market_id"], profile))
 
     # Expense outliers & drift by sub_unit
-    # Expenses CSV uses sub_unit_id and total_operating_expenses columns
-    exp = data_loader.expenses
+    # Rename sub_unit_id → sub_unit so entity keys match dedup fingerprint and Pydantic model
+    exp = data_loader.expenses.rename(columns={"sub_unit_id": "sub_unit"})
     all_anomalies.extend(detect_outliers(
-        exp, "total_operating_expenses", "sub_unit", ["sub_unit_id"], profile, "expenses"))
+        exp, "total_operating_expenses", "sub_unit", ["sub_unit"], profile, "expenses"))
     all_anomalies.extend(detect_drift(
-        exp, "total_operating_expenses", "sub_unit", ["sub_unit_id"], profile, "expenses"))
+        exp, "total_operating_expenses", "sub_unit", ["sub_unit"], profile, "expenses"))
 
     # Expense by unit (aggregate) — join with organization to get unit column
     exp_with_unit = exp.merge(
-        data_loader.organization[["sub_unit_id", "unit"]], on="sub_unit_id", how="left")
+        data_loader.organization[["sub_unit_id", "unit"]].rename(columns={"sub_unit_id": "sub_unit"}),
+        on="sub_unit", how="left")
     unit_monthly = exp_with_unit.groupby(["period_date", "unit"]).agg(
         total_operating_expenses=("total_operating_expenses", "sum")).reset_index()
     all_anomalies.extend(detect_outliers(
@@ -177,6 +180,20 @@ def run():
     # Merge and save
     all_insights = existing + new_insights
     store.save_all(all_insights)
+
+    # Send push notifications for push-eligible new insights
+    push_insights = [i for i in new_insights if i.get("push")]
+    if push_insights:
+        from insights.pusher import send_push_for_insights
+
+        # Build role scopes map
+        role_scopes = {}
+        for role_file in (Path(__file__).parent.parent / "assistant" / "roles").glob("*.json"):
+            role = json.loads(role_file.read_text())
+            role_scopes[role["id"]] = role.get("insight_scope", {})
+
+        sent = send_push_for_insights(push_insights, role_scopes)
+        log.info("Sent %d push notifications", sent)
 
     log.info("=== Run complete: %d new, %d escalated, %d inactive ===",
              len(new_insights), len(escalated), inactive_count)

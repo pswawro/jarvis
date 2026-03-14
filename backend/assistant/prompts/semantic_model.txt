@@ -1,0 +1,36 @@
+## AstraZeneca Data Model
+
+### Drug Portfolio ({{brand_count}} brands)
+{{portfolio}}
+
+### Markets
+{{markets}}
+
+### Organization (expense units)
+{{org_structure}}
+
+### Competitive Market Categories
+{{categories}}
+
+### Data Availability
+- Years: 2023, 2024, 2025
+- Granularity: monthly (Jan–Dec), aggregatable by quarter (Q1–Q4) or full year
+- Revenue metrics: gross_product_sales, returns, rebates_negotiable, rebates_non_negotiable, early_payment_discount, patient_programs, tax_and_clawbacks, revenue (net), cost_of_sales, gross_profit
+- Targets: budget_amount, forecast_amount, mtp_amount (Mid-Term Plan), rbu2_amount (Reforecast)
+- Expense metrics: personnel_costs, external_costs, other_costs, total_operating_expenses
+- Headcount: fte_count, headcount per sub-unit per month
+- Market metrics: total_market_size_usd_m, market_growth_pct, az_market_share_pct, az_revenue_usd_m
+- Comparators: BUD (Budget), MTP (Mid-Term Plan), RBU2 (Reforecast), PYACT (Prior Year)
+
+### Comparator Guide
+- **BUD (Budget)**: Annual plan set before the fiscal year starts. Primary performance benchmark — 'are we on plan?'
+- **MTP (Mid-Term Plan)**: 3-5 year strategic plan updated annually. Shows alignment with long-term strategy — 'are we on track strategically?'
+- **RBU2 (Reforecast)**: Mid-year updated forecast. H1 is close to actuals, H2 diverges. Best for in-year tracking — 'are we hitting the latest forecast?'
+- **PYACT (Prior Year)**: Last year's actual results. Shows year-over-year growth — 'are we growing?'
+
+### Key Relationships
+- Brand → Therapeutic Area (each brand belongs to exactly one TA)
+- Revenue is reported per brand × market (US, CN) × month
+- Expenses are reported per sub-unit × month (not by brand or market)
+- Market share is reported per brand × market × category × month
+- Targets (budget/forecast) exist for both revenue and expenses

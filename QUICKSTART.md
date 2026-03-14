@@ -66,6 +66,21 @@ npm run dev
 
 App runs at `http://localhost:5173`. The Vite dev server proxies `/api` requests to the backend.
 
+## Push Insights
+
+Run the insight detection engine to scan for anomalies:
+
+```bash
+cd backend
+python -m insights.run
+```
+
+This analyzes all data for outliers, drift, target misses, and competitive shifts, then uses AI to explain significant anomalies. Results are stored in `data/insights.json`.
+
+To reset insights, delete or empty `data/insights.json`.
+
+Sensitivity can be adjusted via `INSIGHT_SENSITIVITY` env var (`high`, `medium`, `low`) or by editing `data/insights_config.json`.
+
 ## Both at once
 
 Open two terminals:

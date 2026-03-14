@@ -12,6 +12,8 @@ import { OverviewPage } from "./components/OverviewPage";
 import { LandingView } from "./components/LandingView";
 import { ScenariosPage } from "./components/ScenariosPage";
 import { AssistantDrawer } from "./components/AssistantDrawer";
+import { useInsights } from "./hooks/useInsights";
+import { InsightsPanel } from "./components/InsightsPanel";
 
 const PAGES: PageType[] = ["overview", "landing", "phased"];
 
@@ -30,6 +32,8 @@ export default function App() {
   const [scenarioPreset, setScenarioPreset] = useState("all");
   const lastInteractionRef = useRef<ChartInteraction | null>(null);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
+  const insights = useInsights();
 
   // Derive Period from filters for API calls
   const period = useMemo<Period>(() => ({ year: filters.year, quarter: null }), [filters.year]);
@@ -74,6 +78,17 @@ export default function App() {
     if (assistantOpen) assistant.markRead();
   }, [assistantOpen]);
 
+  // Listen for service worker messages (push notification clicks)
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === "open-insights") {
+        setInsightsOpen(true);
+      }
+    };
+    navigator.serviceWorker?.addEventListener("message", handler);
+    return () => navigator.serviceWorker?.removeEventListener("message", handler);
+  }, []);
+
   const handleInteraction = useCallback((interaction: ChartInteraction) => {
     lastInteractionRef.current = interaction;
     (window as any).__chartInteraction = interaction;
@@ -97,6 +112,27 @@ export default function App() {
     setAssistantOpen(true);
   }, [page, dimConfig.levels, period, filters, assistant.activeChatId, assistant.setActiveContext]);
 
+  const handleInsightToChat = useCallback(async (insightId: string) => {
+    try {
+      await insights.markRead(insightId);
+      const raw = await insights.getInsightContext(insightId);
+      // Merge with current filters so the context has a valid Filters shape
+      const ctx: AssistantContext = {
+        ...raw,
+        filters: { ...filters },
+      };
+      setInsightsOpen(false);
+      const question = ctx.dataPoint?.explanation
+        ? `Analyze this insight: ${ctx.dataPoint.explanation}`
+        : "Analyze this data anomaly and provide recommendations.";
+      assistant.newChat(ctx);
+      setAssistantOpen(true);
+      setTimeout(() => assistant.sendQuestion(question), 150);
+    } catch (e) {
+      console.error("Failed to open insight in chat:", e);
+    }
+  }, [insights.markRead, insights.getInsightContext, assistant.newChat, assistant.sendQuestion, filters]);
+
   const extra = useMemo(() => filtersToExtra(filters), [filters]);
   const { data: kpiData } = useApi<KpiStripSpec>("/kpi", period, extra);
 
@@ -112,7 +148,10 @@ export default function App() {
       <TopBar
         onAssistantOpen={handleAssistantOpen}
         onExport={handleExport}
+        onInsightsOpen={() => setInsightsOpen(true)}
         hasNotification={assistant.hasUnreadResponse}
+        unreadInsightCount={insights.unreadCount}
+        hasUnreadCritical={insights.unreadCriticalCount > 0}
       />
       <FilterBar filters={filters} onChange={setFilters} dimConfig={dimConfig} onDimConfigChange={setDimConfig} page={page} />
       <KpiStrip spec={kpiData} scale={filters.scale} />
@@ -143,6 +182,12 @@ export default function App() {
         switchChat={assistant.switchChat}
         newChat={assistant.newChat}
         deleteChat={assistant.deleteChat}
+      />
+      <InsightsPanel
+        open={insightsOpen}
+        onClose={() => setInsightsOpen(false)}
+        insights={insights.insights}
+        onAddToChat={handleInsightToChat}
       />
     </div>
   );

@@ -30,3 +30,11 @@ LLM_DEBUG = os.getenv("LLM_DEBUG", "").lower() in ("1", "true", "yes")
 # Server
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
+
+# Push Notifications (VAPID)
+VAPID_PUBLIC_KEY = _optional("VAPID_PUBLIC_KEY")
+VAPID_PRIVATE_KEY = _optional("VAPID_PRIVATE_KEY")
+VAPID_CLAIMS_EMAIL = os.getenv("VAPID_CLAIMS_EMAIL", "admin@example.com")
+
+# Insights
+INSIGHT_SENSITIVITY = _optional("INSIGHT_SENSITIVITY")

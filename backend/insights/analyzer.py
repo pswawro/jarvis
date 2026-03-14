@@ -1,6 +1,5 @@
 """AI-powered insight analysis using Bedrock (same client as assistant)."""
 
-import asyncio
 import json
 import logging
 from pathlib import Path
@@ -9,7 +8,6 @@ from anthropic import AnthropicBedrock
 
 import config
 from assistant.tool_dispatch import TOOL_DISPATCH, UI_TOOLS
-from assistant.prompt_builder import load_role
 
 log = logging.getLogger(__name__)
 

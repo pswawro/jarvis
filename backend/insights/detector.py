@@ -24,11 +24,13 @@ def detect_outliers(
             continue
 
         values = group[value_col].values
-        mean, std = values.mean(), values.std()
+        latest = values[-1]
+        # Exclude latest point from mean/std to avoid self-contamination
+        history = values[:-1]
+        mean, std = history.mean(), history.std()
         if std == 0 or np.isnan(std):
             continue
 
-        latest = values[-1]
         zscore = abs((latest - mean) / std)
 
         if zscore >= threshold:

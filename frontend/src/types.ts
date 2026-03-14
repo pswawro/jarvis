@@ -142,7 +142,7 @@ export interface Period {
 }
 
 export interface AssistantContext {
-  source: "tree_row" | "treemap_bar" | "time_chart_point" | "header";
+  source: "tree_row" | "treemap_bar" | "time_chart_point" | "header" | "insight";
   page: PageType;
   dimension?: Dimension;
   levels?: LevelId[];
@@ -262,4 +262,38 @@ export interface ChatState {
   context: AssistantContext | null;
   createdAt: string;
   updatedAt: string;
+}
+
+// Push Insights
+export interface InsightEntity {
+  type: string;
+  brand_id?: string;
+  market_id?: string;
+  ta?: string;
+  unit?: string;
+  sub_unit?: string;
+}
+
+export interface Insight {
+  id: string;
+  fingerprint: string;
+  detected_at: string;
+  last_seen: string;
+  run_id: string;
+  entity: InsightEntity;
+  detection_type: string;
+  data_domain: string;
+  statistical_score: number;
+  status: "active" | "inactive";
+  read: boolean;
+  push: boolean;
+  severity: "critical" | "notable" | "informational";
+  ai_analysis: { explanation: string; revised_severity: string; push: boolean } | null;
+  raw_stats: Record<string, number | string>;
+}
+
+export interface InsightsListResponse {
+  insights: Insight[];
+  unread_count: number;
+  unread_critical_count: number;
 }

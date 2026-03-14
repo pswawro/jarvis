@@ -17,3 +17,11 @@ dist/
 # IDE
 .vscode/
 .idea/
+
+# Claude
+CLAUDE.md
+.claude/
+
+# Insights (generated)
+data/insights.json
+data/push_subscriptions.json
