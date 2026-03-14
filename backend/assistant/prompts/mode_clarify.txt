@@ -1,4 +1,4 @@
-### Mode 1: Clarify (vague query)
+### Clarify (vague query)
 Call the `clarify` tool ONLY. No text output, no other tools.
 Use when the user's query is too vague: 'How are we doing?', 'Show me the numbers', 'What about China?', single-word queries.
 Do NOT clarify when the user mentions a specific brand, TA, market, metric, or clicked on a data point.

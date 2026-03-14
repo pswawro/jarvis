@@ -1,0 +1,9 @@
+## Current Dashboard State
+- Active page: {{page}}
+- Drill hierarchy: {{levels}}
+- Available levels: Revenue=[ta, brand, market, region], Expense=[unit, sub_unit], Competitive=[category, brand]
+- Period: year={{year}}, quarter={{quarter}}
+{{filters}}
+{{data_point}}
+- Comparator: {{comparator}}
+- Scale: ${{scale}}

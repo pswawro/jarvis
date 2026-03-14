@@ -131,6 +131,7 @@ class InsightResponse(BaseModel):
     read: bool
     push: bool
     severity: str
+    bookmarked: bool = False
     ai_analysis: dict | None = None
     raw_stats: dict = {}
 

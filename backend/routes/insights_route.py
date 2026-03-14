@@ -16,15 +16,23 @@ from models import InsightsListResponse
 from insights.store import InsightStore
 from insights.scoping import filter_by_role_scope
 from assistant.prompt_builder import load_role
+from user_preferences import UserPreferencesStore
 
 log = logging.getLogger(__name__)
 
 router = APIRouter()
 
 _STORE_PATH = Path(__file__).parent.parent.parent / "data" / "insights.json"
+_PREFS_PATH = Path(__file__).parent.parent.parent / "data" / "user_preferences.json"
 _SUBS_PATH = Path(__file__).parent.parent.parent / "data" / "push_subscriptions.json"
 _DEFAULT_USER_ID = "demo_analyst"
 _DEFAULT_ROLE = "default"
+
+_DEFAULT_SCOPE = {
+    "revenue": ["brand", "ta", "total"],
+    "expenses": ["sub_unit", "unit", "total"],
+    "market": ["brand_market"],
+}
 
 # User-to-role mapping for mock auth
 _USER_ROLES = {
@@ -34,12 +42,22 @@ _USER_ROLES = {
     "demo_market_lead": "market_lead",
 }
 
+_prefs_store = UserPreferencesStore(_PREFS_PATH)
+
 
 def _resolve_user(x_user_id: str | None) -> tuple[str, str]:
     """Resolve user ID and role from header."""
     user_id = x_user_id or _DEFAULT_USER_ID
     role_id = _USER_ROLES.get(user_id, _DEFAULT_ROLE)
     return user_id, role_id
+
+
+def _get_file_mtime_ns(path: Path) -> int:
+    """Get file modification time in nanoseconds, 0 if file doesn't exist."""
+    try:
+        return path.stat().st_mtime_ns
+    except FileNotFoundError:
+        return 0
 
 
 @router.get("/insights")
@@ -51,11 +69,7 @@ def list_insights(
 ):
     user_id, role_id = _resolve_user(x_user_id)
     role = load_role(role_id)
-    scope = role.get("insight_scope", {
-        "revenue": ["brand", "ta", "total"],
-        "expenses": ["sub_unit", "unit", "total"],
-        "market": ["brand_market"],
-    })
+    scope = role.get("insight_scope", _DEFAULT_SCOPE)
 
     store = InsightStore(_STORE_PATH)
     insights = store.load_all()
@@ -70,9 +84,17 @@ def list_insights(
     # Sort
     severity_order = {"critical": 0, "notable": 1, "informational": 2}
     if sort == "severity":
-        insights.sort(key=lambda i: severity_order.get(i.get("severity", ""), 3))
+        insights.sort(key=lambda i: (
+            severity_order.get(i.get("severity", ""), 3),
+            i.get("detected_at", ""),
+        ))
     else:
         insights.sort(key=lambda i: i.get("detected_at", ""), reverse=True)
+
+    # Inject bookmarked state
+    bookmarks = set(_prefs_store.get_bookmarks(user_id))
+    for ins in insights:
+        ins["bookmarked"] = ins["id"] in bookmarks
 
     # Count before limiting
     unread = [i for i in insights if not i.get("read")]
@@ -92,32 +114,63 @@ def mark_read(insight_id: str):
     return {"ok": found}
 
 
+@router.post("/insights/{insight_id}/bookmark")
+def bookmark_insight(
+    insight_id: str,
+    x_user_id: str | None = Header(None, alias="X-User-Id"),
+):
+    # Validate insight exists
+    store = InsightStore(_STORE_PATH)
+    ins = next((i for i in store.load_all() if i["id"] == insight_id), None)
+    if not ins:
+        raise HTTPException(status_code=404, detail="Insight not found")
+
+    user_id, _ = _resolve_user(x_user_id)
+    _prefs_store.add_bookmark(user_id, insight_id)
+    return {"ok": True}
+
+
+@router.post("/insights/{insight_id}/unbookmark")
+def unbookmark_insight(
+    insight_id: str,
+    x_user_id: str | None = Header(None, alias="X-User-Id"),
+):
+    user_id, _ = _resolve_user(x_user_id)
+    _prefs_store.remove_bookmark(user_id, insight_id)
+    return {"ok": True}
+
+
 @router.get("/insights/stream")
 async def stream_insights(
     x_user_id: str | None = Header(None, alias="X-User-Id"),
 ):
-    """SSE endpoint — pushes insight updates when data/insights.json changes."""
+    """SSE endpoint — pushes insight updates when data files change."""
     user_id, role_id = _resolve_user(x_user_id)
     role = load_role(role_id)
-    scope = role.get("insight_scope", {
-        "revenue": ["brand", "ta", "total"],
-        "expenses": ["sub_unit", "unit", "total"],
-        "market": ["brand_market"],
-    })
+    scope = role.get("insight_scope", _DEFAULT_SCOPE)
 
     async def event_generator():
-        last_mtime = 0.0
+        last_insights_mtime = 0
+        last_prefs_mtime = 0
         while True:
             try:
-                current_mtime = _STORE_PATH.stat().st_mtime if _STORE_PATH.exists() else 0.0
-                if current_mtime != last_mtime:
-                    last_mtime = current_mtime
+                insights_mtime = _get_file_mtime_ns(_STORE_PATH)
+                prefs_mtime = _get_file_mtime_ns(_PREFS_PATH)
+                changed = (insights_mtime != last_insights_mtime or prefs_mtime != last_prefs_mtime)
+
+                if changed:
+                    last_insights_mtime = insights_mtime
+                    last_prefs_mtime = prefs_mtime
                     store = InsightStore(_STORE_PATH)
                     insights = store.load_all()
                     insights = [i for i in insights if i.get("status") == "active"]
                     insights = filter_by_role_scope(insights, scope)
-                    severity_order = {"critical": 0, "notable": 1, "informational": 2}
                     insights.sort(key=lambda i: i.get("detected_at", ""), reverse=True)
+
+                    # Inject bookmarked state
+                    bookmarks = set(_prefs_store.get_bookmarks(user_id))
+                    for ins in insights:
+                        ins["bookmarked"] = ins["id"] in bookmarks
 
                     unread = [i for i in insights if not i.get("read")]
                     unread_critical = [i for i in unread if i.get("severity") == "critical"]
@@ -134,6 +187,10 @@ async def stream_insights(
                 await asyncio.sleep(2)
             except asyncio.CancelledError:
                 break
+            except Exception:
+                log.exception("SSE stream error")
+                yield f"event: error\ndata: {{\"message\": \"Internal error\"}}\n\n"
+                await asyncio.sleep(5)
 
     return StreamingResponse(
         event_generator(),
@@ -256,5 +313,6 @@ def _save_subs(subs: list[dict]):
             json.dump(subs, f, indent=2)
         os.replace(tmp, _SUBS_PATH)
     except BaseException:
-        os.unlink(tmp)
+        if os.path.exists(tmp):
+            os.unlink(tmp)
         raise

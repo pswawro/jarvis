@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { fetchApi } from "../api";
 import type { Period } from "../types";
 
@@ -10,6 +10,9 @@ export function useApi<T>(
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Stabilize extra as a string key outside the effect dependency array
+  const extraKey = useMemo(() => JSON.stringify(extra), [extra]);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,7 +36,7 @@ export function useApi<T>(
     return () => {
       cancelled = true;
     };
-  }, [path, period.year, period.quarter, JSON.stringify(extra)]);
+  }, [path, period.year, period.quarter, extraKey]);
 
   return { data, loading, error };
 }

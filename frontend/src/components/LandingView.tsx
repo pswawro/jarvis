@@ -88,9 +88,9 @@ function LandingRow({ node, depth, columns, closedMonth, scale }: { node: TreeNo
 
 function LandingChart({ data, closedMonth, scale }: { data: TreeTableSpec; closedMonth: number; scale: Scale }) {
   const chartRef = useRef<ReactEChartsCore>(null);
-  const fmtAxis = (v: number) => `${scaleLabel(scale)}${scaleValue(v, scale)}`;
-
   const option = useMemo<echarts.EChartsOption>(() => {
+    const fmtAxis = (v: number) => `${scaleLabel(scale)}${scaleValue(v, scale)}`;
+
     const nodes = data.tree.children.length > 0 ? data.tree.children : [data.tree];
     const xLabels = MONTHS.map((m, i) => i < closedMonth ? m : `${m}*`);
     const seriesList: any[] = [];
@@ -189,7 +189,7 @@ function LandingChart({ data, closedMonth, scale }: { data: TreeTableSpec; close
       },
       series: seriesList,
     };
-  }, [data, closedMonth, fmtAxis]);
+  }, [data, closedMonth, scale]);
 
   return (
     <div className="w-full px-3 pt-3 pb-1 flex flex-col">

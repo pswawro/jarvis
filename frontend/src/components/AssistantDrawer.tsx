@@ -185,7 +185,7 @@ function parseMarkdown(text: string) {
   };
 
   const isTableRow = (line: string) => line.trim().startsWith("|") && line.trim().endsWith("|");
-  const isSeparator = (line: string) => /^\|[\s:?-]+\|/.test(line.trim()) && !line.includes("|") === false && /^[\s|:-]+$/.test(line.trim());
+  const isSeparator = (line: string) => /^\|[\s:-]+(\|[\s:-]+)*\|$/.test(line.trim());
   const parseTableRow = (line: string) => line.trim().slice(1, -1).split("|");
 
   for (const line of lines) {
@@ -556,6 +556,9 @@ export function AssistantDrawer({
   const [showChatList, setShowChatList] = useState(false);
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const voiceTranscriptRef = useRef("");
+  const voiceTimeoutRef = useRef<number | null>(null);
+  const voiceStoppingRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll when new content arrives
@@ -565,6 +568,19 @@ export function AssistantDrawer({
 
   const hasSpeech = typeof window !== "undefined" && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
 
+  const VOICE_TIMEOUT_MS = 30_000;
+
+  const stopVoiceAndSend = useCallback(() => {
+    voiceStoppingRef.current = true;
+    recognitionRef.current?.stop();
+    if (voiceTimeoutRef.current) { clearTimeout(voiceTimeoutRef.current); voiceTimeoutRef.current = null; }
+    const transcript = voiceTranscriptRef.current.trim();
+    voiceTranscriptRef.current = "";
+    setListening(false);
+    setQuestion("");
+    if (transcript) sendQuestion(transcript);
+  }, [sendQuestion]);
+
   const toggleVoice = useCallback(() => {
     if (!hasSpeech) {
       alert("Voice input requires Chrome, Edge, or Safari. Please switch browsers to use this feature.");
@@ -572,29 +588,47 @@ export function AssistantDrawer({
     }
 
     if (listening) {
-      recognitionRef.current?.stop();
-      setListening(false);
+      stopVoiceAndSend();
       return;
     }
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
-    recognition.interimResults = false;
+    recognition.continuous = true;
+    recognition.interimResults = true;
     recognition.maxAlternatives = 1;
     recognitionRef.current = recognition;
+    voiceTranscriptRef.current = "";
+    voiceStoppingRef.current = false;
 
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      sendQuestion(transcript);
-      setListening(false);
+      let finalText = "";
+      let interimText = "";
+      for (let i = 0; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (result.isFinal) {
+          finalText += result[0].transcript;
+        } else {
+          interimText += result[0].transcript;
+        }
+      }
+      voiceTranscriptRef.current = finalText;
+      setQuestion(finalText + (interimText ? interimText : ""));
     };
-    recognition.onerror = () => setListening(false);
-    recognition.onend = () => setListening(false);
+    recognition.onerror = () => { if (!voiceStoppingRef.current) { setListening(false); setQuestion(""); } };
+    recognition.onend = () => {
+      // Browser may auto-stop continuous recognition — restart unless user clicked stop
+      if (!voiceStoppingRef.current) {
+        try { recognition.start(); } catch { setListening(false); }
+      }
+    };
 
     recognition.start();
     setListening(true);
-  }, [listening, sendQuestion, hasSpeech]);
+    // Safety timeout
+    voiceTimeoutRef.current = window.setTimeout(stopVoiceAndSend, VOICE_TIMEOUT_MS);
+  }, [listening, hasSpeech, stopVoiceAndSend]);
 
   const questionRef = useRef(question);
   questionRef.current = question;
@@ -820,7 +854,7 @@ export function AssistantDrawer({
                       ? "bg-red-500 text-white animate-pulse"
                       : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                   }`}
-                  title={listening ? "Stop listening" : "Voice input"}
+                  title={listening ? "Send voice message" : "Voice input"}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-14 0m7 7v4m-4 0h8M12 1a3 3 0 00-3 3v7a3 3 0 006 0V4a3 3 0 00-3-3z" />

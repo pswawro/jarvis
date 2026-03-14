@@ -30,11 +30,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Jarvis Analytics", lifespan=lifespan)
 
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:4173").split(",")
+_cors_raw = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:4173")
+CORS_ORIGINS = [o.strip() for o in _cors_raw.split(",")]
+if "*" in CORS_ORIGINS:
+    log.warning("CORS_ORIGINS contains wildcard '*' — this is insecure in production")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in CORS_ORIGINS],
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type", "X-User-Id"],
 )

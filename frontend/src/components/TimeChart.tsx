@@ -134,7 +134,7 @@ function specToOption(spec: LineChartSpec): echarts.EChartsOption {
 
 export function TimeChart({ spec, onDrill, onDrillBack, onInteraction, onAssistantTrigger }: Props) {
   const chartRef = useRef<ReactEChartsCore>(null);
-  const fmt = spec.y_format === "percent" ? fmtPercent : fmtCurrency;
+  const fmt = useMemo(() => spec.y_format === "percent" ? fmtPercent : fmtCurrency, [spec.y_format]);
 
   const drillableSet = useMemo(() => new Set(spec.drillable_ids ?? []), [spec.drillable_ids]);
   const isDrilled = spec.drill_path && spec.drill_path.length > 0;
@@ -184,8 +184,8 @@ export function TimeChart({ spec, onDrill, onDrillBack, onInteraction, onAssista
           source: "time_chart_point",
           page: "overview",
           dimension: "brand",
-          period: { year: 0, quarter: null },
-          filters: { market_id: [], ta: [], comparator: "BUD", scale: "M" },
+          period: { year: new Date().getFullYear(), quarter: null },
+          filters: { market_id: [], ta: [], product: [], comparator: "BUD", scale: "M", year: new Date().getFullYear(), granularity: "quarter" },
           dataPoint: {
             series_name: params.seriesName,
             series_id: seriesSpec.id,

@@ -5,7 +5,14 @@ from pathlib import Path
 import data_loader
 
 _SEMANTIC_MODEL: str = ""
-_TEMPLATE = (Path(__file__).parent / "prompts" / "semantic_model.txt").read_text()
+_TEMPLATE: str = ""
+
+
+def _load_template() -> str:
+    global _TEMPLATE
+    if not _TEMPLATE:
+        _TEMPLATE = (Path(__file__).parent / "prompts" / "semantic_model.txt").read_text()
+    return _TEMPLATE
 
 
 def _build_semantic_model() -> str:
@@ -49,7 +56,7 @@ def _build_semantic_model() -> str:
 
     brand_count = sum(len(b) for b in ta_brands.values())
 
-    return (_TEMPLATE
+    return (_load_template()
             .replace("{{brand_count}}", str(brand_count))
             .replace("{{portfolio}}", portfolio)
             .replace("{{markets}}", markets)

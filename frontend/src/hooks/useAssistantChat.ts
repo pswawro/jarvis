@@ -118,12 +118,19 @@ export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void):
   const activeContextRef = useRef<AssistantContext | null>(null);
   const messagesRef = useRef<Message[]>([]);
   const chatListRef = useRef<ChatSummary[]>(chatList);
+  const loadingRef = useRef(false);
+  const requestIdRef = useRef(0); // Track current request to avoid stale finally blocks
 
   // Keep refs in sync
   useEffect(() => { activeChatIdRef.current = activeChatId; }, [activeChatId]);
   useEffect(() => { activeContextRef.current = activeContext; }, [activeContext]);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { chatListRef.current = chatList; }, [chatList]);
+
+  // Abort in-flight request on unmount
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
 
   const setDrawerOpen = useCallback((open: boolean) => {
     drawerOpenRef.current = open;
@@ -175,7 +182,7 @@ export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void):
 
   const sendQuestion = useCallback(
     (q: string) => {
-      if (!q.trim() || loading) return;
+      if (!q.trim() || loadingRef.current) return;
 
       // Capture context at send time to avoid stale closure
       const ctx = activeContextRef.current;
@@ -191,7 +198,9 @@ export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void):
         activeChatIdRef.current = chatId;
       }
 
+      const thisRequestId = ++requestIdRef.current;
       setLoading(true);
+      loadingRef.current = true;
       resetLive();
 
       const userMsg: Message = { role: "user", question: q };
@@ -391,11 +400,15 @@ export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void):
           setMessages(finalMessages);
           messagesRef.current = finalMessages;
         } finally {
-          setLoading(false);
+          // Only clear loading if this is still the active request
+          if (requestIdRef.current === thisRequestId) {
+            setLoading(false);
+            loadingRef.current = false;
+          }
         }
       })();
     },
-    [loading, resetLive, persistChat],
+    [resetLive, persistChat],
   );
 
   const switchChat = useCallback(

@@ -73,10 +73,10 @@ def send_push_for_insights(insights: list[dict], role_scopes: dict[str, dict]) -
                     vapid_claims=vapid_claims,
                 )
                 sent += 1
-                log.info("Push sent to %s for insight %s", sub["user_id"], insight["id"])
+                log.info("Push sent to %s for insight %s", sub.get("user_id", "unknown"), insight["id"])
             except WebPushException as e:
-                log.error("Push failed for %s: %s", sub["user_id"], e)
+                log.error("Push failed for %s: %s", sub.get("user_id", "unknown"), e)
             except Exception as e:
-                log.error("Unexpected push error for %s: %s", sub["user_id"], e)
+                log.error("Unexpected push error for %s: %s", sub.get("user_id", "unknown"), e)
 
     return sent

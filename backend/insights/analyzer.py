@@ -2,48 +2,74 @@
 
 import json
 import logging
+import re
 from pathlib import Path
 
 from anthropic import AnthropicBedrock
 
 import config
-from assistant.tool_dispatch import TOOL_DISPATCH, UI_TOOLS
+from assistant.prompt_builder import build_insight_prompt
+from assistant.tool_dispatch import TOOL_DISPATCH
 
 log = logging.getLogger(__name__)
 
 _TOOLS_PATH = Path(__file__).parent.parent / "assistant" / "tools.json"
-_PROMPT_PATH = Path(__file__).parent.parent / "assistant" / "prompts" / "insight_analysis.txt"
+
+# Tools excluded from insight analysis (UI-rendering only, no data value)
+_INSIGHT_EXCLUDED_TOOLS = {"render_table", "render_chart", "propose_config", "clarify", "decompose_variance"}
 
 
-def _build_analysis_prompt(anomaly: dict) -> str:
-    """Build the system prompt for analyzing a single anomaly."""
-    template = _PROMPT_PATH.read_text()
-    entity = anomaly["entity"]
-
-    # Build entity description
-    parts = [entity["type"]]
-    for k, v in entity.items():
-        if k != "type":
-            parts.append(f"{k}={v}")
-    entity_desc = ", ".join(parts)
-
-    return (template
-            .replace("{{detection_type}}", anomaly["detection_type"])
-            .replace("{{entity_description}}", entity_desc)
-            .replace("{{raw_stats}}", json.dumps(anomaly.get("raw_stats", {}), indent=2))
-            .replace("{{data_domain}}", anomaly.get("data_domain", "")))
-
-
-def _get_data_tools() -> list[dict]:
-    """Load tool schemas, excluding UI-only tools."""
+def _get_analysis_tools() -> list[dict]:
+    """Load tool schemas — data tools plus think (for investigation pattern)."""
     tools = json.loads(_TOOLS_PATH.read_text())
-    return [t for t in tools if t["name"] not in UI_TOOLS]
+    return [t for t in tools if t["name"] not in _INSIGHT_EXCLUDED_TOOLS]
+
+
+def _parse_analysis_response(text: str) -> dict | None:
+    """Parse XML-tagged sections from the analysis response.
+
+    Returns dict with 'sections' (list of (tag, content) tuples),
+    'revised_severity', and 'push', or None on failure.
+    """
+    sections = []
+    for tag in ("facts", "interpretation", "hypothesis", "recommendations"):
+        pattern = f"<{tag}>(.*?)</{tag}>"
+        match = re.search(pattern, text, re.DOTALL)
+        if match:
+            sections.append((tag, match.group(1).strip()))
+
+    # If no XML tags found, treat entire text as explanation
+    if not sections and text.strip():
+        sections.append(("facts", text.strip()))
+
+    # Extract insight-specific tags
+    severity_match = re.search(r"<insight_severity>(.*?)</insight_severity>", text, re.DOTALL)
+    push_match = re.search(r"<insight_push>(.*?)</insight_push>", text, re.DOTALL)
+
+    revised_severity = severity_match.group(1).strip().lower() if severity_match else "informational"
+    push_raw = push_match.group(1).strip().lower() if push_match else "false"
+    push = push_raw == "true"
+
+    # Validate severity
+    if revised_severity not in ("critical", "notable", "informational"):
+        revised_severity = "informational"
+
+    # Build explanation from sections for backward compatibility
+    explanation = " ".join(content for _, content in sections)
+
+    return {
+        "explanation": explanation,
+        "sections": sections,
+        "revised_severity": revised_severity,
+        "push": push,
+    }
 
 
 def analyze_insight(anomaly: dict) -> dict | None:
     """Run AI analysis on a single anomaly.
 
-    Returns dict with 'explanation', 'revised_severity', 'push' or None on failure.
+    Returns dict with 'explanation', 'sections', 'revised_severity', 'push'
+    or None on failure.
     """
     client = AnthropicBedrock(
         aws_region=config.LLM_AWS_REGION,
@@ -52,8 +78,8 @@ def analyze_insight(anomaly: dict) -> dict | None:
         aws_session_token=config.AWS_SESSION_TOKEN,
     )
 
-    system = _build_analysis_prompt(anomaly)
-    tools = _get_data_tools()
+    system = build_insight_prompt(anomaly)
+    tools = _get_analysis_tools()
     messages = [{"role": "user", "content": "Analyze this anomaly and provide your assessment."}]
 
     try:
@@ -81,29 +107,28 @@ def analyze_insight(anomaly: dict) -> dict | None:
                     text_content += block.text
 
             if not tool_uses:
-                # Parse the JSON response
-                try:
-                    # Extract JSON from possible markdown code block
-                    text = text_content.strip()
-                    if "```json" in text:
-                        text = text.split("```json")[1].split("```")[0].strip()
-                    elif "```" in text:
-                        text = text.split("```")[1].split("```")[0].strip()
-                    result = json.loads(text)
-                    # Validate required fields
-                    if all(k in result for k in ("explanation", "revised_severity", "push")):
-                        return result
-                    log.warning("AI response missing required fields: %s", result)
-                    return None
-                except (json.JSONDecodeError, IndexError) as e:
-                    log.warning("Failed to parse AI response: %s — text: %s", e, text_content[:200])
-                    return None
+                result = _parse_analysis_response(text_content)
+                if result:
+                    return result
+                log.warning("Failed to parse analysis response: %s", text_content[:200])
+                return None
 
             # Execute tool calls
             tool_results = []
             for tool_block in tool_uses:
                 name = tool_block.name
-                if name in TOOL_DISPATCH:
+
+                # Handle think tool inline — just log and acknowledge
+                if name == "think":
+                    step = tool_block.input.get("step", "")
+                    content = tool_block.input.get("content", "")
+                    log.info("Insight think [%s]: %s", step, content[:100])
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": tool_block.id,
+                        "content": "ok",
+                    })
+                elif name in TOOL_DISPATCH:
                     params = {k: v for k, v in tool_block.input.items() if v is not None}
                     try:
                         result = TOOL_DISPATCH[name](params)
@@ -118,7 +143,7 @@ def analyze_insight(anomaly: dict) -> dict | None:
                         tool_results.append({
                             "type": "tool_result",
                             "tool_use_id": tool_block.id,
-                            "content": f"Error: {type(e).__name__}",
+                            "content": f"Tool '{name}' failed: {e}",
                             "is_error": True,
                         })
                 else:

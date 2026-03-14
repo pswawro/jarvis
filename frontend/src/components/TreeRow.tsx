@@ -44,8 +44,8 @@ export const TreeRow = memo(function TreeRow({ node, depth, isExpanded, hasChild
       source: "tree_row",
       page: "overview", // will be overridden by page component wrapper
       dimension: "brand", // will be overridden
-      period: { year: 2025, quarter: null }, // will be overridden
-      filters: { market_id: [], ta: [], comparator: "BUD", scale: "M" }, // will be overridden
+      period: { year: new Date().getFullYear(), quarter: null }, // will be overridden
+      filters: { market_id: [], ta: [], product: [], comparator: "BUD", scale: "M", year: new Date().getFullYear(), granularity: "quarter" }, // will be overridden
       dataPoint: {
         node_id: node.id,
         node_name: node.name,

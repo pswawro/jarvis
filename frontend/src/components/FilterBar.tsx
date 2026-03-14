@@ -3,7 +3,8 @@ import clsx from "clsx";
 import type { Filters, Comparator, Scale, Granularity, DimensionConfig, LevelId, PageType } from "../types";
 import { DimensionPicker } from "./DimensionPicker";
 
-const YEARS = [2025, 2024, 2023];
+const CURRENT_YEAR = new Date().getFullYear();
+const YEARS = [CURRENT_YEAR, CURRENT_YEAR - 1, CURRENT_YEAR - 2];
 
 const GRANULARITIES: { id: Granularity; label: string }[] = [
   { id: "year", label: "Yearly" },

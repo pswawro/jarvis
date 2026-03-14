@@ -45,17 +45,19 @@ export default function App() {
   }, []);
 
   const handleApplyConfig = useCallback((cfg: ConfigProposal) => {
-    if (cfg.comparator) setFilters((f) => ({ ...f, comparator: cfg.comparator as Filters["comparator"] }));
-    if (cfg.scale) setFilters((f) => ({ ...f, scale: cfg.scale as Filters["scale"] }));
-    if (cfg.market_id) setFilters((f) => ({ ...f, market_id: cfg.market_id! }));
-    if (cfg.ta) setFilters((f) => ({ ...f, ta: cfg.ta! }));
-    if (cfg.year) setFilters((f) => ({ ...f, year: cfg.year! }));
-    if (cfg.quarter !== undefined) {
-      // Legacy: map quarter to granularity
-      if (cfg.quarter) {
-        setFilters((f) => ({ ...f, granularity: "quarter" as const }));
+    // Apply all filter changes in a single update to avoid cascading renders/API calls
+    setFilters((f) => {
+      const next = { ...f };
+      if (cfg.comparator) next.comparator = cfg.comparator as Filters["comparator"];
+      if (cfg.scale) next.scale = cfg.scale as Filters["scale"];
+      if (cfg.market_id) next.market_id = cfg.market_id;
+      if (cfg.ta) next.ta = cfg.ta;
+      if (cfg.year) next.year = cfg.year;
+      if (cfg.quarter !== undefined && cfg.quarter) {
+        next.granularity = "quarter" as const;
       }
-    }
+      return next;
+    });
     if (cfg.page) setPage(cfg.page as PageType);
     if (cfg.scenario_preset) setScenarioPreset(cfg.scenario_preset);
     if (cfg.levels) setDimConfig({ levels: cfg.levels });
@@ -89,6 +91,25 @@ export default function App() {
     return () => navigator.serviceWorker?.removeEventListener("message", handler);
   }, []);
 
+  // Parse ?insights=open URL param (from push notification click)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("insights") === "open") {
+      setInsightsOpen(true);
+      // Clean up URL
+      params.delete("insights");
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params}`
+        : window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, []);
+
+  // Register for push notifications on mount
+  useEffect(() => {
+    insights.subscribeToPush();
+  }, []);
+
   const handleInteraction = useCallback((interaction: ChartInteraction) => {
     lastInteractionRef.current = interaction;
     (window as any).__chartInteraction = interaction;
@@ -112,14 +133,17 @@ export default function App() {
     setAssistantOpen(true);
   }, [page, dimConfig.levels, period, filters, assistant.activeChatId, assistant.setActiveContext]);
 
+  // Use ref to access latest filters without recreating callbacks
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+
   const handleInsightToChat = useCallback(async (insightId: string) => {
     try {
       await insights.markRead(insightId);
       const raw = await insights.getInsightContext(insightId);
-      // Merge with current filters so the context has a valid Filters shape
       const ctx: AssistantContext = {
         ...raw,
-        filters: { ...filters },
+        filters: { ...filtersRef.current },
       };
       setInsightsOpen(false);
       const question = ctx.dataPoint?.explanation
@@ -131,7 +155,7 @@ export default function App() {
     } catch (e) {
       console.error("Failed to open insight in chat:", e);
     }
-  }, [insights.markRead, insights.getInsightContext, assistant.newChat, assistant.sendQuestion, filters]);
+  }, [insights.markRead, insights.getInsightContext, assistant.newChat, assistant.sendQuestion]);
 
   const extra = useMemo(() => filtersToExtra(filters), [filters]);
   const { data: kpiData } = useApi<KpiStripSpec>("/kpi", period, extra);
@@ -188,6 +212,7 @@ export default function App() {
         onClose={() => setInsightsOpen(false)}
         insights={insights.insights}
         onAddToChat={handleInsightToChat}
+        onToggleBookmark={insights.toggleBookmark}
       />
     </div>
   );

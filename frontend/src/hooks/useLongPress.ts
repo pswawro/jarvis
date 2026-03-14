@@ -9,7 +9,6 @@ export function useLongPress(callback: () => void, delay = 500) {
       didLongPress.current = false;
       timerRef.current = window.setTimeout(() => {
         didLongPress.current = true;
-        e.preventDefault();
         callback();
       }, delay);
     },

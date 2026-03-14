@@ -136,13 +136,12 @@ export function ScenariosPage({ period, filters, dimConfig, scenarioPreset, onSc
   const scenarioExtra = useMemo(() => ({ ...extra, levels: levelsKey }), [extra, levelsKey]);
   const { data: scenarioData, loading: scenarioLoading } = useApi<LineChartSpec>("/scenario-chart", period, scenarioExtra);
 
-  // Phased tree
-  const phasedExtra = useMemo(() => {
-    const e = useFilters ? filtersToExtra(filters) : {};
-    e.granularity = granularity;
-    e.levels = levelsKey;
-    return e;
-  }, [filters, granularity, levelsKey, useFilters]);
+  // Phased tree — reuse `extra` instead of recomputing filtersToExtra
+  const phasedExtra = useMemo(() => ({
+    ...extra,
+    granularity,
+    levels: levelsKey,
+  }), [extra, granularity, levelsKey]);
   const { data: phasedData, loading: phasedLoading } = useApi<PhasedTreeSpec>("/phased", period, phasedExtra);
 
   const flatRows = useMemo(() => {

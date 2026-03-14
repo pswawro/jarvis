@@ -18,16 +18,14 @@ router = APIRouter()
 # Dimension config (loaded once)
 # ---------------------------------------------------------------------------
 
-_DIM_CONFIG: dict | None = None
+import functools
 
 
+@functools.lru_cache(maxsize=1)
 def _load_dim_config() -> dict:
-    global _DIM_CONFIG
-    if _DIM_CONFIG is None:
-        p = Path(__file__).resolve().parent.parent.parent / "data" / "dimensions.json"
-        with open(p) as f:
-            _DIM_CONFIG = json.load(f)
-    return _DIM_CONFIG
+    p = Path(__file__).resolve().parent.parent.parent / "data" / "dimensions.json"
+    with open(p) as f:
+        return json.load(f)
 
 
 def get_dimensions_config() -> dict:
@@ -84,16 +82,16 @@ def _detect_domain(levels: list[str]) -> str:
 # ---------------------------------------------------------------------------
 
 def _enrich_revenue(df: pd.DataFrame) -> pd.DataFrame:
-    prods = data_loader.products[["brand_id", "brand_name", "therapeutic_area"]]
-    geo = data_loader.geographies[["market_id", "market_name", "region"]]
+    prods = data_loader.products[["brand_id", "brand_name", "therapeutic_area"]].drop_duplicates(subset=["brand_id"])
+    geo = data_loader.geographies[["market_id", "market_name", "region"]].drop_duplicates(subset=["market_id"])
     df = df.merge(prods, on="brand_id", how="left")
     df = df.merge(geo, on="market_id", how="left")
     return df
 
 
 def _enrich_targets_revenue(df: pd.DataFrame) -> pd.DataFrame:
-    prods = data_loader.products[["brand_id", "brand_name", "therapeutic_area"]]
-    geo = data_loader.geographies[["market_id", "market_name", "region"]]
+    prods = data_loader.products[["brand_id", "brand_name", "therapeutic_area"]].drop_duplicates(subset=["brand_id"])
+    geo = data_loader.geographies[["market_id", "market_name", "region"]].drop_duplicates(subset=["market_id"])
     df = df.merge(prods, left_on="entity_id", right_on="brand_id", how="left")
     df = df.merge(geo, on="market_id", how="left")
     return df
@@ -478,15 +476,6 @@ def _build_competitive_tree(
     # Enrich with brand names
     brand_names = dict(zip(prods.brand_id, prods.brand_name))
     level_cols = _COMPETITIVE_LEVELS
-
-    def _share_spark(df_full, filter_col, filter_val):
-        sub = df_full[df_full[filter_col] == filter_val] if filter_col else df_full
-        monthly = sub.groupby(sub.period_date.dt.month).agg(
-            az=("az_revenue_usd_m", "sum"),
-            mkt=("total_market_size_usd_m", "sum"),
-        ).reindex(range(1, 13), fill_value=0)
-        share = (monthly["az"] / monthly["mkt"] * 100).where(monthly["mkt"] > 0, 0.0)
-        return [safe_round(v) for v in share.values]
 
     def _build_nodes(data, data_py, data_full, depth):
         if depth >= len(levels):

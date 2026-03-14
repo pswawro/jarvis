@@ -159,6 +159,12 @@ export interface AssistantContext {
     x_label?: string;
     value?: number;
     formatted_value?: string;
+    // Insight-specific fields
+    insight_id?: string;
+    detection_type?: string;
+    severity?: string;
+    explanation?: string;
+    raw_stats?: Record<string, number | string>;
   };
 }
 
@@ -288,7 +294,13 @@ export interface Insight {
   read: boolean;
   push: boolean;
   severity: "critical" | "notable" | "informational";
-  ai_analysis: { explanation: string; revised_severity: string; push: boolean } | null;
+  bookmarked: boolean;
+  ai_analysis: {
+    explanation: string;
+    sections: [string, string][];
+    revised_severity: string;
+    push: boolean;
+  } | null;
   raw_stats: Record<string, number | string>;
 }
 

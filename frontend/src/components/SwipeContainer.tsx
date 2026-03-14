@@ -46,7 +46,7 @@ export function SwipeContainer({ activeIndex, onSwitch, children }: Props) {
         className="flex h-full"
         animate={{ x: `-${activeIndex * 100}%` }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        drag={dragEnabled.current ? "x" : false}
+        drag="x"
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.15}
         dragDirectionLock

@@ -62,7 +62,7 @@ def _make_insight(anomaly: dict, run_id: str, ai_result: dict | None, profile: d
         "read": False,
         "push": push,
         "severity": severity,
-        "ai_analysis": ai_result,
+        "ai_analysis": ai_result or {},
         "raw_stats": anomaly.get("raw_stats", {}),
     }
 

@@ -64,8 +64,9 @@ def deduplicate(
             existing = active_by_fp[fp]
             existing["last_seen"] = now
 
-            # Escalate if significantly worse
-            if anomaly["statistical_score"] > existing.get("statistical_score", 0) * escalation_factor:
+            # Escalate if significantly worse (floor of 0.1 prevents 0*factor=0 always escalating)
+            prev_score = max(existing.get("statistical_score", 0), 0.1)
+            if anomaly["statistical_score"] > prev_score * escalation_factor:
                 existing["statistical_score"] = anomaly["statistical_score"]
                 existing["read"] = False  # re-flag as unread
                 existing["raw_stats"] = anomaly.get("raw_stats", existing.get("raw_stats"))

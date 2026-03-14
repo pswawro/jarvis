@@ -155,10 +155,19 @@ async def assistant_chat(req: AssistantRequest):
                             })
                     else:
                         # Data query tools — show progress
+                        if name not in TOOL_DISPATCH:
+                            log.warning("Unknown tool requested: %s", name)
+                            tool_results.append({
+                                "type": "tool_result",
+                                "tool_use_id": tool_block.id,
+                                "content": f"Unknown tool '{name}'. Available tools: {', '.join(TOOL_DISPATCH.keys())}",
+                                "is_error": True,
+                            })
+                            continue
                         yield sse("tool_use", f"Querying {label}...")
                         params = {k: v for k, v in tool_block.input.items() if v is not None}
                         try:
-                            result = TOOL_DISPATCH[name](params)
+                            result = await asyncio.to_thread(TOOL_DISPATCH[name], params)
                             log.info("Tool %s returned %d chars", name, len(result))
                             if config.LLM_DEBUG:
                                 log.info("[DEBUG] tool=%s result_preview=%s", name, result[:500])
@@ -172,7 +181,7 @@ async def assistant_chat(req: AssistantRequest):
                             tool_results.append({
                                 "type": "tool_result",
                                 "tool_use_id": tool_block.id,
-                                "content": f"Error: {type(e).__name__}",
+                                "content": f"Tool '{name}' failed: {e}",
                                 "is_error": True,
                             })
                         yield sse("tool_done", f"Queried {label}")
@@ -195,4 +204,8 @@ async def assistant_chat(req: AssistantRequest):
             if not sent_done:
                 yield sse("done", "")
 
-    return StreamingResponse(generate(), media_type="text/event-stream")
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+    )

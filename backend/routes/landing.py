@@ -34,8 +34,11 @@ def get_landing_view(
     closed_month: int = 8,
     levels: str | None = None,
 ):
-    validate_params(year=year, comparator=comparator)
     """closed_month: last month with actuals (1-12). Months after this use forecast."""
+    validate_params(year=year, comparator=comparator)
+    if closed_month < 1 or closed_month > 12:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=f"closed_month must be 1-12, got {closed_month}")
 
     # Parse levels
     level_list = [lv.strip() for lv in levels.split(",") if lv.strip()] if levels else ["ta", "brand"]
@@ -142,7 +145,7 @@ def get_landing_view(
             name = name_map.get(val, str(val))
 
             if children:
-                monthly = [round(sum(c.values.sparkline[i] for c in children), 1) for i in range(12)]
+                monthly = [round(sum((c.values.sparkline[i] if i < len(c.values.sparkline) else 0.0) for c in children), 1) for i in range(12)]
             else:
                 monthly = _blend_monthly(act_agg, comp_agg, current_filter)
 
@@ -162,7 +165,7 @@ def get_landing_view(
 
     top_children = _build_level(0, {})
 
-    grand_monthly = [round(sum(c.values.sparkline[i] for c in top_children), 1) for i in range(12)]
+    grand_monthly = [round(sum((c.values.sparkline[i] if i < len(c.values.sparkline) else 0.0) for c in top_children), 1) for i in range(12)]
     grand_total = sum(grand_monthly)
 
     columns = MONTHS[:closed_month] + [f"{m}*" for m in MONTHS[closed_month:]] + ["FY Total"]

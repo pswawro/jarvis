@@ -206,8 +206,8 @@ export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger, dr
         source: "treemap_bar",
         page: "overview",
         dimension: "brand",
-        period: { year: 0, quarter: null },
-        filters: { market_id: [], ta: [], comparator: "BUD", scale: "M" },
+        period: { year: new Date().getFullYear(), quarter: null },
+        filters: { market_id: [], ta: [], product: [], comparator: "BUD", scale: "M", year: new Date().getFullYear(), granularity: "quarter" },
         dataPoint: {
           node_id: node.id,
           node_name: node.name,

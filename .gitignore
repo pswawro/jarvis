@@ -25,3 +25,4 @@ CLAUDE.md
 # Insights (generated)
 data/insights.json
 data/push_subscriptions.json
+data/user_preferences.json

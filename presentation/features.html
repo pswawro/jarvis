@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jarvis - Feature Overview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --navy: #0f1a2e;
+    --navy-light: #1a2a45;
+    --navy-mid: #243352;
+    --accent: #3b82f6;
+    --accent-light: #60a5fa;
+    --green: #22c55e;
+    --green-bg: rgba(34,197,94,0.12);
+    --amber: #f59e0b;
+    --amber-bg: rgba(245,158,11,0.12);
+    --red: #ef4444;
+    --red-bg: rgba(239,68,68,0.12);
+    --gray: #94a3b8;
+    --gray-light: #cbd5e1;
+    --white: #f1f5f9;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--navy);
+    color: var(--white);
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  /* ─── Slide system ─── */
+  .deck { position: relative; width: 100%; height: 100vh; }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 48px 64px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.45s ease;
+    overflow-y: auto;
+  }
+  .slide.active { opacity: 1; pointer-events: auto; }
+
+  /* ─── Navigation ─── */
+  .nav {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 100;
+    background: rgba(15,26,46,0.85);
+    backdrop-filter: blur(12px);
+    padding: 8px 20px;
+    border-radius: 40px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .nav button {
+    background: none;
+    border: none;
+    color: var(--gray);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+  .nav button:hover { color: var(--white); background: rgba(255,255,255,0.06); }
+  .nav .counter { font-size: 13px; color: var(--gray); font-variant-numeric: tabular-nums; min-width: 48px; text-align: center; }
+  .nav .dots { display: flex; gap: 5px; }
+  .nav .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .nav .dot.active { background: var(--accent); width: 18px; border-radius: 3px; }
+
+  /* ─── Typography ─── */
+  h1 { font-size: 42px; font-weight: 800; letter-spacing: -1px; line-height: 1.1; margin-bottom: 8px; }
+  h2 { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
+  h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: var(--accent-light); }
+  .subtitle { font-size: 18px; color: var(--gray); font-weight: 400; margin-bottom: 32px; }
+  .section-num { font-size: 13px; font-weight: 600; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+
+  /* ─── Status badges ─── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 600; padding: 3px 10px;
+    border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .badge-done { background: var(--green-bg); color: var(--green); }
+  .badge-partial { background: var(--amber-bg); color: var(--amber); }
+  .badge-missing { background: var(--red-bg); color: var(--red); }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+  .badge-done::before { background: var(--green); }
+  .badge-partial::before { background: var(--amber); }
+  .badge-missing::before { background: var(--red); }
+
+  /* ─── Cards ─── */
+  .card-grid { display: grid; gap: 16px; flex: 1; }
+  .card-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .card-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .card {
+    background: var(--navy-light);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .card-accent { border-left: 3px solid var(--accent); }
+
+  .card ul { list-style: none; margin-top: 10px; }
+  .card li {
+    position: relative;
+    padding: 5px 0 5px 18px;
+    font-size: 14px;
+    color: var(--gray-light);
+    line-height: 1.5;
+  }
+  .card li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 12px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.5;
+  }
+
+  /* ─── Feature rows ─── */
+  .feature-list { display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; }
+  .feature-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--navy-light);
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+  .feature-row .name { font-size: 14px; font-weight: 500; }
+  .feature-row .desc { font-size: 12px; color: var(--gray); margin-top: 2px; }
+
+  /* ─── Comparison table ─── */
+  .compare-table { width: 100%; border-collapse: collapse; flex: 1; }
+  .compare-table th {
+    text-align: left; padding: 10px 14px; font-size: 12px; font-weight: 600;
+    color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .compare-table td {
+    padding: 10px 14px; font-size: 13px; color: var(--gray-light);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    vertical-align: top;
+  }
+  .compare-table td:first-child { font-weight: 500; color: var(--white); }
+
+  /* ─── Stats row ─── */
+  .stats {
+    display: flex; gap: 32px; margin: 24px 0;
+  }
+  .stat { text-align: center; }
+  .stat-val { font-size: 48px; font-weight: 800; letter-spacing: -2px; }
+  .stat-label { font-size: 13px; color: var(--gray); margin-top: 2px; }
+  .stat-green .stat-val { color: var(--green); }
+  .stat-amber .stat-val { color: var(--amber); }
+  .stat-red .stat-val { color: var(--red); }
+
+  /* ─── Pipeline graphic ─── */
+  .pipeline {
+    display: flex; align-items: center; gap: 0;
+    margin: 20px 0;
+  }
+  .pipeline-step {
+    flex: 1;
+    padding: 16px 20px;
+    background: var(--navy-light);
+    border: 1px solid rgba(255,255,255,0.06);
+    text-align: center;
+    position: relative;
+  }
+  .pipeline-step:first-child { border-radius: 10px 0 0 10px; }
+  .pipeline-step:last-child { border-radius: 0 10px 10px 0; }
+  .pipeline-step .step-num {
+    font-size: 11px; font-weight: 700; color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .pipeline-step .step-title { font-size: 13px; font-weight: 600; }
+  .pipeline-step .step-desc { font-size: 11px; color: var(--gray); margin-top: 4px; }
+  .pipeline-arrow {
+    width: 20px; height: 20px; flex-shrink: 0;
+    color: var(--accent); font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ─── Title slide ─── */
+  .title-slide { justify-content: center; align-items: center; text-align: center; }
+  .title-slide h1 { font-size: 64px; margin-bottom: 12px; }
+  .title-slide .subtitle { font-size: 22px; max-width: 600px; }
+  .logo { font-size: 14px; font-weight: 700; letter-spacing: 3px; color: var(--accent); margin-bottom: 24px; }
+
+  .scroll-hint { font-size: 11px; color: var(--gray); margin-top: auto; padding-top: 8px; text-align: center; opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+<!-- ════════════════════════════════════════════════ SLIDE 1: Title ════════════════════════════════════════════════ -->
+<div class="slide active" data-slide="0">
+  <div class="title-slide">
+    <div class="logo">ASTRAZENECA</div>
+    <h1>Jarvis</h1>
+    <p class="subtitle">AI-Augmented Enterprise Analytics Platform<br>Feature Overview & Hackathon Alignment</p>
+    <div style="margin-top: 40px; display: flex; gap: 16px; justify-content: center;">
+      <span class="badge badge-done">Implemented</span>
+      <span class="badge badge-partial">In Progress</span>
+      <span class="badge badge-missing">Not Started</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ SLIDE 2: Scorecard ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="1">
+  <div class="section-num">Overview</div>
+  <h2>Hackathon Requirements Scorecard</h2>
+  <p class="subtitle">How Jarvis maps to the AI30 challenge statement</p>
+
+  <div class="stats">
+    <div class="stat stat-green">
+      <div class="stat-val">20</div>
+      <div class="stat-label">Implemented</div>
+    </div>
+    <div class="stat stat-amber">
+      <div class="stat-val">4</div>
+      <div class="stat-label">Partial</div>
+    </div>
+    <div class="stat stat-red">
+      <div class="stat-val">1</div>
+      <div class="stat-label">Not Started</div>
+    </div>
+  </div>
+
+  <table class="compare-table">
+    <tr><th>Hackathon Requirement</th><th>Status</th></tr>
+    <tr><td>Multiple consumption modes (table, visual, chat)</td><td><span class="badge badge-done">Done</span></td></tr>
+    <tr><td>Seamless switching between table/chart/detail</td><td><span class="badge badge-done">Done</span></td></tr>
+    <tr><td>Standardised enterprise hierarchies</td><td><span class="badge badge-done">Done</span></td></tr>
+    <tr><td>Personalisation & flexibility</td><td><span class="badge badge-done">Done</span></td></tr>
+    <tr><td>Root cause analysis, not surface-level</td><td><span class="badge badge-done">Done</span></td></tr>
+    <tr><td>AI augmentation (detection, trends, outliers)</td><td><span class="badge badge-done">Done</span></td></tr>
+    <tr><td>Facts / interpretations / hypotheses separation</td><td><span class="badge badge-done">Done</span></td></tr>
+    <tr><td>Push vs Pull insights</td><td><span class="badge badge-done">Done</span></td></tr>
+    <tr><td>Mobile native & web responsive</td><td><span class="badge badge-done">Done</span></td></tr>
+    <tr><td>Role-based access control</td><td><span class="badge badge-done">Done</span></td></tr>
+    <tr><td>Natural language + voice queries</td><td><span class="badge badge-done">Done</span></td></tr>
+    <tr><td>Predictive outcomes & what-if reasoning</td><td><span class="badge badge-done">Done</span></td></tr>
+    <tr><td>External signals / competitor context</td><td><span class="badge badge-missing">Not Started</span></td></tr>
+    <tr><td>Saved views / personalised dashboards</td><td><span class="badge badge-partial">Partial</span></td></tr>
+  </table>
+</div>
+
+<!-- ════════════════════════════════════════════════ SLIDE 3: Dashboard Views ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="2">
+  <div class="section-num">01 &mdash; Core Analytics</div>
+  <h2>Three Dashboard Views</h2>
+  <p class="subtitle">Coexistence of standardised tables and flexible exploration</p>
+
+  <div class="card-grid cols-3">
+    <div class="card card-accent">
+      <h3>Overview</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>Hierarchical tree-table with drill-down (Brand &rarr; TA &rarr; Total, Region &rarr; Market, Unit &rarr; Sub-unit)</li>
+        <li>Toggle to treemap bar chart for visual distribution</li>
+        <li>Actual vs comparator with colour-coded variance pills</li>
+        <li>12-month sparklines showing revenue/expense trends per row</li>
+        <li>Market share column for competitive dimensions</li>
+        <li>Expense breakdown (Personnel, External, Other, FTE, Cost/FTE)</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>Landing</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>12-month blended view: actuals for closed months, forecast for future</li>
+        <li>Toggle between table and line chart visualisation</li>
+        <li>Solid lines for actuals, dashed lines for forecast</li>
+        <li>"Now" marker showing the actual/forecast boundary</li>
+        <li>Composable drill hierarchy via levels parameter</li>
+        <li>FY Total aggregation across all months</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>Phased / Scenarios</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>Multi-scenario comparison: ACT vs BUD vs MTP vs RBU2 vs PY</li>
+        <li>7 preset scenario combinations (e.g. ACT vs Budget & MTP)</li>
+        <li>Granularity toggle: Monthly, Quarterly, Full Year</li>
+        <li>Double-click to expand scenario sub-rows with variance detail</li>
+        <li>Colour-coded scenario labels for quick identification</li>
+        <li>Chart mode with scenario overlay trend lines</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="scroll-hint">All views support Revenue, Expense, and Competitive domains via dimension picker</div>
+</div>
+
+<!-- ════════════════════════════════════════════════ SLIDE 4: KPI & Filtering ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="3">
+  <div class="section-num">02 &mdash; KPIs & Navigation</div>
+  <h2>KPI Summary & Smart Filtering</h2>
+  <p class="subtitle">Making data easily accessible with contextual navigation</p>
+
+  <div class="card-grid cols-2">
+    <div class="card card-accent">
+      <h3>KPI Strip</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>Top-level cards: Total Revenue, Gross Profit, Operating Expenses, Operating Margin</li>
+        <li>Actual values with delta vs multiple comparators (BUD, MTP, PY)</li>
+        <li>Colour-coded variance (green = beat, red = miss)</li>
+        <li>Inverted logic for expenses (green = cost savings)</li>
+        <li>Collapsible for screen space on mobile</li>
+        <li>Responds to all active filters in real-time</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>Filter System</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li><strong>Settings:</strong> Year, Granularity (Y/Q/M), Comparator (BUD/MTP/RBU2/PY), Scale ($K/$M/$B)</li>
+        <li><strong>Data filters:</strong> Market, Therapeutic Area, Product (with search)</li>
+        <li>Product filter auto-scoped by selected TA</li>
+        <li>Removable filter chips with "Clear all" action</li>
+        <li><strong>Dimension picker:</strong> Composable hierarchies (TA&rarr;Brand&rarr;Market, Region&rarr;Market, etc.)</li>
+        <li>Save and load custom dimension configurations</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 16px;">
+    <h3>Data Export</h3>
+    <span class="badge badge-done">Done</span>
+    <ul>
+      <li>CSV download of any tree view, preserving full hierarchy path &mdash; filtered by current year, market, and TA selections</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ SLIDE 5: AI Assistant ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="4">
+  <div class="section-num">03 &mdash; AI Assistant</div>
+  <h2>Conversational AI Analytics</h2>
+  <p class="subtitle">Natural language queries with structured, data-grounded responses</p>
+
+  <div class="card-grid cols-2">
+    <div class="card card-accent">
+      <h3>Three Response Modes</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li><strong>Clarify:</strong> When user query is vague, AI asks smart follow-up questions with suggested options</li>
+        <li><strong>Configure:</strong> When user wants to navigate ("show me Oncology in US"), AI proposes dashboard filter/view changes that can be applied with one click</li>
+        <li><strong>Analyse:</strong> For data questions, AI runs a structured investigation with planning, querying, and synthesis</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>Structured Investigation</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>AI makes its reasoning visible via think steps (plan &rarr; finding &rarr; pivot &rarr; synthesis)</li>
+        <li>Queries real data using 10 internal tools (KPI, brand, region, unit, market, charts, config)</li>
+        <li>Multi-turn: investigates 2-4 angles before synthesising</li>
+        <li>Renders inline tables, charts, and variance decomposition waterfalls</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card-grid cols-2" style="margin-top: 16px;">
+    <div class="card card-accent">
+      <h3>Facts / Interpretation / Hypothesis</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>Every analytical response is structured into clear XML-tagged sections</li>
+        <li><strong>Facts:</strong> Data points discovered, with numbers</li>
+        <li><strong>Interpretation:</strong> What the data means in business context</li>
+        <li><strong>Hypothesis:</strong> Likely root cause or explanation</li>
+        <li><strong>Recommendations:</strong> Specific, actionable next steps with named entities</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>Context Awareness</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>Receives current page, filters, period, comparator, and scale</li>
+        <li>Right-click any data point to ask AI about it</li>
+        <li>Long-press on mobile to trigger AI investigation</li>
+        <li>Voice input via Web Speech API &mdash; tap microphone, speak, auto-submits transcription</li>
+        <li>Multi-chat sessions (up to 20) with localStorage persistence</li>
+        <li>Real-time SSE streaming of response sections</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ SLIDE 6: AI Roles ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="5">
+  <div class="section-num">04 &mdash; Roles & Access</div>
+  <h2>Role-Based Personalisation</h2>
+  <p class="subtitle">Different perspectives for different users &mdash; same trusted data foundation</p>
+
+  <div class="card-grid cols-2">
+    <div class="card card-accent">
+      <h3>How Roles Work</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>Each role defines: prompt personality, default page, available tools, and insight visibility scope</li>
+        <li>The AI adapts its language, framing, and focus to match the user's role</li>
+        <li>Tool access is filtered &mdash; a Commercial Lead cannot query expense data</li>
+        <li>Insight scope filtering &mdash; users only see anomalies relevant to their domain</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>Defined Roles</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li><strong>Enterprise Analyst (default):</strong> Full access to all tools, insights, and dimensions</li>
+        <li><strong>CFO:</strong> Focus on margin, OpEx efficiency, forecast accuracy. Framed through P&L impact</li>
+        <li><strong>Commercial Lead:</strong> Brand performance, market share, competitive positioning. No expense data</li>
+        <li><strong>Market Lead:</strong> Scoped to specific market data and insights</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 16px;">
+    <h3>Hackathon Alignment: Access Security</h3>
+    <p style="font-size: 13px; color: var(--gray-light); margin-top: 8px; line-height: 1.6;">
+      The brief requires "grant different access to data to different people (e.g. CEO can see everything while somebody in a market can only see data from such market)."
+      Jarvis implements this through role-based configuration: each role defines which data tools are available and which insight scopes are visible.
+      The semantic model is injected into every prompt, ensuring the AI can only reference data it has access to query.
+    </p>
+    <span class="badge badge-done" style="margin-top: 8px;">Done</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ SLIDE 7: Insights Pipeline ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="6">
+  <div class="section-num">05 &mdash; Push Insights</div>
+  <h2>Automated Anomaly Detection Pipeline</h2>
+  <p class="subtitle">From statistical detection to AI analysis to push notification</p>
+
+  <div class="pipeline">
+    <div class="pipeline-step">
+      <div class="step-num">1</div>
+      <div class="step-title">Detect</div>
+      <div class="step-desc">Statistical algorithms scan revenue, expenses, and market share data</div>
+    </div>
+    <div class="pipeline-arrow">&rarr;</div>
+    <div class="pipeline-step">
+      <div class="step-num">2</div>
+      <div class="step-title">Fingerprint</div>
+      <div class="step-desc">Each anomaly gets a stable identity for deduplication and escalation tracking</div>
+    </div>
+    <div class="pipeline-arrow">&rarr;</div>
+    <div class="pipeline-step">
+      <div class="step-num">3</div>
+      <div class="step-title">AI Analyse</div>
+      <div class="step-desc">Claude investigates context, queries data tools, and writes structured analysis</div>
+    </div>
+    <div class="pipeline-arrow">&rarr;</div>
+    <div class="pipeline-step">
+      <div class="step-num">4</div>
+      <div class="step-title">Classify</div>
+      <div class="step-desc">AI assigns severity (critical / notable / informational) and push eligibility</div>
+    </div>
+    <div class="pipeline-arrow">&rarr;</div>
+    <div class="pipeline-step">
+      <div class="step-num">5</div>
+      <div class="step-title">Deliver</div>
+      <div class="step-desc">Web Push notification to subscribed users, filtered by role scope</div>
+    </div>
+  </div>
+
+  <div class="card-grid cols-2" style="margin-top: 8px;">
+    <div class="card">
+      <h3>Four Detection Methods</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li><strong>Outlier (Z-Score):</strong> Flags single-month values that deviate significantly from historical average</li>
+        <li><strong>Drift (Rolling Mean):</strong> Detects sustained trend changes &mdash; recent window vs overall baseline</li>
+        <li><strong>Target Miss:</strong> Compares actual revenue vs budget targets, flags when variance exceeds threshold</li>
+        <li><strong>Competitive Shift:</strong> Detects month-over-month market share changes beyond threshold</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Entities Monitored</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li><strong>Revenue:</strong> Every brand-market combination, TA aggregates, and total company</li>
+        <li><strong>Expenses:</strong> Sub-unit level, unit aggregates, and total company</li>
+        <li><strong>Competitive:</strong> Brand-market pairs with competitive category tracking</li>
+        <li>Configurable sensitivity profiles (zscore thresholds, rolling window, market share delta)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ SLIDE 8: Insight Management ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="7">
+  <div class="section-num">05 &mdash; Push Insights (cont.)</div>
+  <h2>Insight Management & Interaction</h2>
+  <p class="subtitle">Avoiding alert fatigue through smart deduplication and user controls</p>
+
+  <div class="card-grid cols-2">
+    <div class="card card-accent">
+      <h3>Smart Deduplication & Escalation</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>Fingerprinting prevents the same anomaly from creating duplicate alerts across runs</li>
+        <li>If an existing anomaly worsens (&gt;30% score increase), the insight is automatically re-analysed by AI</li>
+        <li>When an anomaly is no longer detected, its insight transitions to "inactive" status</li>
+        <li>Push notifications only fire for genuinely new or escalated findings</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>User Interaction</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li><strong>Insights panel:</strong> Slide-out panel with severity-sorted list of anomalies</li>
+        <li><strong>Read/unread tracking:</strong> Unread count badge with blue dot indicators</li>
+        <li><strong>Bookmarking:</strong> Save important insights for later review, filter to show bookmarks only</li>
+        <li><strong>Send to chat:</strong> One-click to open AI assistant with full insight context for deeper analysis</li>
+        <li><strong>Expandable analysis:</strong> Preview first section, expand to see full facts/interpretation/hypothesis/recommendations</li>
+        <li><strong>Sort:</strong> By date (newest first) or by severity level</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 16px;">
+    <h3>Hackathon Alignment: Push vs Pull</h3>
+    <p style="font-size: 13px; color: var(--gray-light); margin-top: 8px; line-height: 1.6;">
+      The brief asks: "Should insights be pushed or pulled? How do we avoid noise and alert fatigue?"
+      Jarvis implements <strong>both</strong>: critical anomalies are pushed via Web Push notifications (filtered by role scope), while all insights
+      are available to pull from the insights panel. Alert fatigue is mitigated by fingerprint-based deduplication, severity gating (only critical
+      triggers push), and AI-driven push eligibility (the model decides if a finding truly warrants interruption).
+    </p>
+    <span class="badge badge-done" style="margin-top: 8px;">Done</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ SLIDE 9: AI Analysis (shared) ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="8">
+  <div class="section-num">06 &mdash; AI Architecture</div>
+  <h2>Unified AI Analysis Engine</h2>
+  <p class="subtitle">One investigation pattern shared between assistant chat and automated insights</p>
+
+  <div class="card-grid cols-2">
+    <div class="card card-accent">
+      <h3>Shared Prompt Architecture</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>Common core: personality rules, semantic model (brands, markets, org structure), and formatting conventions</li>
+        <li>Shared investigation pattern: plan &rarr; query &rarr; finding &rarr; drill/pivot &rarr; synthesise</li>
+        <li>Same XML output sections: facts, interpretation, hypothesis, recommendations</li>
+        <li>Same data query tools: 10 endpoints covering KPIs, revenue, expenses, and competitive data</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>Mode-Specific Extensions</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li><strong>Assistant chat</strong> adds: dashboard state context, clarify/configure modes, render tools (tables, charts, variance decomposition), filter scope guidance</li>
+        <li><strong>Insight analysis</strong> adds: anomaly details (detection type, entity, raw statistics), severity classification, push eligibility determination</li>
+        <li>No duplicated prompt content &mdash; each mode composes only the pieces it needs</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 16px;">
+    <h3>Semantic Model</h3>
+    <span class="badge badge-done">Done</span>
+    <p style="font-size: 13px; color: var(--gray-light); margin-top: 8px; line-height: 1.6;">
+      Dynamically built from actual data dimensions at startup. Includes the complete brand portfolio grouped by therapeutic area,
+      all markets with regional grouping, full organisational structure with units and sub-units, and competitive categories.
+      This ensures the AI always references real entities and never fabricates brand or market names.
+    </p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ SLIDE 10: Mobile & Responsive ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="9">
+  <div class="section-num">07 &mdash; Mobile Experience</div>
+  <h2>Mobile-Native & Web Responsive</h2>
+  <p class="subtitle">Touch-first design that scales to desktop without compromise</p>
+
+  <div class="card-grid cols-3">
+    <div class="card card-accent">
+      <h3>Touch Navigation</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>Swipe left/right between Overview, Landing, and Phased views</li>
+        <li>Long-press any data row to trigger AI analysis</li>
+        <li>Drag-to-close insights panel from bottom sheet</li>
+        <li>Pill-style tab indicators optimised for thumb reach</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>Responsive Layout</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>KPI strip: 2-column grid on mobile, 4-column on desktop</li>
+        <li>Tree tables: horizontal scroll with sticky name column</li>
+        <li>Hidden columns on small screens (sparklines, market share, forecasts)</li>
+        <li>Collapsible filter bar and KPI strip to save vertical space</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>Push Notifications</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>Service Worker for Web Push subscription</li>
+        <li>VAPID-based notification delivery</li>
+        <li>Click notification to deep-link into insights panel</li>
+        <li>Works on mobile browsers and installable as PWA</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ SLIDE 11: Data Coverage ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="10">
+  <div class="section-num">08 &mdash; Data Coverage</div>
+  <h2>Data Domains & Hierarchies</h2>
+  <p class="subtitle">Enterprise-wide data foundation with standardised hierarchies</p>
+
+  <div class="card-grid cols-2">
+    <div class="card card-accent">
+      <h3>Financial Data</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>Revenue by brand, market, month across 2023-2025</li>
+        <li>Operating expenses by unit/sub-unit with personnel/external/other breakdown</li>
+        <li>Gross profit and operating margin calculations</li>
+        <li>Headcount and FTE data with cost-per-FTE derived metric</li>
+        <li>Variances vs Budget, MTP, RBU2, and Prior Year</li>
+        <li>Monthly, quarterly, annual, and year-to-date time series</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>Commercial Data</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>Market size and market growth by competitive category</li>
+        <li>Market share by brand and category, tracked monthly</li>
+        <li>AZ revenue vs total market revenue</li>
+        <li>Share delta vs prior year in percentage points</li>
+        <li>Performance by brand-market pair</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 16px;">
+    <h3>Enterprise Hierarchies (Non-Negotiable)</h3>
+    <span class="badge badge-done">Done</span>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 12px;">
+      <div>
+        <div style="font-size: 13px; font-weight: 600; color: var(--accent-light); margin-bottom: 6px;">TA View</div>
+        <div style="font-size: 13px; color: var(--gray-light);">Brand &rarr; Therapeutic Area &rarr; Total AZ</div>
+      </div>
+      <div>
+        <div style="font-size: 13px; font-weight: 600; color: var(--accent-light); margin-bottom: 6px;">Geographic View</div>
+        <div style="font-size: 13px; color: var(--gray-light);">Market &rarr; Region &rarr; Total AZ</div>
+      </div>
+      <div>
+        <div style="font-size: 13px; font-weight: 600; color: var(--accent-light); margin-bottom: 6px;">Management View</div>
+        <div style="font-size: 13px; color: var(--gray-light);">Sub-unit &rarr; Unit &rarr; Total AZ</div>
+      </div>
+    </div>
+    <p style="font-size: 13px; color: var(--gray); margin-top: 12px;">
+      Plus composable combinations: any hierarchy levels can be mixed (e.g. TA &rarr; Market &rarr; Brand, Region &rarr; Brand, etc.)
+    </p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ SLIDE 12: What's Missing ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="11">
+  <div class="section-num">09 &mdash; Gaps</div>
+  <h2>What's Not Yet Built</h2>
+  <p class="subtitle">Remaining hackathon requirements and future capabilities</p>
+
+  <div class="card-grid cols-3">
+    <div class="card" style="border-left: 3px solid var(--red);">
+      <h3 style="color: var(--red);">Not Started</h3>
+      <ul>
+        <li><strong>External signals:</strong> "Integration of external signals from AZ and from competitors" &mdash; currently all analysis is based on internal data only</li>
+      </ul>
+    </div>
+    <div class="card" style="border-left: 3px solid var(--amber);">
+      <h3 style="color: var(--amber);">Partially Built</h3>
+      <ul>
+        <li><strong>Saved views:</strong> Dimension configurations can be saved/loaded. A bookmark hook for full dashboard state (filters + view + period) exists but is not connected to the UI</li>
+        <li><strong>Scaling beyond Finance/Commercial:</strong> Architecture supports new data domains, but only revenue, expenses, and market share are loaded. HR, manufacturing, and R&D mentioned in brief are not yet included</li>
+        <li><strong>Internal context leverage:</strong> The semantic model provides structural context, but there is no integration with internal knowledge bases or prior analyses</li>
+        <li><strong>Production deployment:</strong> Designed for Domino Data Lab but not production-hardened (no auth middleware, no persistent database, JSON file storage)</li>
+      </ul>
+    </div>
+    <div class="card" style="border-left: 3px solid var(--green);">
+      <h3 style="color: var(--green);">Easy to Add</h3>
+      <ul>
+        <li><strong>External data:</strong> The AI tool system is extensible &mdash; adding a web search or news query tool would give the assistant external context</li>
+        <li><strong>Saved views:</strong> The useBookmarks hook is already built; it just needs to be wired to a UI button</li>
+        <li><strong>New data domains:</strong> Data loader and tree builder are domain-agnostic; adding HR/R&D data requires only new CSV files and dimension config</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ SLIDE 13: Detailed Comparison ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="12">
+  <div class="section-num">10 &mdash; Full Mapping</div>
+  <h2>Hackathon Brief &harr; Jarvis Feature Map</h2>
+  <p class="subtitle">Detailed requirement-by-requirement alignment</p>
+
+  <div style="overflow-y: auto; flex: 1;">
+    <table class="compare-table">
+      <tr><th style="width: 40%;">Brief Requirement</th><th style="width: 45%;">Jarvis Implementation</th><th>Status</th></tr>
+      <tr>
+        <td>Multiple modes of consumption (table, visual, chat)</td>
+        <td>Tree tables, treemap charts, line charts, sparklines, AI chat with inline tables/charts</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Seamless switching between table &harr; chart &harr; detail</td>
+        <td>Every page has table/chart toggle. Click any row to drill down. Right-click for AI analysis</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Standardised enterprise hierarchies</td>
+        <td>Brand&rarr;TA&rarr;Total, Market&rarr;Region&rarr;Total, Sub-unit&rarr;Unit&rarr;Total, plus composable mixes</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Balance between standardisation and personalisation</td>
+        <td>Standard hierarchies enforced; personalisation via filters, dimension picker, saved configs, role-based views</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Root causes, not surface-level fluctuations</td>
+        <td>AI investigates 2-4 angles per question. Variance decomposition waterfall shows contributing factors. Hypothesis section explains "why"</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Automated detection of variances, trends, outliers</td>
+        <td>Four statistical methods (outlier z-score, drift, target miss, competitive shift) monitored across all entities</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Contextual explanations grounded in data</td>
+        <td>AI queries real data tools before answering. Never fabricates numbers. Shows investigation steps transparently</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Recommendation of actions</td>
+        <td>Recommendations section with specific, named entities and concrete actions (not generic "monitor closely")</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Clear distinction: facts vs interpretations vs hypotheses</td>
+        <td>Separate XML-tagged sections displayed in distinct UI blocks: Facts, Interpretation, Hypothesis, Recommendations</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Natural language queries</td>
+        <td>Multi-turn chat with context propagation, 20 persistent sessions, streaming responses</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Voice queries</td>
+        <td>Web Speech API integration in AI chat &mdash; microphone button, speech-to-text, auto-submit</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Push vs Pull insights</td>
+        <td>Both: Web Push for critical anomalies, pull via insights panel. Dedup and AI severity gating prevent alert fatigue</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Drill into variances across markets, brands, KPIs</td>
+        <td>Interactive drill-down in tree tables + treemaps. AI decompose_variance tool breaks down contributing factors</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Connect financial outcomes with commercial drivers</td>
+        <td>AI can cross-query revenue and market share tools in a single investigation. Competitive view links share to revenue</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Mobile native and web responsive</td>
+        <td>Swipeable views, long-press, responsive grids, collapsible panels, push notifications, mobile-first CSS</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Role-based access control</td>
+        <td>4 roles (Analyst, CFO, Commercial Lead, Market Lead) with scoped tools, insights, and AI personality</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>External signals / competitor context</td>
+        <td>Not implemented &mdash; only internal data is used</td>
+        <td><span class="badge badge-missing">Not Started</span></td>
+      </tr>
+      <tr>
+        <td>Predictive outcomes & what-if reasoning</td>
+        <td>Landing view blends actuals with forecast. Scenario comparison across BUD/MTP/RBU2. AI uses &lt;hypothesis&gt; section for forward-looking speculation and what-if reasoning grounded in queried data</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Revenue, OpEx, margin, variances (3-year)</td>
+        <td>2023-2025 data loaded. Budget, MTP, RBU2, Prior Year comparators. Gross profit and operating margin KPIs</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Market size, share, growth by brand/market</td>
+        <td>Commercial market data with share %, growth %, delta vs PY, by brand-market-category</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Monthly, quarterly, annual time series</td>
+        <td>Granularity toggle (M/Q/Y) on phased view. Monthly sparklines. Landing view shows 12-month series</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Scalable beyond finance to HR, manufacturing, R&D</td>
+        <td>Architecture is domain-agnostic; only finance and commercial data are currently loaded</td>
+        <td><span class="badge badge-partial">Partial</span></td>
+      </tr>
+      <tr>
+        <td>Explanations visualised alongside data</td>
+        <td>AI renders inline tables, charts, and variance decomposition inside the chat panel. Insights show analysis next to anomaly cards</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Personalised, actionable discovery</td>
+        <td>Composable dimension picker with save/load, filter chips, AI-proposed navigation changes</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>Affordable to build and maintain</td>
+        <td>Python/React stack, CSV data layer, no database dependency, runs on Domino Data Lab</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ SLIDE 14: Summary ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="13">
+  <div class="title-slide">
+    <div class="logo">JARVIS</div>
+    <h1 style="font-size: 48px;">Summary</h1>
+    <p class="subtitle" style="max-width: 700px;">
+      Jarvis delivers a credible, human-centred evolution of enterprise analytics &mdash; grounded in AstraZeneca's table-driven culture
+      while unlocking AI-augmented exploration, automated anomaly detection, and push-based insight delivery.
+    </p>
+    <div class="stats" style="justify-content: center; margin-top: 32px;">
+      <div class="stat stat-green">
+        <div class="stat-val">20</div>
+        <div class="stat-label">Requirements Met</div>
+      </div>
+      <div class="stat" style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 32px;">
+        <div class="stat-val" style="color: var(--accent-light);">3</div>
+        <div class="stat-label">Views</div>
+      </div>
+      <div class="stat" style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 32px;">
+        <div class="stat-val" style="color: var(--accent-light);">4</div>
+        <div class="stat-label">Detection Methods</div>
+      </div>
+      <div class="stat" style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 32px;">
+        <div class="stat-val" style="color: var(--accent-light);">3</div>
+        <div class="stat-label">AI Modes</div>
+      </div>
+      <div class="stat" style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 32px;">
+        <div class="stat-val" style="color: var(--accent-light);">4</div>
+        <div class="stat-label">User Roles</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<!-- ─── Navigation bar ─── -->
+<div class="nav">
+  <button onclick="go(-1)" aria-label="Previous slide">&larr;</button>
+  <div class="dots" id="dots"></div>
+  <button onclick="go(1)" aria-label="Next slide">&rarr;</button>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const dotsC  = document.getElementById('dots');
+let cur = 0;
+
+// Build dots
+slides.forEach((_, i) => {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' active' : '');
+  d.onclick = () => show(i);
+  dotsC.appendChild(d);
+});
+
+function show(n) {
+  cur = Math.max(0, Math.min(n, slides.length - 1));
+  slides.forEach((s, i) => s.classList.toggle('active', i === cur));
+  dotsC.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === cur));
+}
+
+function go(dir) { show(cur + dir); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(1); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+});
+
+// Touch swipe support
+let tx = 0;
+document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; });
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - tx;
+  if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+});
+</script>
+</body>
+</html>

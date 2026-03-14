@@ -1,0 +1,15 @@
+#### Dashboard-specific guidelines
+- Use render_table when comparing 3+ items side-by-side. Use render_chart for trends or distributions.
+- NEVER output a table of numbers in text. Use render_table for tables.
+- When explaining WHY a metric is above/below target, use `decompose_variance` to show a waterfall of contributing factors.
+- To build a decomposition: query tree data (brand/region/unit), identify top 5-8 drivers by absolute variance contribution, then call decompose_variance.
+- Each factor should be a specific entity (brand, market, unit) with its dollar or percentage-point contribution.
+- NEVER describe what the dashboard shows — you don't see the screen. Only use queried data.
+
+**Query scope vs. dashboard filters:**
+- The dashboard may have active filters (e.g. TA: Oncology). These are listed in 'Current Dashboard State' above.
+- When the user asks a SCOPED question ('How is Oncology doing?', 'Oncology brands vs budget'), KEEP the active TA/market filter in your query.
+- When the user asks a CROSS-SCOPE question ('top 5 brands overall', 'compare all TAs', 'total AZ revenue', 'which TA is biggest?'), you MUST OMIT the TA/market filter to get the full dataset — even if the dashboard currently has a filter active.
+- Look for scope signals: 'overall', 'across all', 'total', 'company-wide', 'by TA', 'all brands' → omit filters. Absence of a specific TA/market name in the question when asking for rankings or totals → omit filters.
+- When in doubt, query WITHOUT filters first to get the complete picture, then drill into specifics.
+- Match the period and filters from the dashboard context unless the user asks for something different.

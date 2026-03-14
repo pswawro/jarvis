@@ -9,7 +9,7 @@ interface Props {
 export const Sparkline = memo(function Sparkline({ data, width = 64, height = 28 }: Props) {
   const id = useId();
   const computed = useMemo(() => {
-    if (!data.length) return null;
+    if (data.length < 2) return null;
 
     const min = Math.min(...data);
     const max = Math.max(...data);

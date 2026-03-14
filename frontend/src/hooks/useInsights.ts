@@ -6,6 +6,7 @@ export function useInsights() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const sourceRef = useRef<EventSource | null>(null);
+  const pendingRef = useRef(new Set<string>());
 
   useEffect(() => {
     const source = new EventSource("/api/insights/stream");
@@ -16,15 +17,20 @@ export function useInsights() {
         const json: InsightsListResponse = JSON.parse(event.data);
         setData(json);
         setError(null);
+        setLoading(false);
       } catch (e) {
         console.warn("Failed to parse SSE data:", e);
+        setError("Received invalid data from server");
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     source.onerror = () => {
-      // EventSource auto-reconnects; just flag the error state temporarily
-      setError("Connection lost, reconnecting...");
+      if (source.readyState === EventSource.CLOSED) {
+        setError("Connection closed. Please refresh the page.");
+      } else {
+        setError("Connection lost, reconnecting...");
+      }
     };
 
     return () => {
@@ -34,12 +40,9 @@ export function useInsights() {
   }, []);
 
   const markRead = useCallback(async (id: string) => {
-    // Check if already read before decrementing counts
-    const insight = data?.insights.find((i) => i.id === id);
-    if (insight?.read) return;
-
-    await fetch(`/api/insights/${id}/read`, { method: "POST" });
-    // Optimistic local update; SSE will confirm shortly
+    // Guard: check current data via ref-like pattern to avoid React 19 batching issues
+    // We always fire the API call and let the server be the source of truth;
+    // the optimistic update is just for UI responsiveness.
     setData((prev) => {
       if (!prev) return prev;
       const target = prev.insights.find((i) => i.id === id);
@@ -56,7 +59,58 @@ export function useInsights() {
             : prev.unread_critical_count,
       };
     });
-  }, [data?.insights]);
+
+    try {
+      const resp = await fetch(`/api/insights/${id}/read`, { method: "POST" });
+      if (!resp.ok) console.warn(`Failed to mark insight ${id} as read: HTTP ${resp.status}`);
+    } catch {
+      // SSE will reconcile state
+    }
+  }, []);
+
+  const toggleBookmark = useCallback(async (id: string) => {
+    if (pendingRef.current.has(id)) return;
+    pendingRef.current.add(id);
+
+    let shouldBookmark: boolean | null = null;
+
+    setData((prev) => {
+      if (!prev) return prev;
+      const target = prev.insights.find((i) => i.id === id);
+      if (!target) return prev;
+      shouldBookmark = !target.bookmarked;
+      return {
+        ...prev,
+        insights: prev.insights.map((i) =>
+          i.id === id ? { ...i, bookmarked: shouldBookmark! } : i
+        ),
+      };
+    });
+
+    if (shouldBookmark === null) {
+      pendingRef.current.delete(id);
+      return;
+    }
+
+    const endpoint = shouldBookmark ? "bookmark" : "unbookmark";
+    try {
+      const resp = await fetch(`/api/insights/${id}/${endpoint}`, { method: "POST" });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    } catch {
+      // Revert on failure
+      setData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          insights: prev.insights.map((i) =>
+            i.id === id ? { ...i, bookmarked: !shouldBookmark! } : i
+          ),
+        };
+      });
+    } finally {
+      pendingRef.current.delete(id);
+    }
+  }, []);
 
   const getInsightContext = useCallback(async (id: string) => {
     const resp = await fetch(`/api/insights/${id}/chat`, { method: "POST" });
@@ -72,7 +126,6 @@ export function useInsights() {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") return;
 
-      // Get VAPID public key from backend config
       const configResp = await fetch("/api/config");
       const config = await configResp.json();
       if (!config.vapid_public_key) return;
@@ -99,6 +152,7 @@ export function useInsights() {
     loading,
     error,
     markRead,
+    toggleBookmark,
     getInsightContext,
     subscribeToPush,
   };

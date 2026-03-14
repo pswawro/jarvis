@@ -31,6 +31,14 @@ def load_role(role_id: str) -> dict:
     return _role_cache[role_id]
 
 
+def _build_core(role_context: str) -> str:
+    """Build the shared core prompt (personality + semantic model)."""
+    core = _load_text(_PROMPTS_DIR / "system_core.txt")
+    return (core
+            .replace("{{role_context}}", role_context)
+            .replace("{{semantic_model}}", get_semantic_model()))
+
+
 def _build_filters_block(filters: dict) -> str:
     active = []
     if filters.get("market_id"):
@@ -76,36 +84,12 @@ def _build_data_point_block(dp: dict) -> str:
     return "\n".join(lines)
 
 
-def build_system_prompt(ctx: dict, role_id: str = "default", user_vars: dict | None = None) -> str:
-    """Build the full system prompt for a request.
-
-    Args:
-        ctx: Dashboard context (page, filters, period, dataPoint, etc.)
-        role_id: Role ID to load from roles/ directory.
-        user_vars: Extra template variables (e.g. {"market": "US"} for market_lead).
-    """
-    role = load_role(role_id)
-    uv = user_vars or {}
-
-    # Load templates
-    base = _load_text(_PROMPTS_DIR / "system_base.txt")
-    mode_clarify = _load_text(_PROMPTS_DIR / "mode_clarify.txt")
-    mode_configure = _load_text(_PROMPTS_DIR / "mode_configure.txt")
-    mode_analyze = _load_text(_PROMPTS_DIR / "mode_analyze.txt")
-
-    # Resolve role prompt context with user variables
-    role_context = role.get("prompt_context", "")
-    for key, val in uv.items():
-        role_context = role_context.replace(f"{{{{{key}}}}}", str(val))
-
+def _build_dashboard_block(ctx: dict) -> str:
+    """Build the dashboard state section."""
+    dashboard = _load_text(_PROMPTS_DIR / "system_dashboard.txt")
     filters = ctx.get("filters", {})
     period = ctx.get("period", {})
-
-    # Fill base template
-    prompt = base
     replacements = {
-        "{{role_context}}": role_context,
-        "{{semantic_model}}": get_semantic_model(),
         "{{page}}": ctx.get("page", "overview"),
         "{{levels}}": " → ".join(ctx.get("levels", ["ta", "brand", "market"])),
         "{{year}}": str(period.get("year", 2025)),
@@ -116,13 +100,69 @@ def build_system_prompt(ctx: dict, role_id: str = "default", user_vars: dict | N
         "{{scale}}": filters.get("scale", "M"),
     }
     for placeholder, value in replacements.items():
-        prompt = prompt.replace(placeholder, value)
+        dashboard = dashboard.replace(placeholder, value)
+    return dashboard
 
-    # Append response modes
+
+def build_insight_prompt(anomaly: dict) -> str:
+    """Build system prompt for insight analysis.
+
+    Uses: core (personality + semantic model) + anomaly context + analyze mode + insight extras.
+    """
+    entity = anomaly["entity"]
+    parts = [entity["type"]]
+    for k, v in entity.items():
+        if k != "type":
+            parts.append(f"{k}={v}")
+    entity_desc = ", ".join(parts)
+
+    core = _build_core("You are analyzing an automatically detected data anomaly. Investigate thoroughly using data tools.")
+    mode_analyze = _load_text(_PROMPTS_DIR / "mode_analyze.txt")
+    insight_extra = _load_text(_PROMPTS_DIR / "insight_analysis.txt")
+
+    # Fill anomaly placeholders
+    insight_section = (insight_extra
+                       .replace("{{detection_type}}", anomaly["detection_type"])
+                       .replace("{{entity_description}}", entity_desc)
+                       .replace("{{raw_stats}}", json.dumps(anomaly.get("raw_stats", {}), indent=2))
+                       .replace("{{data_domain}}", anomaly.get("data_domain", "")))
+
+    prompt = core
+    prompt += "\n\n" + insight_section
+    prompt += "\n\n## Response Mode\n\n"
+    prompt += mode_analyze
+
+    return prompt
+
+
+def build_system_prompt(ctx: dict, role_id: str = "default", user_vars: dict | None = None) -> str:
+    """Build the full system prompt for assistant chat.
+
+    Uses: core (personality + semantic model) + dashboard state + all 3 response modes.
+    """
+    role = load_role(role_id)
+    uv = user_vars or {}
+
+    # Resolve role prompt context with user variables
+    role_context = role.get("prompt_context", "")
+    for key, val in uv.items():
+        role_context = role_context.replace(f"{{{{{key}}}}}", str(val))
+
+    core = _build_core(role_context)
+    dashboard = _build_dashboard_block(ctx)
+
+    mode_clarify = _load_text(_PROMPTS_DIR / "mode_clarify.txt")
+    mode_configure = _load_text(_PROMPTS_DIR / "mode_configure.txt")
+    mode_analyze = _load_text(_PROMPTS_DIR / "mode_analyze.txt")
+    mode_analyze_dashboard = _load_text(_PROMPTS_DIR / "mode_analyze_dashboard.txt")
+
+    prompt = core
+    prompt += "\n\n" + dashboard
     prompt += "\n\n## Response Modes — PICK EXACTLY ONE\n\n"
     prompt += "Every response must use exactly ONE of these three modes. Never mix them.\n\n"
     prompt += mode_clarify + "\n\n"
     prompt += mode_configure + "\n\n"
-    prompt += mode_analyze
+    prompt += mode_analyze + "\n\n"
+    prompt += mode_analyze_dashboard
 
     return prompt

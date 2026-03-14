@@ -15,10 +15,12 @@ export function ViewTabs({ activeIndex, onSwitch }: Props) {
   return (
     <>
       {/* Desktop tabs */}
-      <div className="hidden md:flex border-b border-gray-200 bg-white">
+      <div role="tablist" className="hidden md:flex border-b border-gray-200 bg-white">
         {TABS.map((tab, i) => (
           <button
             key={tab.label}
+            role="tab"
+            aria-selected={i === activeIndex}
             onClick={() => onSwitch(i)}
             className={clsx(
               "flex-1 py-2.5 text-sm font-medium border-b-2 transition-all duration-200",
@@ -33,10 +35,12 @@ export function ViewTabs({ activeIndex, onSwitch }: Props) {
       </div>
 
       {/* Mobile pill indicators */}
-      <div className="flex md:hidden justify-center items-center gap-1.5 py-2.5 bg-white border-b border-gray-200">
+      <div role="tablist" className="flex md:hidden justify-center items-center gap-1.5 py-2.5 bg-white border-b border-gray-200">
         {TABS.map((tab, i) => (
           <button
             key={tab.label}
+            role="tab"
+            aria-selected={i === activeIndex}
             onClick={() => onSwitch(i)}
             className={clsx(
               "flex items-center gap-1.5 transition-all duration-200",

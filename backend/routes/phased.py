@@ -72,6 +72,10 @@ def get_phased_view(
     dimension: str | None = None,
     levels: str | None = None,
 ):
+    if granularity not in ("month", "quarter", "year"):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=f"Invalid granularity '{granularity}'. Must be month, quarter, or year.")
+
     # Parse levels
     level_list = [lv.strip() for lv in levels.split(",") if lv.strip()] if levels else None
 

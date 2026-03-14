@@ -1,9 +1,11 @@
+import { useState } from "react";
 import clsx from "clsx";
 import type { Insight } from "../types";
 
 interface Props {
   insight: Insight;
   onAddToChat: (id: string) => void;
+  onToggleBookmark: (id: string) => void;
 }
 
 const SEVERITY_STYLES = {
@@ -24,7 +26,7 @@ function relativeTime(iso: string): string {
   return `${days}d ago`;
 }
 
-export function InsightCard({ insight, onAddToChat }: Props) {
+export function InsightCard({ insight, onAddToChat, onToggleBookmark }: Props) {
   const isInactive = insight.status === "inactive";
   const hasAI = !!insight.ai_analysis;
   const styles = SEVERITY_STYLES[insight.severity] ?? SEVERITY_STYLES.informational;
@@ -49,8 +51,19 @@ export function InsightCard({ insight, onAddToChat }: Props) {
           </span>
         )}
         <span className="text-[10px] text-white/30">{relativeTime(insight.detected_at)}</span>
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleBookmark(insight.id); }}
+          className="ml-auto text-white/30 hover:text-amber-400 transition-colors"
+          title={insight.bookmarked ? "Remove bookmark" : "Bookmark"}
+          aria-label={insight.bookmarked ? "Remove bookmark" : "Bookmark"}
+          aria-pressed={insight.bookmarked}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill={insight.bookmarked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" className={insight.bookmarked ? "text-amber-400" : ""} />
+          </svg>
+        </button>
         {!insight.read && !isInactive && (
-          <div className="w-1.5 h-1.5 rounded-full bg-blue-400 ml-auto" title="Unread" />
+          <div className="w-1.5 h-1.5 rounded-full bg-blue-400" title="Unread" />
         )}
       </div>
 
@@ -59,10 +72,14 @@ export function InsightCard({ insight, onAddToChat }: Props) {
         {_buildTitle(insight)}
       </div>
 
-      {/* Explanation */}
-      <div className="text-[11px] text-white/50 leading-relaxed">
-        {hasAI ? insight.ai_analysis!.explanation : "Statistical detection only — no AI analysis"}
-      </div>
+      {/* AI Analysis */}
+      {hasAI ? (
+        <InsightAnalysis ai={insight.ai_analysis!} />
+      ) : (
+        <div className="text-[11px] text-white/50 leading-relaxed">
+          Statistical detection only — no AI analysis
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex gap-1.5 mt-2">
@@ -73,6 +90,54 @@ export function InsightCard({ insight, onAddToChat }: Props) {
           {hasAI ? "Add to chat →" : "Add to chat & analyze →"}
         </button>
       </div>
+    </div>
+  );
+}
+
+const SECTION_LABELS: Record<string, string> = {
+  facts: "Key Facts",
+  interpretation: "Interpretation",
+  hypothesis: "Hypothesis",
+  recommendations: "Recommendations",
+};
+
+function InsightAnalysis({ ai }: { ai: NonNullable<Insight["ai_analysis"]> }) {
+  const [expanded, setExpanded] = useState(false);
+  const sections = ai.sections ?? [];
+
+  // Show first section as preview, rest on expand
+  const preview = sections[0];
+  const rest = sections.slice(1);
+
+  if (!preview) {
+    return (
+      <div className="text-[11px] text-white/50 leading-relaxed">{ai.explanation}</div>
+    );
+  }
+
+  return (
+    <div className="text-[11px] text-white/50 leading-relaxed">
+      <div>{preview[1]}</div>
+      {rest.length > 0 && expanded && (
+        <div className="mt-1.5 space-y-1.5">
+          {rest.map(([tag, content]) => (
+            <div key={tag}>
+              <span className="text-[9px] font-semibold text-white/30 uppercase tracking-wide">
+                {SECTION_LABELS[tag] ?? tag}
+              </span>
+              <div className="mt-0.5">{content}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {rest.length > 0 && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          className="text-[10px] text-white/30 hover:text-white/50 transition-colors mt-1"
+        >
+          {expanded ? "Show less" : `Show more (${rest.length} sections)`}
+        </button>
+      )}
     </div>
   );
 }
