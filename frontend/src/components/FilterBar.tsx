@@ -156,7 +156,7 @@ export function FilterBar({ filters, onChange, dimConfig, onDimConfigChange, pag
       product: [],
       comparator: "BUD",
       scale: "B",
-      year: 2025,
+      year: CURRENT_YEAR,
       granularity: "quarter",
     });
   }, [onChange]);

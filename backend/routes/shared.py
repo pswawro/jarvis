@@ -16,7 +16,8 @@ import data_loader
 COMPARATOR_FIELD = {"BUD": "budget_amount", "MTP": "mtp_amount", "RBU2": "rbu2_amount"}
 COMPARATOR_LABELS = {"BUD": "Budget", "MTP": "MTP", "RBU2": "RBU2", "PYACT": "Prior Year"}
 VALID_QUARTERS = {"Q1", "Q2", "Q3", "Q4"}
-VALID_YEARS = {2023, 2024, 2025, 2026}
+_CURRENT_YEAR = __import__("datetime").date.today().year
+VALID_YEARS = set(range(_CURRENT_YEAR - 2, _CURRENT_YEAR + 2))
 VALID_COMPARATORS = {"BUD", "MTP", "RBU2", "PYACT"}
 
 
@@ -55,8 +56,13 @@ def safe_round(val: float, ndigits: int = 1) -> float:
 
 
 def var_pct(actual: float, compare: float) -> float:
-    """Percentage variance: (actual - compare) / compare * 100, or 0 if compare is 0/NaN."""
-    if not compare or compare == 0 or (isinstance(compare, float) and math.isnan(compare)):
+    """Percentage variance: (actual - compare) / compare * 100, or 0 if compare is 0/NaN/Inf."""
+    try:
+        if not compare or compare == 0 or math.isnan(compare) or math.isinf(compare):
+            return 0.0
+        if math.isnan(actual) or math.isinf(actual):
+            return 0.0
+    except TypeError:
         return 0.0
     return safe_round((actual - compare) / compare * 100)
 

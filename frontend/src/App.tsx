@@ -24,7 +24,7 @@ export default function App() {
     product: [],
     comparator: "BUD",
     scale: "B",
-    year: 2025,
+    year: new Date().getFullYear(),
     granularity: "quarter",
   });
   const [page, setPage] = useState<PageType>("overview");
@@ -48,12 +48,12 @@ export default function App() {
     // Apply all filter changes in a single update to avoid cascading renders/API calls
     setFilters((f) => {
       const next = { ...f };
-      if (cfg.comparator) next.comparator = cfg.comparator as Filters["comparator"];
-      if (cfg.scale) next.scale = cfg.scale as Filters["scale"];
-      if (cfg.market_id) next.market_id = cfg.market_id;
-      if (cfg.ta) next.ta = cfg.ta;
-      if (cfg.year) next.year = cfg.year;
-      if (cfg.quarter !== undefined && cfg.quarter) {
+      if (cfg.comparator !== undefined) next.comparator = cfg.comparator as Filters["comparator"];
+      if (cfg.scale !== undefined) next.scale = cfg.scale as Filters["scale"];
+      if (cfg.market_id !== undefined) next.market_id = cfg.market_id;
+      if (cfg.ta !== undefined) next.ta = cfg.ta;
+      if (cfg.year !== undefined) next.year = cfg.year;
+      if (cfg.quarter !== undefined) {
         next.granularity = "quarter" as const;
       }
       return next;
@@ -78,7 +78,7 @@ export default function App() {
   useEffect(() => {
     assistant.setDrawerOpen(assistantOpen);
     if (assistantOpen) assistant.markRead();
-  }, [assistantOpen]);
+  }, [assistantOpen, assistant.setDrawerOpen, assistant.markRead]);
 
   // Listen for service worker messages (push notification clicks)
   useEffect(() => {
@@ -108,11 +108,10 @@ export default function App() {
   // Register for push notifications on mount
   useEffect(() => {
     insights.subscribeToPush();
-  }, []);
+  }, [insights.subscribeToPush]);
 
   const handleInteraction = useCallback((interaction: ChartInteraction) => {
     lastInteractionRef.current = interaction;
-    (window as any).__chartInteraction = interaction;
   }, []);
 
   const handleAssistantTrigger = useCallback((ctx: AssistantContext) => {
@@ -149,13 +148,12 @@ export default function App() {
       const question = ctx.dataPoint?.explanation
         ? `Analyze this insight: ${ctx.dataPoint.explanation}`
         : "Analyze this data anomaly and provide recommendations.";
-      assistant.newChat(ctx);
+      assistant.newChat(ctx, question);
       setAssistantOpen(true);
-      setTimeout(() => assistant.sendQuestion(question), 150);
     } catch (e) {
       console.error("Failed to open insight in chat:", e);
     }
-  }, [insights.markRead, insights.getInsightContext, assistant.newChat, assistant.sendQuestion]);
+  }, [insights.markRead, insights.getInsightContext, assistant.newChat]);
 
   const extra = useMemo(() => filtersToExtra(filters), [filters]);
   const { data: kpiData } = useApi<KpiStripSpec>("/kpi", period, extra);

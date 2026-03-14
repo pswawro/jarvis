@@ -9,6 +9,7 @@ export function filtersToExtra(filters: Filters): Record<string, string> {
   return extra;
 }
 
+/** Scale factors: raw data is in $M. Divide by factor to get target unit. */
 const SCALE_DIVISORS: Record<string, number> = { M: 1, K: 0.001, B: 1000 };
 
 export function scaleValue(value: number, scale: string): string {

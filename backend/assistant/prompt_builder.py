@@ -22,7 +22,13 @@ def _load_text(path: Path) -> str:
 
 
 def load_role(role_id: str) -> dict:
-    """Load a role config by ID. Falls back to 'default'."""
+    """Load a role config by ID. Falls back to 'default'.
+
+    Validates role_id to prevent path traversal attacks.
+    """
+    import re
+    if not re.match(r'^[a-zA-Z0-9_-]+$', role_id):
+        role_id = "default"
     if role_id not in _role_cache:
         path = _ROLES_DIR / f"{role_id}.json"
         if not path.exists():

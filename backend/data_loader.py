@@ -37,7 +37,11 @@ def load_all():
     with open(DATA_DIR / "config.json") as f:
         app_config = json.load(f)
 
-    for df in [revenue, expenses, targets, commercial, headcount]:
+    # Convert period_date to datetime — use reassignment to avoid in-place mutation
+    for name in ["revenue", "expenses", "targets", "commercial", "headcount"]:
+        df = globals()[name]
+        df = df.copy()
         df["period_date"] = pd.to_datetime(df["period_date"])
+        globals()[name] = df
 
     data_refreshed_at = datetime.now().strftime("%Y-%m-%d %H:%M")

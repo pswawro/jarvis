@@ -24,6 +24,23 @@ COLORS = [
 
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
+SCENARIO_COLORS = {
+    "Actuals": "#2563EB",
+    "Budget": "#DC2626",
+    "MTP": "#059669",
+    "RBU2": "#D97706",
+    "Prior Year": "#9CA3AF",
+}
+
+
+def _to_series(name: str, data) -> ChartSeries:
+    return ChartSeries(
+        id=name.lower().replace(" ", "_"),
+        name=name,
+        color=SCENARIO_COLORS[name],
+        data=[round(float(v), 1) for v in data.values],
+    )
+
 
 def _find_node(tree, node_id: str):
     """Find a node by id in the tree (BFS)."""
@@ -261,32 +278,16 @@ def get_scenario_chart(
     mtp_monthly = tgt_agg["mtp_amount"]
     rbu2_monthly = tgt_agg["rbu2_amount"]
 
-    SCENARIO_COLORS = {
-        "Actuals": "#2563EB",
-        "Budget": "#DC2626",
-        "MTP": "#059669",
-        "RBU2": "#D97706",
-        "Prior Year": "#9CA3AF",
-    }
-
-    def to_series(name: str, data) -> ChartSeries:
-        return ChartSeries(
-            id=name.lower().replace(" ", "_"),
-            name=name,
-            color=SCENARIO_COLORS[name],
-            data=[round(float(v), 1) for v in data.values],
-        )
-
     entity_label = entity_id or "Total"
     return LineChartSpec(
         period_label=f"FY {year} — {entity_label}",
         x_labels=MONTHS,
         series=[
-            to_series("Actuals", act_monthly),
-            to_series("Budget", bud_monthly),
-            to_series("MTP", mtp_monthly),
-            to_series("RBU2", rbu2_monthly),
-            to_series("Prior Year", py_monthly),
+            _to_series("Actuals", act_monthly),
+            _to_series("Budget", bud_monthly),
+            _to_series("MTP", mtp_monthly),
+            _to_series("RBU2", rbu2_monthly),
+            _to_series("Prior Year", py_monthly),
         ],
     )
 
@@ -310,31 +311,15 @@ def _scenario_chart_expense(year: int, entity_id: str | None, data_loader) -> Li
 
     tgt_agg = t.groupby(t.period_date.dt.month)[["budget_amount", "mtp_amount", "rbu2_amount"]].sum().reindex(range(1, 13), fill_value=0)
 
-    SCENARIO_COLORS = {
-        "Actuals": "#2563EB",
-        "Budget": "#DC2626",
-        "MTP": "#059669",
-        "RBU2": "#D97706",
-        "Prior Year": "#9CA3AF",
-    }
-
-    def to_series(name: str, data) -> ChartSeries:
-        return ChartSeries(
-            id=name.lower().replace(" ", "_"),
-            name=name,
-            color=SCENARIO_COLORS[name],
-            data=[round(float(v), 1) for v in data.values],
-        )
-
     entity_label = entity_id or "Total Expenses"
     return LineChartSpec(
         period_label=f"FY {year} — {entity_label}",
         x_labels=MONTHS,
         series=[
-            to_series("Actuals", act_monthly),
-            to_series("Budget", tgt_agg["budget_amount"]),
-            to_series("MTP", tgt_agg["mtp_amount"]),
-            to_series("RBU2", tgt_agg["rbu2_amount"]),
-            to_series("Prior Year", py_monthly),
+            _to_series("Actuals", act_monthly),
+            _to_series("Budget", tgt_agg["budget_amount"]),
+            _to_series("MTP", tgt_agg["mtp_amount"]),
+            _to_series("RBU2", tgt_agg["rbu2_amount"]),
+            _to_series("Prior Year", py_monthly),
         ],
     )

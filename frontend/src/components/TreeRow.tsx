@@ -66,9 +66,13 @@ export const TreeRow = memo(function TreeRow({ node, depth, isExpanded, hasChild
     [onAssistantTrigger, triggerAssistant],
   );
 
+  const handleClick = useCallback(() => {
+    if (hasChildren && !longPress.didLongPress.current) onToggle();
+  }, [hasChildren, longPress.didLongPress, onToggle]);
+
   return (
     <button
-      onClick={hasChildren && !longPress.didLongPress.current ? onToggle : undefined}
+      onClick={hasChildren ? handleClick : undefined}
       onContextMenu={handleContextMenu}
       {...longPress}
       className={clsx(
@@ -167,7 +171,7 @@ export const TreeRow = memo(function TreeRow({ node, depth, isExpanded, hasChild
       )}
 
       {/* vs Comparator (Budget/MTP/RBU2/PY) */}
-      <VariancePill value={(values[COMPARATOR_VARIANCE[comparator]] as number) ?? values.variance_pct} invertColor={invertColor} suffix={varianceSuffix} />
+      <VariancePill value={(values[COMPARATOR_VARIANCE[comparator]] as number | null) ?? values.variance_pct ?? 0} invertColor={invertColor} suffix={varianceSuffix} />
 
       {/* Market Share */}
       {showShare && values.market_share_pct != null && (

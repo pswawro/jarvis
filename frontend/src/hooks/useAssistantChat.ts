@@ -91,7 +91,7 @@ export interface UseAssistantChat {
 
   chatList: ChatSummary[];
   switchChat: (id: string) => void;
-  newChat: (context?: AssistantContext) => void;
+  newChat: (context?: AssistantContext, initialQuestion?: string) => void;
   deleteChat: (id: string) => void;
 
   onApplyConfig?: (cfg: ConfigProposal) => void;
@@ -120,6 +120,7 @@ export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void):
   const chatListRef = useRef<ChatSummary[]>(chatList);
   const loadingRef = useRef(false);
   const requestIdRef = useRef(0); // Track current request to avoid stale finally blocks
+  const sendQuestionRef = useRef<(q: string) => void>(() => {});
 
   // Keep refs in sync
   useEffect(() => { activeChatIdRef.current = activeChatId; }, [activeChatId]);
@@ -411,6 +412,9 @@ export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void):
     [resetLive, persistChat],
   );
 
+  // Keep ref in sync so newChat always calls the latest sendQuestion
+  sendQuestionRef.current = sendQuestion;
+
   const switchChat = useCallback(
     (id: string) => {
       if (id === activeChatIdRef.current) return;
@@ -431,7 +435,7 @@ export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void):
   );
 
   const newChat = useCallback(
-    (context?: AssistantContext) => {
+    (context?: AssistantContext, initialQuestion?: string) => {
       // Abort in-flight
       abortRef.current?.abort();
       setLoading(false);
@@ -443,6 +447,12 @@ export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void):
       setMessages([]);
       messagesRef.current = [];
       setActiveContext(context || null);
+      activeContextRef.current = context || null;
+
+      // Auto-send initial question if provided (use ref to always get latest sendQuestion)
+      if (initialQuestion) {
+        queueMicrotask(() => sendQuestionRef.current(initialQuestion));
+      }
     },
     [resetLive],
   );

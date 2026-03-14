@@ -174,8 +174,9 @@ function LandingChart({ data, closedMonth, scale }: { data: TreeTableSpec; close
           const val = fmtAxis(p.value as number);
           const name = p.seriesName.replace(" (fcst)", "");
           const isFcst = p.seriesName.includes("(fcst)");
-          return `<div style="font-size:10px;color:#9ca3af;margin-bottom:1px">${p.name}</div>
-                  <div style="color:${p.color};font-weight:600">${name}: ${val}${isFcst ? " <i style='color:#9ca3af'>(forecast)</i>" : ""}</div>`;
+          const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          return `<div style="font-size:10px;color:#9ca3af;margin-bottom:1px">${esc(p.name)}</div>
+                  <div style="color:${p.color};font-weight:600">${esc(name)}: ${val}${isFcst ? " <i style='color:#9ca3af'>(forecast)</i>" : ""}</div>`;
         },
         extraCssText: "border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.06);",
       },
@@ -214,12 +215,20 @@ export function LandingView({ period, filters, dimConfig }: Props) {
   const levelsKey = dimConfig.levels.join(",");
   const extra = useMemo(() => {
     const e = filtersToExtra(filters);
-    e.closed_month = "8";
+    e.closed_month = String(new Date().getMonth() || 12);
     e.levels = levelsKey;
     return e;
   }, [filters, levelsKey]);
 
-  const { data, loading } = useApi<TreeTableSpec>("/landing", period, extra);
+  const { data, loading, error } = useApi<TreeTableSpec>("/landing", period, extra);
+
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center text-[13px] text-red-500">
+        Failed to load data. Please try refreshing.
+      </div>
+    );
+  }
 
   if (loading || !data) {
     return (
@@ -230,7 +239,7 @@ export function LandingView({ period, filters, dimConfig }: Props) {
   }
 
   const columns = data.columns;
-  const closedMonth = 8;
+  const closedMonth = new Date().getMonth() || 12; // getMonth() is 0-indexed; Jan=0→use 12 (Dec)
 
   return (
     <div className="flex flex-col h-full">

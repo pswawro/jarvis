@@ -21,6 +21,7 @@ dist/
 # Claude
 CLAUDE.md
 .claude/
+docs/superpowers/
 
 # Insights (generated)
 data/insights.json

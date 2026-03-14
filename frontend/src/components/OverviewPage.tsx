@@ -96,7 +96,7 @@ export function OverviewPage({ period, filters, dimConfig, onAssistantTrigger }:
     e.levels = levelsKey;
     return e;
   }, [filters, config.useFilters, levelsKey]);
-  const { data } = useApi<TreeTableSpec>("/tree", period, extra);
+  const { data, error } = useApi<TreeTableSpec>("/tree", period, extra);
 
   // Initialize table expandedIds when data loads
   useEffect(() => {
@@ -124,6 +124,14 @@ export function OverviewPage({ period, filters, dimConfig, onAssistantTrigger }:
     },
     [onAssistantTrigger, dimConfig.levels, period, filters],
   );
+
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center text-[13px] text-red-500">
+        Failed to load data. Please try refreshing.
+      </div>
+    );
+  }
 
   if (!data) {
     return (

@@ -1,5 +1,6 @@
-"""Per-user preferences store (JSON file, atomic writes)."""
+"""Per-user preferences store (JSON file, atomic writes with file locking)."""
 
+import fcntl
 import json
 import os
 import tempfile
@@ -11,6 +12,19 @@ _PREFS_PATH = Path(__file__).parent.parent / "data" / "user_preferences.json"
 class UserPreferencesStore:
     def __init__(self, path: Path = _PREFS_PATH):
         self._path = path
+        self._lock_path = self._path.with_suffix(".lock")
+        self._lock_fd = None
+
+    def _acquire_lock(self, shared: bool = False):
+        self._lock_path.parent.mkdir(parents=True, exist_ok=True)
+        self._lock_fd = open(self._lock_path, "w")
+        fcntl.flock(self._lock_fd, fcntl.LOCK_SH if shared else fcntl.LOCK_EX)
+
+    def _release_lock(self):
+        if self._lock_fd:
+            fcntl.flock(self._lock_fd, fcntl.LOCK_UN)
+            self._lock_fd.close()
+            self._lock_fd = None
 
     def _load(self) -> dict:
         if not self._path.exists():
@@ -36,24 +50,36 @@ class UserPreferencesStore:
         return data.get(user_id, {"insight_bookmarks": []})
 
     def get_bookmarks(self, user_id: str) -> list[str]:
-        data = self._load()
-        return self._get_user(data, user_id).get("insight_bookmarks", [])
+        self._acquire_lock(shared=True)
+        try:
+            data = self._load()
+            return self._get_user(data, user_id).get("insight_bookmarks", [])
+        finally:
+            self._release_lock()
 
     def add_bookmark(self, user_id: str, insight_id: str):
-        data = self._load()
-        user = self._get_user(data, user_id)
-        if insight_id not in user.get("insight_bookmarks", []):
-            user.setdefault("insight_bookmarks", []).append(insight_id)
-        data[user_id] = user
-        self._save(data)
+        self._acquire_lock()
+        try:
+            data = self._load()
+            user = self._get_user(data, user_id)
+            if insight_id not in user.get("insight_bookmarks", []):
+                user.setdefault("insight_bookmarks", []).append(insight_id)
+            data[user_id] = user
+            self._save(data)
+        finally:
+            self._release_lock()
 
     def remove_bookmark(self, user_id: str, insight_id: str):
-        data = self._load()
-        if user_id not in data:
-            return
-        user = data[user_id]
-        bookmarks = user.get("insight_bookmarks", [])
-        if insight_id in bookmarks:
-            bookmarks.remove(insight_id)
-            user["insight_bookmarks"] = bookmarks
-            self._save(data)
+        self._acquire_lock()
+        try:
+            data = self._load()
+            if user_id not in data:
+                return
+            user = data[user_id]
+            bookmarks = user.get("insight_bookmarks", [])
+            if insight_id in bookmarks:
+                bookmarks.remove(insight_id)
+                user["insight_bookmarks"] = bookmarks
+                self._save(data)
+        finally:
+            self._release_lock()

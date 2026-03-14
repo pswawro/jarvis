@@ -118,6 +118,8 @@ function flattenTree(node: PhasedTreeNode, depth: number, expandedIds: Set<strin
 
 /* ---------- Component ---------- */
 
+const EXPENSE_LEVELS = new Set(["unit", "sub_unit"]);
+
 export function ScenariosPage({ period, filters, dimConfig, scenarioPreset, onScenarioPresetChange, onInteraction, onAssistantTrigger }: Props) {
   const [chartMode, setChartMode] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set(["TOTAL"]));
@@ -127,14 +129,13 @@ export function ScenariosPage({ period, filters, dimConfig, scenarioPreset, onSc
   const levelsKey = dimConfig.levels.join(",");
   const granularity = filters.granularity;
   const scale = filters.scale;
-  const EXPENSE_LEVELS = new Set(["unit", "sub_unit"]);
   const isExpense = dimConfig.levels.some((l) => EXPENSE_LEVELS.has(l));
   const useFilters = !isExpense;
   const extra = useMemo(() => useFilters ? filtersToExtra(filters) : {}, [filters, useFilters]);
 
   // Scenario chart
   const scenarioExtra = useMemo(() => ({ ...extra, levels: levelsKey }), [extra, levelsKey]);
-  const { data: scenarioData, loading: scenarioLoading } = useApi<LineChartSpec>("/scenario-chart", period, scenarioExtra);
+  const { data: scenarioData, loading: scenarioLoading, error: scenarioError } = useApi<LineChartSpec>("/scenario-chart", period, scenarioExtra);
 
   // Phased tree — reuse `extra` instead of recomputing filtersToExtra
   const phasedExtra = useMemo(() => ({
@@ -142,7 +143,7 @@ export function ScenariosPage({ period, filters, dimConfig, scenarioPreset, onSc
     granularity,
     levels: levelsKey,
   }), [extra, granularity, levelsKey]);
-  const { data: phasedData, loading: phasedLoading } = useApi<PhasedTreeSpec>("/phased", period, phasedExtra);
+  const { data: phasedData, loading: phasedLoading, error: phasedError } = useApi<PhasedTreeSpec>("/phased", period, phasedExtra);
 
   const flatRows = useMemo(() => {
     if (!phasedData) return [];
@@ -254,7 +255,11 @@ export function ScenariosPage({ period, filters, dimConfig, scenarioPreset, onSc
 
       {chartMode ? (
         <div className="flex-1">
-          {scenarioLoading || !scenarioData ? (
+          {scenarioError ? (
+            <div className="h-full flex items-center justify-center text-[13px] text-red-500">
+              Failed to load scenario data. Please try refreshing.
+            </div>
+          ) : scenarioLoading || !scenarioData ? (
             <div className="h-full flex items-center justify-center">
               <div className="w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
             </div>
@@ -264,7 +269,11 @@ export function ScenariosPage({ period, filters, dimConfig, scenarioPreset, onSc
         </div>
       ) : (
         <div className="flex-1 overflow-auto">
-          {phasedLoading || !phasedData ? (
+          {phasedError ? (
+            <div className="flex items-center justify-center py-8 text-[13px] text-red-500">
+              Failed to load data. Please try refreshing.
+            </div>
+          ) : phasedLoading || !phasedData ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
             </div>

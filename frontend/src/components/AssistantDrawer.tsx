@@ -561,6 +561,14 @@ export function AssistantDrawer({
   const voiceStoppingRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Cleanup voice recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (voiceTimeoutRef.current) clearTimeout(voiceTimeoutRef.current);
+      recognitionRef.current?.stop();
+    };
+  }, []);
+
   // Auto-scroll when new content arrives
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });

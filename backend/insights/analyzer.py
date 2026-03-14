@@ -65,18 +65,21 @@ def _parse_analysis_response(text: str) -> dict | None:
     }
 
 
+_client = AnthropicBedrock(
+    aws_region=config.LLM_AWS_REGION,
+    aws_access_key=config.AWS_ACCESS_KEY_ID,
+    aws_secret_key=config.AWS_SECRET_ACCESS_KEY,
+    aws_session_token=config.AWS_SESSION_TOKEN,
+)
+
+
 def analyze_insight(anomaly: dict) -> dict | None:
     """Run AI analysis on a single anomaly.
 
     Returns dict with 'explanation', 'sections', 'revised_severity', 'push'
     or None on failure.
     """
-    client = AnthropicBedrock(
-        aws_region=config.LLM_AWS_REGION,
-        aws_access_key=config.AWS_ACCESS_KEY_ID,
-        aws_secret_key=config.AWS_SECRET_ACCESS_KEY,
-        aws_session_token=config.AWS_SESSION_TOKEN,
-    )
+    client = _client
 
     system = build_insight_prompt(anomaly)
     tools = _get_analysis_tools()
@@ -139,11 +142,11 @@ def analyze_insight(anomaly: dict) -> dict | None:
                             "content": result,
                         })
                     except Exception as e:
-                        log.error("Insight tool %s failed: %s", name, e)
+                        log.error("Insight tool %s failed: %s", name, e, exc_info=True)
                         tool_results.append({
                             "type": "tool_result",
                             "tool_use_id": tool_block.id,
-                            "content": f"Tool '{name}' failed: {e}",
+                            "content": f"Tool '{name}' encountered an error. Try a different approach.",
                             "is_error": True,
                         })
                 else:

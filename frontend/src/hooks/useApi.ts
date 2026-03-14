@@ -19,7 +19,8 @@ export function useApi<T>(
     setLoading(true);
     setError(null);
 
-    fetchApi<T>(path, period, extra)
+    const parsedExtra: Record<string, string> | undefined = extraKey ? JSON.parse(extraKey) : undefined;
+    fetchApi<T>(path, period, parsedExtra)
       .then((d) => {
         if (!cancelled) {
           setData(d);

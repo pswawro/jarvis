@@ -85,12 +85,14 @@ export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger, dr
           const sign = variances[idx] >= 0 ? "+" : "";
           const color = varianceColor(variances[idx], invertColor);
           const canDrill = drillable.has(ids[idx]);
-          return `<div style="font-weight:600;font-size:13px;margin-bottom:4px">${names[idx]}</div>
+          const eName = names[idx].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          const eCompLabel = compLabel.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          return `<div style="font-weight:600;font-size:13px;margin-bottom:4px">${eName}</div>
                   <div style="display:flex;justify-content:space-between;gap:16px">
                     <span style="color:#9ca3af">Actual</span><span style="font-weight:500">${fmtValue(actuals[idx])}</span>
                   </div>
                   <div style="display:flex;justify-content:space-between;gap:16px">
-                    <span style="color:#9ca3af">${compLabel}</span><span style="font-weight:500">${fmtValue(budgets[idx])}</span>
+                    <span style="color:#9ca3af">${eCompLabel}</span><span style="font-weight:500">${fmtValue(budgets[idx])}</span>
                   </div>
                   <div style="color:${color};font-weight:600;margin-top:4px;font-size:13px">${sign}${variances[idx].toFixed(1)}%</div>
                   ${canDrill ? '<div style="color:#9ca3af;font-size:10px;margin-top:4px">Click to drill down</div>' : ""}`;
@@ -189,12 +191,12 @@ export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger, dr
         setDrillPath((prev) => [...prev, { id: node.id, name: node.name }]);
       }
     },
-    [items],
+    [items, setDrillPath],
   );
 
   const handleBack = useCallback(() => {
     setDrillPath((prev) => prev.slice(0, -1));
-  }, []);
+  }, [setDrillPath]);
 
   const handleContextMenu = useCallback(
     (params: any) => {

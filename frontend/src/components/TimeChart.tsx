@@ -81,8 +81,9 @@ function specToOption(spec: LineChartSpec): echarts.EChartsOption {
         const p = Array.isArray(params) ? params[0] : params;
         const color = p.color;
         const val = fmt(p.value as number);
-        return `<div style="font-size:10px;color:#9ca3af;margin-bottom:1px">${p.name}</div>
-                <div style="color:${color};font-weight:600">${p.seriesName}: ${val}</div>`;
+        const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        return `<div style="font-size:10px;color:#9ca3af;margin-bottom:1px">${esc(p.name)}</div>
+                <div style="color:${color};font-weight:600">${esc(p.seriesName)}: ${val}</div>`;
       },
       extraCssText: "border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.06);",
     },

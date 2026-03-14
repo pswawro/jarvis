@@ -24,7 +24,7 @@ export function SwipeContainer({ activeIndex, onSwitch, children }: Props) {
     dragEnabled.current = !hasHorizontalScroll(e.target as HTMLElement);
   }, []);
 
-  const handleDragEnd = (
+  const handleDragEnd = useCallback((
     _: unknown,
     info: { offset: { x: number }; velocity: { x: number } }
   ) => {
@@ -38,7 +38,7 @@ export function SwipeContainer({ activeIndex, onSwitch, children }: Props) {
     } else if (info.offset.x > threshold || info.velocity.x > velThreshold) {
       if (activeIndex > 0) onSwitch(activeIndex - 1);
     }
-  };
+  }, [activeIndex, children.length, onSwitch]);
 
   return (
     <div className="relative overflow-hidden flex-1" onPointerDown={handlePointerDown}>

@@ -177,11 +177,11 @@ async def assistant_chat(req: AssistantRequest):
                                 "content": result,
                             })
                         except Exception as e:
-                            log.error("Tool %s failed: %s", name, e)
+                            log.error("Tool %s failed: %s", name, e, exc_info=True)
                             tool_results.append({
                                 "type": "tool_result",
                                 "tool_use_id": tool_block.id,
-                                "content": f"Tool '{name}' failed: {e}",
+                                "content": f"Tool '{name}' encountered an error. Try a different approach or parameters.",
                                 "is_error": True,
                             })
                         yield sse("tool_done", f"Queried {label}")

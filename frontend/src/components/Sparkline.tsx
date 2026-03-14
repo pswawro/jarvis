@@ -11,8 +11,8 @@ export const Sparkline = memo(function Sparkline({ data, width = 64, height = 28
   const computed = useMemo(() => {
     if (data.length < 2) return null;
 
-    const min = Math.min(...data);
-    const max = Math.max(...data);
+    const min = data.reduce((a, b) => Math.min(a, b), Infinity);
+    const max = data.reduce((a, b) => Math.max(a, b), -Infinity);
     const range = max - min || 1;
     const padX = 2;
     const padY = 3;

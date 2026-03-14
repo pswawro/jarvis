@@ -1,6 +1,7 @@
 """API endpoints for insights and push subscriptions."""
 
 import asyncio
+import fcntl
 import json
 import logging
 import os
@@ -272,16 +273,19 @@ def push_subscribe(
     x_user_id: str | None = Header(None, alias="X-User-Id"),
 ):
     user_id, role_id = _resolve_user(x_user_id)
-    subs = _load_subs()
-
-    # Remove existing subscription for this user
-    subs = [s for s in subs if s["user_id"] != user_id]
-    subs.append({
-        "user_id": user_id,
-        "role": role_id,
-        "subscription": body.subscription.model_dump(),
-    })
-    _save_subs(subs)
+    lock_fd = _acquire_subs_lock()
+    try:
+        subs = _load_subs()
+        # Remove existing subscription for this user
+        subs = [s for s in subs if s["user_id"] != user_id]
+        subs.append({
+            "user_id": user_id,
+            "role": role_id,
+            "subscription": body.subscription.model_dump(),
+        })
+        _save_subs(subs)
+    finally:
+        _release_subs_lock(lock_fd)
     return {"ok": True}
 
 
@@ -290,10 +294,29 @@ def push_unsubscribe(
     x_user_id: str | None = Header(None, alias="X-User-Id"),
 ):
     user_id, _ = _resolve_user(x_user_id)
-    subs = _load_subs()
-    subs = [s for s in subs if s["user_id"] != user_id]
-    _save_subs(subs)
+    lock_fd = _acquire_subs_lock()
+    try:
+        subs = _load_subs()
+        subs = [s for s in subs if s["user_id"] != user_id]
+        _save_subs(subs)
+    finally:
+        _release_subs_lock(lock_fd)
     return {"ok": True}
+
+
+_SUBS_LOCK_PATH = _SUBS_PATH.with_suffix(".lock")
+
+
+def _acquire_subs_lock():
+    _SUBS_LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+    fd = open(_SUBS_LOCK_PATH, "w")
+    fcntl.flock(fd, fcntl.LOCK_EX)
+    return fd
+
+
+def _release_subs_lock(fd):
+    fcntl.flock(fd, fcntl.LOCK_UN)
+    fd.close()
 
 
 def _load_subs() -> list[dict]:
