@@ -140,21 +140,6 @@
     opacity: 0.5;
   }
 
-  /* ─── Feature rows ─── */
-  .feature-list { display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; }
-  .feature-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 16px;
-    align-items: center;
-    padding: 12px 16px;
-    background: var(--navy-light);
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.04);
-  }
-  .feature-row .name { font-size: 14px; font-weight: 500; }
-  .feature-row .desc { font-size: 12px; color: var(--gray); margin-top: 2px; }
-
   /* ─── Comparison table ─── */
   .compare-table { width: 100%; border-collapse: collapse; flex: 1; }
   .compare-table th {
@@ -242,11 +227,11 @@
 
   <div class="stats">
     <div class="stat stat-green">
-      <div class="stat-val">20</div>
+      <div class="stat-val">19</div>
       <div class="stat-label">Implemented</div>
     </div>
     <div class="stat stat-amber">
-      <div class="stat-val">4</div>
+      <div class="stat-val">5</div>
       <div class="stat-label">Partial</div>
     </div>
     <div class="stat stat-red">
@@ -266,7 +251,7 @@
     <tr><td>Facts / interpretations / hypotheses separation</td><td><span class="badge badge-done">Done</span></td></tr>
     <tr><td>Push vs Pull insights</td><td><span class="badge badge-done">Done</span></td></tr>
     <tr><td>Mobile native & web responsive</td><td><span class="badge badge-done">Done</span></td></tr>
-    <tr><td>Role-based access control</td><td><span class="badge badge-done">Done</span></td></tr>
+    <tr><td>Role-based access control</td><td><span class="badge badge-partial">Partial</span></td></tr>
     <tr><td>Natural language + voice queries</td><td><span class="badge badge-done">Done</span></td></tr>
     <tr><td>Predictive outcomes & what-if reasoning</td><td><span class="badge badge-done">Done</span></td></tr>
     <tr><td>External signals / competitor context</td><td><span class="badge badge-missing">Not Started</span></td></tr>
@@ -287,10 +272,8 @@
       <ul>
         <li>Hierarchical tree-table with drill-down (Brand &rarr; TA &rarr; Total, Region &rarr; Market, Unit &rarr; Sub-unit)</li>
         <li>Toggle to treemap bar chart for visual distribution</li>
-        <li>Actual vs comparator with colour-coded variance pills</li>
-        <li>12-month sparklines showing revenue/expense trends per row</li>
+        <li>Actual vs comparator with colour-coded variance pills and 12-month sparklines</li>
         <li>Market share column for competitive dimensions</li>
-        <li>Expense breakdown (Personnel, External, Other, FTE, Cost/FTE)</li>
       </ul>
     </div>
     <div class="card card-accent">
@@ -298,11 +281,9 @@
       <span class="badge badge-done">Done</span>
       <ul>
         <li>12-month blended view: actuals for closed months, forecast for future</li>
-        <li>Toggle between table and line chart visualisation</li>
-        <li>Solid lines for actuals, dashed lines for forecast</li>
+        <li>Toggle between table and line chart (solid = actuals, dashed = forecast)</li>
         <li>"Now" marker showing the actual/forecast boundary</li>
         <li>Composable drill hierarchy via levels parameter</li>
-        <li>FY Total aggregation across all months</li>
       </ul>
     </div>
     <div class="card card-accent">
@@ -310,10 +291,8 @@
       <span class="badge badge-done">Done</span>
       <ul>
         <li>Multi-scenario comparison: ACT vs BUD vs MTP vs RBU2 vs PY</li>
-        <li>7 preset scenario combinations (e.g. ACT vs Budget & MTP)</li>
-        <li>Granularity toggle: Monthly, Quarterly, Full Year</li>
+        <li>7 preset scenario combinations with granularity toggle (M/Q/Y)</li>
         <li>Double-click to expand scenario sub-rows with variance detail</li>
-        <li>Colour-coded scenario labels for quick identification</li>
         <li>Chart mode with scenario overlay trend lines</li>
       </ul>
     </div>
@@ -335,10 +314,8 @@
       <ul>
         <li>Top-level cards: Total Revenue, Gross Profit, Operating Expenses, Operating Margin</li>
         <li>Actual values with delta vs multiple comparators (BUD, MTP, PY)</li>
-        <li>Colour-coded variance (green = beat, red = miss)</li>
-        <li>Inverted logic for expenses (green = cost savings)</li>
-        <li>Collapsible for screen space on mobile</li>
-        <li>Responds to all active filters in real-time</li>
+        <li>Colour-coded variance (green = beat, red = miss; inverted for expenses)</li>
+        <li>Collapsible on mobile; responds to all active filters in real-time</li>
       </ul>
     </div>
     <div class="card card-accent">
@@ -346,331 +323,9 @@
       <span class="badge badge-done">Done</span>
       <ul>
         <li><strong>Settings:</strong> Year, Granularity (Y/Q/M), Comparator (BUD/MTP/RBU2/PY), Scale ($K/$M/$B)</li>
-        <li><strong>Data filters:</strong> Market, Therapeutic Area, Product (with search)</li>
-        <li>Product filter auto-scoped by selected TA</li>
-        <li>Removable filter chips with "Clear all" action</li>
-        <li><strong>Dimension picker:</strong> Composable hierarchies (TA&rarr;Brand&rarr;Market, Region&rarr;Market, etc.)</li>
-        <li>Save and load custom dimension configurations</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="card" style="margin-top: 16px;">
-    <h3>Data Export</h3>
-    <span class="badge badge-done">Done</span>
-    <ul>
-      <li>CSV download of any tree view, preserving full hierarchy path &mdash; filtered by current year, market, and TA selections</li>
-    </ul>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════ SLIDE 5: AI Assistant ════════════════════════════════════════════════ -->
-<div class="slide" data-slide="4">
-  <div class="section-num">03 &mdash; AI Assistant</div>
-  <h2>Conversational AI Analytics</h2>
-  <p class="subtitle">Natural language queries with structured, data-grounded responses</p>
-
-  <div class="card-grid cols-2">
-    <div class="card card-accent">
-      <h3>Three Response Modes</h3>
-      <span class="badge badge-done">Done</span>
-      <ul>
-        <li><strong>Clarify:</strong> When user query is vague, AI asks smart follow-up questions with suggested options</li>
-        <li><strong>Configure:</strong> When user wants to navigate ("show me Oncology in US"), AI proposes dashboard filter/view changes that can be applied with one click</li>
-        <li><strong>Analyse:</strong> For data questions, AI runs a structured investigation with planning, querying, and synthesis</li>
-      </ul>
-    </div>
-    <div class="card card-accent">
-      <h3>Structured Investigation</h3>
-      <span class="badge badge-done">Done</span>
-      <ul>
-        <li>AI makes its reasoning visible via think steps (plan &rarr; finding &rarr; pivot &rarr; synthesis)</li>
-        <li>Queries real data using 10 internal tools (KPI, brand, region, unit, market, charts, config)</li>
-        <li>Multi-turn: investigates 2-4 angles before synthesising</li>
-        <li>Renders inline tables, charts, and variance decomposition waterfalls</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="card-grid cols-2" style="margin-top: 16px;">
-    <div class="card card-accent">
-      <h3>Facts / Interpretation / Hypothesis</h3>
-      <span class="badge badge-done">Done</span>
-      <ul>
-        <li>Every analytical response is structured into clear XML-tagged sections</li>
-        <li><strong>Facts:</strong> Data points discovered, with numbers</li>
-        <li><strong>Interpretation:</strong> What the data means in business context</li>
-        <li><strong>Hypothesis:</strong> Likely root cause or explanation</li>
-        <li><strong>Recommendations:</strong> Specific, actionable next steps with named entities</li>
-      </ul>
-    </div>
-    <div class="card card-accent">
-      <h3>Context Awareness</h3>
-      <span class="badge badge-done">Done</span>
-      <ul>
-        <li>Receives current page, filters, period, comparator, and scale</li>
-        <li>Right-click any data point to ask AI about it</li>
-        <li>Long-press on mobile to trigger AI investigation</li>
-        <li>Voice input via Web Speech API &mdash; tap microphone, speak, auto-submits transcription</li>
-        <li>Multi-chat sessions (up to 20) with localStorage persistence</li>
-        <li>Real-time SSE streaming of response sections</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════ SLIDE 6: AI Roles ════════════════════════════════════════════════ -->
-<div class="slide" data-slide="5">
-  <div class="section-num">04 &mdash; Roles & Access</div>
-  <h2>Role-Based Personalisation</h2>
-  <p class="subtitle">Different perspectives for different users &mdash; same trusted data foundation</p>
-
-  <div class="card-grid cols-2">
-    <div class="card card-accent">
-      <h3>How Roles Work</h3>
-      <span class="badge badge-done">Done</span>
-      <ul>
-        <li>Each role defines: prompt personality, default page, available tools, and insight visibility scope</li>
-        <li>The AI adapts its language, framing, and focus to match the user's role</li>
-        <li>Tool access is filtered &mdash; a Commercial Lead cannot query expense data</li>
-        <li>Insight scope filtering &mdash; users only see anomalies relevant to their domain</li>
-      </ul>
-    </div>
-    <div class="card card-accent">
-      <h3>Defined Roles</h3>
-      <span class="badge badge-done">Done</span>
-      <ul>
-        <li><strong>Enterprise Analyst (default):</strong> Full access to all tools, insights, and dimensions</li>
-        <li><strong>CFO:</strong> Focus on margin, OpEx efficiency, forecast accuracy. Framed through P&L impact</li>
-        <li><strong>Commercial Lead:</strong> Brand performance, market share, competitive positioning. No expense data</li>
-        <li><strong>Market Lead:</strong> Scoped to specific market data and insights</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="card" style="margin-top: 16px;">
-    <h3>Hackathon Alignment: Access Security</h3>
-    <p style="font-size: 13px; color: var(--gray-light); margin-top: 8px; line-height: 1.6;">
-      The brief requires "grant different access to data to different people (e.g. CEO can see everything while somebody in a market can only see data from such market)."
-      Jarvis implements this through role-based configuration: each role defines which data tools are available and which insight scopes are visible.
-      The semantic model is injected into every prompt, ensuring the AI can only reference data it has access to query.
-    </p>
-    <span class="badge badge-done" style="margin-top: 8px;">Done</span>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════ SLIDE 7: Insights Pipeline ════════════════════════════════════════════════ -->
-<div class="slide" data-slide="6">
-  <div class="section-num">05 &mdash; Push Insights</div>
-  <h2>Automated Anomaly Detection Pipeline</h2>
-  <p class="subtitle">From statistical detection to AI analysis to push notification</p>
-
-  <div class="pipeline">
-    <div class="pipeline-step">
-      <div class="step-num">1</div>
-      <div class="step-title">Detect</div>
-      <div class="step-desc">Statistical algorithms scan revenue, expenses, and market share data</div>
-    </div>
-    <div class="pipeline-arrow">&rarr;</div>
-    <div class="pipeline-step">
-      <div class="step-num">2</div>
-      <div class="step-title">Fingerprint</div>
-      <div class="step-desc">Each anomaly gets a stable identity for deduplication and escalation tracking</div>
-    </div>
-    <div class="pipeline-arrow">&rarr;</div>
-    <div class="pipeline-step">
-      <div class="step-num">3</div>
-      <div class="step-title">AI Analyse</div>
-      <div class="step-desc">Claude investigates context, queries data tools, and writes structured analysis</div>
-    </div>
-    <div class="pipeline-arrow">&rarr;</div>
-    <div class="pipeline-step">
-      <div class="step-num">4</div>
-      <div class="step-title">Classify</div>
-      <div class="step-desc">AI assigns severity (critical / notable / informational) and push eligibility</div>
-    </div>
-    <div class="pipeline-arrow">&rarr;</div>
-    <div class="pipeline-step">
-      <div class="step-num">5</div>
-      <div class="step-title">Deliver</div>
-      <div class="step-desc">Web Push notification to subscribed users, filtered by role scope</div>
-    </div>
-  </div>
-
-  <div class="card-grid cols-2" style="margin-top: 8px;">
-    <div class="card">
-      <h3>Four Detection Methods</h3>
-      <span class="badge badge-done">Done</span>
-      <ul>
-        <li><strong>Outlier (Z-Score):</strong> Flags single-month values that deviate significantly from historical average</li>
-        <li><strong>Drift (Rolling Mean):</strong> Detects sustained trend changes &mdash; recent window vs overall baseline</li>
-        <li><strong>Target Miss:</strong> Compares actual revenue vs budget targets, flags when variance exceeds threshold</li>
-        <li><strong>Competitive Shift:</strong> Detects month-over-month market share changes beyond threshold</li>
-      </ul>
-    </div>
-    <div class="card">
-      <h3>Entities Monitored</h3>
-      <span class="badge badge-done">Done</span>
-      <ul>
-        <li><strong>Revenue:</strong> Every brand-market combination, TA aggregates, and total company</li>
-        <li><strong>Expenses:</strong> Sub-unit level, unit aggregates, and total company</li>
-        <li><strong>Competitive:</strong> Brand-market pairs with competitive category tracking</li>
-        <li>Configurable sensitivity profiles (zscore thresholds, rolling window, market share delta)</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════ SLIDE 8: Insight Management ════════════════════════════════════════════════ -->
-<div class="slide" data-slide="7">
-  <div class="section-num">05 &mdash; Push Insights (cont.)</div>
-  <h2>Insight Management & Interaction</h2>
-  <p class="subtitle">Avoiding alert fatigue through smart deduplication and user controls</p>
-
-  <div class="card-grid cols-2">
-    <div class="card card-accent">
-      <h3>Smart Deduplication & Escalation</h3>
-      <span class="badge badge-done">Done</span>
-      <ul>
-        <li>Fingerprinting prevents the same anomaly from creating duplicate alerts across runs</li>
-        <li>If an existing anomaly worsens (&gt;30% score increase), the insight is automatically re-analysed by AI</li>
-        <li>When an anomaly is no longer detected, its insight transitions to "inactive" status</li>
-        <li>Push notifications only fire for genuinely new or escalated findings</li>
-      </ul>
-    </div>
-    <div class="card card-accent">
-      <h3>User Interaction</h3>
-      <span class="badge badge-done">Done</span>
-      <ul>
-        <li><strong>Insights panel:</strong> Slide-out panel with severity-sorted list of anomalies</li>
-        <li><strong>Read/unread tracking:</strong> Unread count badge with blue dot indicators</li>
-        <li><strong>Bookmarking:</strong> Save important insights for later review, filter to show bookmarks only</li>
-        <li><strong>Send to chat:</strong> One-click to open AI assistant with full insight context for deeper analysis</li>
-        <li><strong>Expandable analysis:</strong> Preview first section, expand to see full facts/interpretation/hypothesis/recommendations</li>
-        <li><strong>Sort:</strong> By date (newest first) or by severity level</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="card" style="margin-top: 16px;">
-    <h3>Hackathon Alignment: Push vs Pull</h3>
-    <p style="font-size: 13px; color: var(--gray-light); margin-top: 8px; line-height: 1.6;">
-      The brief asks: "Should insights be pushed or pulled? How do we avoid noise and alert fatigue?"
-      Jarvis implements <strong>both</strong>: critical anomalies are pushed via Web Push notifications (filtered by role scope), while all insights
-      are available to pull from the insights panel. Alert fatigue is mitigated by fingerprint-based deduplication, severity gating (only critical
-      triggers push), and AI-driven push eligibility (the model decides if a finding truly warrants interruption).
-    </p>
-    <span class="badge badge-done" style="margin-top: 8px;">Done</span>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════ SLIDE 9: AI Analysis (shared) ════════════════════════════════════════════════ -->
-<div class="slide" data-slide="8">
-  <div class="section-num">06 &mdash; AI Architecture</div>
-  <h2>Unified AI Analysis Engine</h2>
-  <p class="subtitle">One investigation pattern shared between assistant chat and automated insights</p>
-
-  <div class="card-grid cols-2">
-    <div class="card card-accent">
-      <h3>Shared Prompt Architecture</h3>
-      <span class="badge badge-done">Done</span>
-      <ul>
-        <li>Common core: personality rules, semantic model (brands, markets, org structure), and formatting conventions</li>
-        <li>Shared investigation pattern: plan &rarr; query &rarr; finding &rarr; drill/pivot &rarr; synthesise</li>
-        <li>Same XML output sections: facts, interpretation, hypothesis, recommendations</li>
-        <li>Same data query tools: 10 endpoints covering KPIs, revenue, expenses, and competitive data</li>
-      </ul>
-    </div>
-    <div class="card card-accent">
-      <h3>Mode-Specific Extensions</h3>
-      <span class="badge badge-done">Done</span>
-      <ul>
-        <li><strong>Assistant chat</strong> adds: dashboard state context, clarify/configure modes, render tools (tables, charts, variance decomposition), filter scope guidance</li>
-        <li><strong>Insight analysis</strong> adds: anomaly details (detection type, entity, raw statistics), severity classification, push eligibility determination</li>
-        <li>No duplicated prompt content &mdash; each mode composes only the pieces it needs</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="card" style="margin-top: 16px;">
-    <h3>Semantic Model</h3>
-    <span class="badge badge-done">Done</span>
-    <p style="font-size: 13px; color: var(--gray-light); margin-top: 8px; line-height: 1.6;">
-      Dynamically built from actual data dimensions at startup. Includes the complete brand portfolio grouped by therapeutic area,
-      all markets with regional grouping, full organisational structure with units and sub-units, and competitive categories.
-      This ensures the AI always references real entities and never fabricates brand or market names.
-    </p>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════ SLIDE 10: Mobile & Responsive ════════════════════════════════════════════════ -->
-<div class="slide" data-slide="9">
-  <div class="section-num">07 &mdash; Mobile Experience</div>
-  <h2>Mobile-Native & Web Responsive</h2>
-  <p class="subtitle">Touch-first design that scales to desktop without compromise</p>
-
-  <div class="card-grid cols-3">
-    <div class="card card-accent">
-      <h3>Touch Navigation</h3>
-      <span class="badge badge-done">Done</span>
-      <ul>
-        <li>Swipe left/right between Overview, Landing, and Phased views</li>
-        <li>Long-press any data row to trigger AI analysis</li>
-        <li>Drag-to-close insights panel from bottom sheet</li>
-        <li>Pill-style tab indicators optimised for thumb reach</li>
-      </ul>
-    </div>
-    <div class="card card-accent">
-      <h3>Responsive Layout</h3>
-      <span class="badge badge-done">Done</span>
-      <ul>
-        <li>KPI strip: 2-column grid on mobile, 4-column on desktop</li>
-        <li>Tree tables: horizontal scroll with sticky name column</li>
-        <li>Hidden columns on small screens (sparklines, market share, forecasts)</li>
-        <li>Collapsible filter bar and KPI strip to save vertical space</li>
-      </ul>
-    </div>
-    <div class="card card-accent">
-      <h3>Push Notifications</h3>
-      <span class="badge badge-done">Done</span>
-      <ul>
-        <li>Service Worker for Web Push subscription</li>
-        <li>VAPID-based notification delivery</li>
-        <li>Click notification to deep-link into insights panel</li>
-        <li>Works on mobile browsers and installable as PWA</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════ SLIDE 11: Data Coverage ════════════════════════════════════════════════ -->
-<div class="slide" data-slide="10">
-  <div class="section-num">08 &mdash; Data Coverage</div>
-  <h2>Data Domains & Hierarchies</h2>
-  <p class="subtitle">Enterprise-wide data foundation with standardised hierarchies</p>
-
-  <div class="card-grid cols-2">
-    <div class="card card-accent">
-      <h3>Financial Data</h3>
-      <span class="badge badge-done">Done</span>
-      <ul>
-        <li>Revenue by brand, market, month across 2023-2025</li>
-        <li>Operating expenses by unit/sub-unit with personnel/external/other breakdown</li>
-        <li>Gross profit and operating margin calculations</li>
-        <li>Headcount and FTE data with cost-per-FTE derived metric</li>
-        <li>Variances vs Budget, MTP, RBU2, and Prior Year</li>
-        <li>Monthly, quarterly, annual, and year-to-date time series</li>
-      </ul>
-    </div>
-    <div class="card card-accent">
-      <h3>Commercial Data</h3>
-      <span class="badge badge-done">Done</span>
-      <ul>
-        <li>Market size and market growth by competitive category</li>
-        <li>Market share by brand and category, tracked monthly</li>
-        <li>AZ revenue vs total market revenue</li>
-        <li>Share delta vs prior year in percentage points</li>
-        <li>Performance by brand-market pair</li>
+        <li><strong>Data filters:</strong> Market, Therapeutic Area, Product (auto-scoped by TA)</li>
+        <li><strong>Dimension picker:</strong> Composable hierarchies with save/load custom configurations</li>
+        <li>Removable filter chips with "Clear all" &bull; CSV export of any view</li>
       </ul>
     </div>
   </div>
@@ -698,9 +353,198 @@
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════════ SLIDE 12: What's Missing ════════════════════════════════════════════════ -->
-<div class="slide" data-slide="11">
-  <div class="section-num">09 &mdash; Gaps</div>
+<!-- ════════════════════════════════════════════════ SLIDE 5: AI Assistant ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="4">
+  <div class="section-num">03 &mdash; AI Assistant</div>
+  <h2>Conversational AI Analytics</h2>
+  <p class="subtitle">Natural language queries with structured, data-grounded responses</p>
+
+  <div class="card-grid cols-3">
+    <div class="card card-accent">
+      <h3>Three Response Modes</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li><strong>Clarify:</strong> Smart follow-up questions with suggested options when query is vague</li>
+        <li><strong>Configure:</strong> Proposes dashboard filter/view changes applicable with one click</li>
+        <li><strong>Analyse:</strong> Structured investigation with planning, querying, and synthesis</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>Facts / Interpretation / Hypothesis</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>Every response structured into XML-tagged sections with clear epistemological boundaries</li>
+        <li><strong>Facts</strong> (data points) &rarr; <strong>Interpretation</strong> (business context) &rarr; <strong>Hypothesis</strong> (root cause) &rarr; <strong>Recommendations</strong> (actions)</li>
+        <li>AI investigates 2-4 angles per question using 10+ data query tools before synthesising</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>Context & Interaction</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>Receives current page, filters, period, comparator, and scale</li>
+        <li>Right-click any data point (long-press on mobile) to ask AI about it</li>
+        <li>Voice input via Web Speech API, multi-chat sessions (up to 20), SSE streaming</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 16px;">
+    <h3>Unified AI Engine</h3>
+    <span class="badge badge-done">Done</span>
+    <p style="font-size: 13px; color: var(--gray-light); margin-top: 8px; line-height: 1.6;">
+      One investigation pattern shared between assistant chat and automated insights. A semantic model dynamically built from actual data at startup
+      ensures the AI always references real entities. Both modes share the same query tools and output structure &mdash;
+      chat adds dashboard context and render tools; insights add anomaly details and severity classification.
+    </p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ SLIDE 6: Roles ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="5">
+  <div class="section-num">04 &mdash; Roles & Access</div>
+  <h2>Role-Based Personalisation</h2>
+  <p class="subtitle">Different perspectives for different users &mdash; same trusted data foundation</p>
+
+  <div class="card-grid cols-2">
+    <div class="card card-accent">
+      <h3>What Works Today</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>Each role defines: prompt personality, available AI tools, and insight visibility scope</li>
+        <li>The AI adapts its language, framing, and focus to match the user's role</li>
+        <li>Tool access is filtered &mdash; e.g. Market Lead cannot query expense or org-unit data</li>
+        <li>Insight scope filtering &mdash; users only see anomalies relevant to their domain</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>Four Defined Roles</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li><strong>Enterprise Analyst (default):</strong> Full access to all tools, insights, and dimensions</li>
+        <li><strong>CFO:</strong> Focus on margin, OpEx efficiency, forecast accuracy. Framed through P&L impact</li>
+        <li><strong>Commercial Lead:</strong> Brand performance, market share, competitive positioning. No expense data</li>
+        <li><strong>Market Lead:</strong> Scoped to specific market data and insights only</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 16px; border-left: 3px solid var(--amber);">
+    <h3>What's Still Needed</h3>
+    <span class="badge badge-partial" style="margin-bottom: 8px;">Partial</span>
+    <ul>
+      <li><strong>Data route enforcement:</strong> Roles filter AI tools and insights, but dashboard API endpoints are not yet restricted by role &mdash; any user can query any data view directly</li>
+      <li><strong>Default page & settings:</strong> Role configs declare <code>default_page</code>, but the frontend doesn't read it yet &mdash; all users start on Overview</li>
+      <li><strong>Frontend role context:</strong> No role selector or role-aware UI &mdash; role is only applied server-side via <code>X-User-Id</code> header for insights</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ SLIDE 7: Push Insights ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="6">
+  <div class="section-num">05 &mdash; Push Insights</div>
+  <h2>Automated Anomaly Detection &amp; Delivery</h2>
+  <p class="subtitle">From statistical detection to AI analysis to push notification</p>
+
+  <div class="pipeline">
+    <div class="pipeline-step">
+      <div class="step-num">1</div>
+      <div class="step-title">Detect</div>
+      <div class="step-desc">4 statistical methods scan all entities</div>
+    </div>
+    <div class="pipeline-arrow">&rarr;</div>
+    <div class="pipeline-step">
+      <div class="step-num">2</div>
+      <div class="step-title">Deduplicate</div>
+      <div class="step-desc">Fingerprinting prevents duplicate alerts; escalates if worsened</div>
+    </div>
+    <div class="pipeline-arrow">&rarr;</div>
+    <div class="pipeline-step">
+      <div class="step-num">3</div>
+      <div class="step-title">AI Analyse</div>
+      <div class="step-desc">Claude investigates context and writes structured analysis</div>
+    </div>
+    <div class="pipeline-arrow">&rarr;</div>
+    <div class="pipeline-step">
+      <div class="step-num">4</div>
+      <div class="step-title">Classify &amp; Deliver</div>
+      <div class="step-desc">Severity gating + Web Push to subscribed users by role</div>
+    </div>
+  </div>
+
+  <div class="card-grid cols-3" style="margin-top: 8px;">
+    <div class="card card-accent">
+      <h3>Detection Methods</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li><strong>Outlier (Z-Score):</strong> Single-month deviations from historical average</li>
+        <li><strong>Drift (Rolling Mean):</strong> Sustained trend changes vs baseline</li>
+        <li><strong>Target Miss:</strong> Actual vs budget variance beyond threshold</li>
+        <li><strong>Competitive Shift:</strong> MoM market share changes</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>User Interaction</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>Slide-out insights panel with severity-sorted anomalies</li>
+        <li>Read/unread tracking, bookmarking, sort by date or severity</li>
+        <li>One-click "Send to chat" for deeper AI analysis</li>
+        <li>Expandable analysis: facts / interpretation / hypothesis / recommendations</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>Push vs Pull</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li><strong>Push:</strong> Web Push for critical anomalies, filtered by role scope</li>
+        <li><strong>Pull:</strong> All insights available in the insights panel on demand</li>
+        <li>Alert fatigue mitigated by dedup, severity gating, and AI push-eligibility</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ SLIDE 8: Mobile ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="7">
+  <div class="section-num">06 &mdash; Mobile Experience</div>
+  <h2>Mobile-Native & Web Responsive</h2>
+  <p class="subtitle">Touch-first design that scales to desktop without compromise</p>
+
+  <div class="card-grid cols-3">
+    <div class="card card-accent">
+      <h3>Touch Navigation</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>Swipe left/right between views</li>
+        <li>Long-press any data row to trigger AI analysis</li>
+        <li>Drag-to-close insights panel</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>Responsive Layout</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>KPI strip: 2-column on mobile, 4-column on desktop</li>
+        <li>Sticky name column with horizontal scroll on tables</li>
+        <li>Collapsible filter bar and KPI strip</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>Push Notifications</h3>
+      <span class="badge badge-done">Done</span>
+      <ul>
+        <li>Service Worker + VAPID-based Web Push</li>
+        <li>Click notification to deep-link into insights</li>
+        <li>Installable as PWA</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ SLIDE 9: Gaps ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="8">
+  <div class="section-num">07 &mdash; Gaps & Roadmap</div>
   <h2>What's Not Yet Built</h2>
   <p class="subtitle">Remaining hackathon requirements and future capabilities</p>
 
@@ -708,169 +552,32 @@
     <div class="card" style="border-left: 3px solid var(--red);">
       <h3 style="color: var(--red);">Not Started</h3>
       <ul>
-        <li><strong>External signals:</strong> "Integration of external signals from AZ and from competitors" &mdash; currently all analysis is based on internal data only</li>
+        <li><strong>External signals:</strong> No integration with competitor data, news, or AZ public filings &mdash; all analysis uses internal data only</li>
       </ul>
     </div>
     <div class="card" style="border-left: 3px solid var(--amber);">
       <h3 style="color: var(--amber);">Partially Built</h3>
       <ul>
-        <li><strong>Saved views:</strong> Dimension configurations can be saved/loaded. A bookmark hook for full dashboard state (filters + view + period) exists but is not connected to the UI</li>
-        <li><strong>Scaling beyond Finance/Commercial:</strong> Architecture supports new data domains, but only revenue, expenses, and market share are loaded. HR, manufacturing, and R&D mentioned in brief are not yet included</li>
-        <li><strong>Internal context leverage:</strong> The semantic model provides structural context, but there is no integration with internal knowledge bases or prior analyses</li>
-        <li><strong>Production deployment:</strong> Designed for Domino Data Lab but not production-hardened (no auth middleware, no persistent database, JSON file storage)</li>
+        <li><strong>Role enforcement:</strong> AI personalisation and insight scoping work, but data APIs are unrestricted and frontend has no role awareness</li>
+        <li><strong>Saved views:</strong> Dimension configs can be saved; full dashboard state bookmarks not yet wired to UI</li>
+        <li><strong>Scaling beyond Finance/Commercial:</strong> Architecture is domain-agnostic but only revenue, expenses, and market share are loaded</li>
+        <li><strong>Production readiness:</strong> No auth middleware, no persistent database, JSON file storage</li>
       </ul>
     </div>
     <div class="card" style="border-left: 3px solid var(--green);">
       <h3 style="color: var(--green);">Easy to Add</h3>
       <ul>
-        <li><strong>External data:</strong> The AI tool system is extensible &mdash; adding a web search or news query tool would give the assistant external context</li>
-        <li><strong>Saved views:</strong> The useBookmarks hook is already built; it just needs to be wired to a UI button</li>
-        <li><strong>New data domains:</strong> Data loader and tree builder are domain-agnostic; adding HR/R&D data requires only new CSV files and dimension config</li>
+        <li><strong>External data:</strong> Add a web search tool to the AI tool system</li>
+        <li><strong>Role enforcement:</strong> Add middleware to check role on data routes; wire <code>default_page</code> to frontend</li>
+        <li><strong>Saved views:</strong> useBookmarks hook exists; needs UI button</li>
+        <li><strong>New data domains:</strong> Just add CSV files and dimension config</li>
       </ul>
     </div>
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════════ SLIDE 13: Detailed Comparison ════════════════════════════════════════════════ -->
-<div class="slide" data-slide="12">
-  <div class="section-num">10 &mdash; Full Mapping</div>
-  <h2>Hackathon Brief &harr; Jarvis Feature Map</h2>
-  <p class="subtitle">Detailed requirement-by-requirement alignment</p>
-
-  <div style="overflow-y: auto; flex: 1;">
-    <table class="compare-table">
-      <tr><th style="width: 40%;">Brief Requirement</th><th style="width: 45%;">Jarvis Implementation</th><th>Status</th></tr>
-      <tr>
-        <td>Multiple modes of consumption (table, visual, chat)</td>
-        <td>Tree tables, treemap charts, line charts, sparklines, AI chat with inline tables/charts</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Seamless switching between table &harr; chart &harr; detail</td>
-        <td>Every page has table/chart toggle. Click any row to drill down. Right-click for AI analysis</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Standardised enterprise hierarchies</td>
-        <td>Brand&rarr;TA&rarr;Total, Market&rarr;Region&rarr;Total, Sub-unit&rarr;Unit&rarr;Total, plus composable mixes</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Balance between standardisation and personalisation</td>
-        <td>Standard hierarchies enforced; personalisation via filters, dimension picker, saved configs, role-based views</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Root causes, not surface-level fluctuations</td>
-        <td>AI investigates 2-4 angles per question. Variance decomposition waterfall shows contributing factors. Hypothesis section explains "why"</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Automated detection of variances, trends, outliers</td>
-        <td>Four statistical methods (outlier z-score, drift, target miss, competitive shift) monitored across all entities</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Contextual explanations grounded in data</td>
-        <td>AI queries real data tools before answering. Never fabricates numbers. Shows investigation steps transparently</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Recommendation of actions</td>
-        <td>Recommendations section with specific, named entities and concrete actions (not generic "monitor closely")</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Clear distinction: facts vs interpretations vs hypotheses</td>
-        <td>Separate XML-tagged sections displayed in distinct UI blocks: Facts, Interpretation, Hypothesis, Recommendations</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Natural language queries</td>
-        <td>Multi-turn chat with context propagation, 20 persistent sessions, streaming responses</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Voice queries</td>
-        <td>Web Speech API integration in AI chat &mdash; microphone button, speech-to-text, auto-submit</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Push vs Pull insights</td>
-        <td>Both: Web Push for critical anomalies, pull via insights panel. Dedup and AI severity gating prevent alert fatigue</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Drill into variances across markets, brands, KPIs</td>
-        <td>Interactive drill-down in tree tables + treemaps. AI decompose_variance tool breaks down contributing factors</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Connect financial outcomes with commercial drivers</td>
-        <td>AI can cross-query revenue and market share tools in a single investigation. Competitive view links share to revenue</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Mobile native and web responsive</td>
-        <td>Swipeable views, long-press, responsive grids, collapsible panels, push notifications, mobile-first CSS</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Role-based access control</td>
-        <td>4 roles (Analyst, CFO, Commercial Lead, Market Lead) with scoped tools, insights, and AI personality</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>External signals / competitor context</td>
-        <td>Not implemented &mdash; only internal data is used</td>
-        <td><span class="badge badge-missing">Not Started</span></td>
-      </tr>
-      <tr>
-        <td>Predictive outcomes & what-if reasoning</td>
-        <td>Landing view blends actuals with forecast. Scenario comparison across BUD/MTP/RBU2. AI uses &lt;hypothesis&gt; section for forward-looking speculation and what-if reasoning grounded in queried data</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Revenue, OpEx, margin, variances (3-year)</td>
-        <td>2023-2025 data loaded. Budget, MTP, RBU2, Prior Year comparators. Gross profit and operating margin KPIs</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Market size, share, growth by brand/market</td>
-        <td>Commercial market data with share %, growth %, delta vs PY, by brand-market-category</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Monthly, quarterly, annual time series</td>
-        <td>Granularity toggle (M/Q/Y) on phased view. Monthly sparklines. Landing view shows 12-month series</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Scalable beyond finance to HR, manufacturing, R&D</td>
-        <td>Architecture is domain-agnostic; only finance and commercial data are currently loaded</td>
-        <td><span class="badge badge-partial">Partial</span></td>
-      </tr>
-      <tr>
-        <td>Explanations visualised alongside data</td>
-        <td>AI renders inline tables, charts, and variance decomposition inside the chat panel. Insights show analysis next to anomaly cards</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Personalised, actionable discovery</td>
-        <td>Composable dimension picker with save/load, filter chips, AI-proposed navigation changes</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-      <tr>
-        <td>Affordable to build and maintain</td>
-        <td>Python/React stack, CSV data layer, no database dependency, runs on Domino Data Lab</td>
-        <td><span class="badge badge-done">Done</span></td>
-      </tr>
-    </table>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════ SLIDE 14: Summary ════════════════════════════════════════════════ -->
-<div class="slide" data-slide="13">
+<!-- ════════════════════════════════════════════════ SLIDE 10: Summary ════════════════════════════════════════════════ -->
+<div class="slide" data-slide="9">
   <div class="title-slide">
     <div class="logo">JARVIS</div>
     <h1 style="font-size: 48px;">Summary</h1>
@@ -880,7 +587,7 @@
     </p>
     <div class="stats" style="justify-content: center; margin-top: 32px;">
       <div class="stat stat-green">
-        <div class="stat-val">20</div>
+        <div class="stat-val">19</div>
         <div class="stat-label">Requirements Met</div>
       </div>
       <div class="stat" style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 32px;">
