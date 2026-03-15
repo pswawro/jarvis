@@ -4,6 +4,7 @@ import fcntl
 import json
 import os
 import tempfile
+from contextlib import contextmanager
 from pathlib import Path
 
 
@@ -11,20 +12,18 @@ class InsightStore:
     def __init__(self, path: Path | str):
         self.path = Path(path)
         self._lock_path = self.path.with_suffix(".lock")
-        self._lock_fd = None
 
-    def _acquire_lock(self, shared: bool = False):
-        """Acquire a file lock. Use shared=True for read-only operations."""
+    @contextmanager
+    def _file_lock(self, shared: bool = False):
+        """Context manager for file locking. Use shared=True for read-only operations."""
         self._lock_path.parent.mkdir(parents=True, exist_ok=True)
-        self._lock_fd = open(self._lock_path, "w")
-        fcntl.flock(self._lock_fd, fcntl.LOCK_SH if shared else fcntl.LOCK_EX)
-
-    def _release_lock(self):
-        """Release the file lock."""
-        if self._lock_fd:
-            fcntl.flock(self._lock_fd, fcntl.LOCK_UN)
-            self._lock_fd.close()
-            self._lock_fd = None
+        fd = open(self._lock_path, "w")
+        try:
+            fcntl.flock(fd, fcntl.LOCK_SH if shared else fcntl.LOCK_EX)
+            yield
+        finally:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+            fd.close()
 
     def _load(self) -> list[dict]:
         """Internal load without locking — caller must hold lock."""
@@ -37,11 +36,8 @@ class InsightStore:
 
     def load_all(self) -> list[dict]:
         """Load all insights with a shared lock for read consistency."""
-        self._acquire_lock(shared=True)
-        try:
+        with self._file_lock(shared=True):
             return self._load()
-        finally:
-            self._release_lock()
 
     def save_all(self, insights: list[dict]) -> None:
         """Atomic write: write to temp file, then os.replace."""
@@ -60,8 +56,7 @@ class InsightStore:
 
     def mark_read(self, insight_id: str) -> bool:
         """Mark a single insight as read. Returns True if found. Uses file lock."""
-        self._acquire_lock(shared=False)
-        try:
+        with self._file_lock(shared=False):
             insights = self._load()
             for ins in insights:
                 if ins["id"] == insight_id:
@@ -69,5 +64,3 @@ class InsightStore:
                     self.save_all(insights)
                     return True
             return False
-        finally:
-            self._release_lock()

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query
 
 import data_loader
 from models import KpiStripSpec, KpiCard, KpiComparison
-from routes.shared import validate_params, safe_round, var_pct
+from routes.shared import validate_params, safe_round, var_pct, apply_standard_filters
 
 router = APIRouter()
 
@@ -14,24 +14,15 @@ def get_kpi(year: int = 2025, quarter: str | None = None, market_id: str | None 
     exp = data_loader.expenses
     tgt = data_loader.targets
 
-    # TA filter: restrict to brands in that therapeutic area
-    if ta:
-        ta_list = [t.strip() for t in ta.split(",")]
-        ta_brands = data_loader.products[data_loader.products.therapeutic_area.isin(ta_list)].brand_id.tolist()
-        rev = rev[rev.brand_id.isin(ta_brands)]
-        tgt = tgt[tgt.entity_id.isin(ta_brands) | (tgt.target_type == "expense")]
-
-    # Brand/product filter
-    if brand_id:
-        bid_list = [b.strip() for b in brand_id.split(",")]
-        rev = rev[rev.brand_id.isin(bid_list)]
-        tgt = tgt[tgt.entity_id.isin(bid_list) | (tgt.target_type == "expense")]
-
-    # Market filter
+    # Apply standard filters (TA, brand, market)
+    rev, tgt_filtered, _prods = apply_standard_filters(rev, tgt, ta=ta, brand_id=brand_id, market_id=market_id)
+    # Keep expense targets unfiltered by TA/brand/market
+    tgt = tgt[(tgt.entity_id.isin(tgt_filtered.entity_id.unique())) | (tgt.target_type == "expense")]
     if market_id:
-        mkt_list = [m.strip() for m in market_id.split(",")]
-        rev = rev[rev.market_id.isin(mkt_list)]
-        tgt = tgt[(tgt.market_id.isin(mkt_list)) | (tgt.target_type == "expense")]
+        from routes.shared import parse_list
+        mkt_list = parse_list(market_id)
+        if mkt_list:
+            tgt = tgt[(tgt.market_id.isin(mkt_list)) | (tgt.target_type == "expense")]
 
     # Filter by year
     r = rev[rev.year == year]

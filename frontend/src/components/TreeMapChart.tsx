@@ -5,6 +5,8 @@ import { BarChart } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import type { TreeNode, TreeTableSpec, AssistantContext } from "../types";
+import { escapeHtml, sanitizeColor } from "../escapeHtml";
+import { makeBaseContext } from "../utils";
 
 echarts.use([BarChart, GridComponent, TooltipComponent, CanvasRenderer]);
 
@@ -85,8 +87,8 @@ export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger, dr
           const sign = variances[idx] >= 0 ? "+" : "";
           const color = varianceColor(variances[idx], invertColor);
           const canDrill = drillable.has(ids[idx]);
-          const eName = names[idx].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-          const eCompLabel = compLabel.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          const eName = escapeHtml(names[idx]);
+          const eCompLabel = escapeHtml(compLabel);
           return `<div style="font-weight:600;font-size:13px;margin-bottom:4px">${eName}</div>
                   <div style="display:flex;justify-content:space-between;gap:16px">
                     <span style="color:#9ca3af">Actual</span><span style="font-weight:500">${fmtValue(actuals[idx])}</span>
@@ -131,8 +133,8 @@ export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger, dr
             value: v,
             itemStyle: {
               color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-                { offset: 0, color: varianceColor(variances[i], invertColor) },
-                { offset: 1, color: varianceColor(variances[i], invertColor) + "cc" },
+                { offset: 0, color: sanitizeColor(varianceColor(variances[i], invertColor)) },
+                { offset: 1, color: sanitizeColor(varianceColor(variances[i], invertColor)) + "cc" },
               ]),
               borderRadius: [0, 4, 4, 0],
             },
@@ -179,7 +181,7 @@ export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger, dr
           label: { show: false },
         },
       ],
-    } as echarts.EChartsOption;
+    } as echarts.EChartsCoreOption;
   }, [items, invertColor, drillable]);
 
   const handleClick = useCallback(
@@ -188,15 +190,15 @@ export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger, dr
       const idx = params.dataIndex;
       const node = items[idx];
       if (node.children.length > 0) {
-        setDrillPath((prev) => [...prev, { id: node.id, name: node.name }]);
+        setDrillPath([...drillPath, { id: node.id, name: node.name }]);
       }
     },
-    [items, setDrillPath],
+    [items, drillPath, setDrillPath],
   );
 
   const handleBack = useCallback(() => {
-    setDrillPath((prev) => prev.slice(0, -1));
-  }, [setDrillPath]);
+    setDrillPath(drillPath.slice(0, -1));
+  }, [drillPath, setDrillPath]);
 
   const handleContextMenu = useCallback(
     (params: any) => {
@@ -205,11 +207,7 @@ export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger, dr
       const idx = params.dataIndex;
       const node = items[idx];
       onAssistantTrigger({
-        source: "treemap_bar",
-        page: "overview",
-        dimension: "brand",
-        period: { year: new Date().getFullYear(), quarter: null },
-        filters: { market_id: [], ta: [], product: [], comparator: "BUD", scale: "M", year: new Date().getFullYear(), granularity: "quarter" },
+        ...makeBaseContext("treemap_bar"),
         dataPoint: {
           node_id: node.id,
           node_name: node.name,

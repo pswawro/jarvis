@@ -1,4 +1,7 @@
 import { useState, useMemo, useRef } from "react";
+import { escapeHtml, sanitizeColor } from "../escapeHtml";
+import { LoadingState } from "./LoadingState";
+import { ErrorState } from "./ErrorState";
 import clsx from "clsx";
 import ReactEChartsCore from "echarts-for-react/lib/core";
 import * as echarts from "echarts/core";
@@ -22,11 +25,6 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 const COLORS = [
   "#2563EB", "#059669", "#D97706", "#7C3AED", "#DC2626",
   "#0891B2", "#4F46E5", "#CA8A04", "#0D9488", "#E11D48",
-];
-
-const FADED_COLORS = [
-  "#93bbfd", "#6ee7b7", "#fcd34d", "#c4b5fd", "#fca5a5",
-  "#67e8f9", "#a5b4fc", "#fde047", "#5eead4", "#fda4af",
 ];
 
 function fmtVal(v: number, scale: Scale): string {
@@ -88,7 +86,7 @@ function LandingRow({ node, depth, columns, closedMonth, scale }: { node: TreeNo
 
 function LandingChart({ data, closedMonth, scale }: { data: TreeTableSpec; closedMonth: number; scale: Scale }) {
   const chartRef = useRef<ReactEChartsCore>(null);
-  const option = useMemo<echarts.EChartsOption>(() => {
+  const option = useMemo<echarts.EChartsCoreOption>(() => {
     const fmtAxis = (v: number) => `${scaleLabel(scale)}${scaleValue(v, scale)}`;
 
     const nodes = data.tree.children.length > 0 ? data.tree.children : [data.tree];
@@ -98,7 +96,6 @@ function LandingChart({ data, closedMonth, scale }: { data: TreeTableSpec; close
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
       const color = COLORS[i % COLORS.length];
-      const fadedColor = FADED_COLORS[i % FADED_COLORS.length];
       const sparkline = node.values.sparkline.map((v) => Math.round(v * 10) / 10);
 
       // Actuals: data up to closedMonth, null after
@@ -174,9 +171,8 @@ function LandingChart({ data, closedMonth, scale }: { data: TreeTableSpec; close
           const val = fmtAxis(p.value as number);
           const name = p.seriesName.replace(" (fcst)", "");
           const isFcst = p.seriesName.includes("(fcst)");
-          const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-          return `<div style="font-size:10px;color:#9ca3af;margin-bottom:1px">${esc(p.name)}</div>
-                  <div style="color:${p.color};font-weight:600">${esc(name)}: ${val}${isFcst ? " <i style='color:#9ca3af'>(forecast)</i>" : ""}</div>`;
+          return `<div style="font-size:10px;color:#9ca3af;margin-bottom:1px">${escapeHtml(p.name)}</div>
+                  <div style="color:${sanitizeColor(p.color)};font-weight:600">${escapeHtml(name)}: ${val}${isFcst ? " <i style='color:#9ca3af'>(forecast)</i>" : ""}</div>`;
         },
         extraCssText: "border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.06);",
       },
@@ -220,26 +216,13 @@ export function LandingView({ period, filters, dimConfig }: Props) {
     return e;
   }, [filters, levelsKey]);
 
+  const closedMonth = useMemo(() => new Date().getMonth() || 12, []); // getMonth() is 0-indexed; Jan=0→use 12 (Dec)
   const { data, loading, error } = useApi<TreeTableSpec>("/landing", period, extra);
 
-  if (error) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-[13px] text-red-500">
-        Failed to load data. Please try refreshing.
-      </div>
-    );
-  }
-
-  if (loading || !data) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (error) return <ErrorState />;
+  if (loading || !data) return <LoadingState />;
 
   const columns = data.columns;
-  const closedMonth = new Date().getMonth() || 12; // getMonth() is 0-indexed; Jan=0→use 12 (Dec)
 
   return (
     <div className="flex flex-col h-full">

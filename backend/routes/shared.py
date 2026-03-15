@@ -15,6 +15,13 @@ import data_loader
 
 COMPARATOR_FIELD = {"BUD": "budget_amount", "MTP": "mtp_amount", "RBU2": "rbu2_amount"}
 COMPARATOR_LABELS = {"BUD": "Budget", "MTP": "MTP", "RBU2": "RBU2", "PYACT": "Prior Year"}
+
+LEVEL_COLS = {
+    "ta":       {"group": "therapeutic_area", "name": "therapeutic_area"},
+    "brand":    {"group": "brand_id",         "name": "brand_name"},
+    "market":   {"group": "market_id",        "name": "market_name"},
+    "region":   {"group": "region",           "name": "region"},
+}
 VALID_QUARTERS = {"Q1", "Q2", "Q3", "Q4"}
 _CURRENT_YEAR = __import__("datetime").date.today().year
 VALID_YEARS = set(range(_CURRENT_YEAR - 2, _CURRENT_YEAR + 2))
@@ -134,6 +141,41 @@ def get_prior_year(
     return r_py
 
 
+def apply_standard_filters(
+    rev: pd.DataFrame,
+    tgt: pd.DataFrame,
+    ta: str | None = None,
+    brand_id: str | None = None,
+    market_id: str | None = None,
+):
+    """Apply TA, brand, and market filters to revenue and targets DataFrames.
+
+    Returns (rev, tgt, prods) after filtering.
+    """
+    prods = data_loader.products
+    if ta:
+        ta_list = parse_list(ta)
+        if ta_list:
+            prods = prods[prods.therapeutic_area.isin(ta_list)]
+            ta_brands = prods.brand_id.tolist()
+            rev = rev[rev.brand_id.isin(ta_brands)]
+            tgt = tgt[tgt.entity_id.isin(ta_brands)]
+    if brand_id:
+        bid_list = parse_list(brand_id)
+        if bid_list:
+            prods = prods[prods.brand_id.isin(bid_list)]
+            rev = rev[rev.brand_id.isin(bid_list)]
+            tgt = tgt[tgt.entity_id.isin(bid_list)]
+    if market_id:
+        mkt_list = parse_list(market_id)
+        if mkt_list:
+            rev = rev[rev.market_id.isin(mkt_list)]
+            tgt = tgt[tgt.market_id.isin(mkt_list)]
+    return rev, tgt, prods
+
+
 def period_label(year: int, quarter: str | None) -> str:
     """Format period label like 'Q1 2025' or 'FY 2025'."""
-    return f"{'Q' + quarter[1] + ' ' if quarter else 'FY '}{year}"
+    if quarter and len(quarter) >= 2:
+        return f"Q{quarter[1]} {year}"
+    return f"FY {year}"

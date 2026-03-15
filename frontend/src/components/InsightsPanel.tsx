@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence, type PanInfo } from "framer-motion";
 import type { Insight } from "../types";
 import { InsightCard } from "./InsightCard";
@@ -18,6 +18,16 @@ const SEVERITY_ORDER: Record<string, number> = { critical: 0, notable: 1, inform
 export function InsightsPanel({ open, onClose, insights, onAddToChat, onToggleBookmark }: Props) {
   const [sortBy, setSortBy] = useState<SortBy>("date");
   const [bookmarkFilter, setBookmarkFilter] = useState(false);
+
+  // Close on Escape key
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [open, onClose]);
 
   const filtered = useMemo(() => {
     if (!bookmarkFilter) return insights;
@@ -51,6 +61,9 @@ export function InsightsPanel({ open, onClose, insights, onAddToChat, onToggleBo
 
           {/* Panel */}
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Push Insights"
             className="fixed inset-x-0 bottom-0 z-50 bg-[#0f1225] rounded-t-2xl max-h-[85vh] flex flex-col"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}

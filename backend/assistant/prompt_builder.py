@@ -1,9 +1,15 @@
 """Assembles the system prompt from templates, roles, and runtime context."""
 
 import json
+import re as _re
 from pathlib import Path
 
 from assistant.semantic_model import get_semantic_model
+
+def _sanitize_value(val: str, max_len: int = 500) -> str:
+    cleaned = _re.sub(r'<[^>]+>', '', str(val))
+    return cleaned[:max_len]
+
 
 _DIR = Path(__file__).parent
 _PROMPTS_DIR = _DIR / "prompts"
@@ -96,14 +102,14 @@ def _build_dashboard_block(ctx: dict) -> str:
     filters = ctx.get("filters", {})
     period = ctx.get("period", {})
     replacements = {
-        "{{page}}": ctx.get("page", "overview"),
+        "{{page}}": _sanitize_value(ctx.get("page", "overview")),
         "{{levels}}": " → ".join(ctx.get("levels", ["ta", "brand", "market"])),
-        "{{year}}": str(period.get("year", 2025)),
-        "{{quarter}}": str(period.get("quarter", "Full Year")),
+        "{{year}}": _sanitize_value(str(period.get("year", 2025))),
+        "{{quarter}}": _sanitize_value(str(period.get("quarter", "Full Year"))),
         "{{filters}}": _build_filters_block(filters),
         "{{data_point}}": _build_data_point_block(ctx.get("dataPoint", {})),
-        "{{comparator}}": filters.get("comparator", "BUD"),
-        "{{scale}}": filters.get("scale", "M"),
+        "{{comparator}}": _sanitize_value(filters.get("comparator", "BUD")),
+        "{{scale}}": _sanitize_value(filters.get("scale", "M")),
     }
     for placeholder, value in replacements.items():
         dashboard = dashboard.replace(placeholder, value)

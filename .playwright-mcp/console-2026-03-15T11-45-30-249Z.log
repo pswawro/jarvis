@@ -1,0 +1,51 @@
+[    1728ms] [ERROR] React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element. didLongPress didlongpress @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:2402
+[    2013ms] [ERROR] React has detected a change in the order of Hooks called by %s. This will lead to bugs and errors if not fixed. For more information, read the Rules of Hooks: https://react.dev/link/rules-of-hooks
+
+   Previous render            Next render
+   ------------------------------------------------------
+%s   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ LandingView 1. useState                   useState
+2. useMemo                    useMemo
+3. useState                   useState
+4. useState                   useState
+5. useState                   useState
+6. useMemo                    useMemo
+7. useEffect                  useEffect
+8. undefined                  useMemo
+ @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:5593
+[    2017ms] [ERROR] %o
+
+%s
+
+%s
+ Error: Rendered more hooks than during the previous render.
+    at updateWorkInProgressHook (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:5792:19)
+    at updateMemo (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:6540:20)
+    at Object.useMemo (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:18969:20)
+    at exports.useMemo (http://localhost:5173/node_modules/.vite/deps/chunk-TMM3WI36.js?v=3d1658a8:947:36)
+    at LandingView (http://localhost:5173/src/components/LandingView.tsx:268:23)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:997:72) The above error occurred in the <LandingView> component. React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:7000
+[    2018ms] [ERROR] ErrorBoundary caught: Error: Rendered more hooks than during the previous render.
+    at updateWorkInProgressHook (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:5792:19)
+    at updateMemo (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:6540:20)
+    at Object.useMemo (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:18969:20)
+    at exports.useMemo (http://localhost:5173/node_modules/.vite/deps/chunk-TMM3WI36.js?v=3d1658a8:947:36)
+    at LandingView (http://localhost:5173/src/components/LandingView.tsx:268:23)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=3d1658a8:997:72) 
+    at LandingView (http://localhost:5173/src/components/LandingView.tsx:245:31)
+    at ErrorBoundary (http://localhost:5173/src/components/ErrorBoundary.tsx:3:8)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at MotionDOMComponent (http://localhost:5173/node_modules/.vite/deps/framer-motion.js?v=3d1658a8:8655:40)
+    at div (<anonymous>)
+    at SwipeContainer (http://localhost:5173/src/components/SwipeContainer.tsx:12:34)
+    at div (<anonymous>)
+    at App (http://localhost:5173/src/App.tsx:22:33) @ http://localhost:5173/src/components/ErrorBoundary.tsx:8

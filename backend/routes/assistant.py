@@ -5,9 +5,10 @@ import json
 import logging
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from anthropic import AnthropicBedrock
+from rate_limit import limiter
 
 from models import AssistantRequest
 import config
@@ -19,12 +20,19 @@ log = logging.getLogger(__name__)
 
 router = APIRouter()
 
-client = AnthropicBedrock(
-    aws_region=config.LLM_AWS_REGION,
-    aws_access_key=config.AWS_ACCESS_KEY_ID,
-    aws_secret_key=config.AWS_SECRET_ACCESS_KEY,
-    aws_session_token=config.AWS_SESSION_TOKEN,
-)
+_client = None
+
+
+def _get_client() -> AnthropicBedrock:
+    global _client
+    if _client is None:
+        _client = AnthropicBedrock(
+            aws_region=config.LLM_AWS_REGION,
+            aws_access_key=config.AWS_ACCESS_KEY_ID,
+            aws_secret_key=config.AWS_SECRET_ACCESS_KEY,
+            aws_session_token=config.AWS_SESSION_TOKEN,
+        )
+    return _client
 
 # Load tool schemas once at import time
 _TOOLS_PATH = Path(__file__).parent.parent / "assistant" / "tools.json"
@@ -41,7 +49,8 @@ def _get_tools_for_role(role_id: str) -> list[dict]:
 
 
 @router.post("/assistant")
-async def assistant_chat(req: AssistantRequest):
+@limiter.limit("10/minute")
+async def assistant_chat(request: Request, req: AssistantRequest):
     async def generate():
         # TODO: resolve role_id from authenticated user session
         role_id = req.context.get("role", "default")
@@ -71,7 +80,7 @@ async def assistant_chat(req: AssistantRequest):
                 log.info("Iteration %d — calling Claude (%s)...", iteration, model)
                 # Run blocking API call in thread so SSE events flush immediately
                 response = await asyncio.to_thread(
-                    client.messages.create,
+                    _get_client().messages.create,
                     model=model,
                     max_tokens=config.LLM_MAX_TOKENS,
                     temperature=config.LLM_TEMPERATURE,

@@ -14,6 +14,7 @@ import { ScenariosPage } from "./components/ScenariosPage";
 import { AssistantDrawer } from "./components/AssistantDrawer";
 import { useInsights } from "./hooks/useInsights";
 import { InsightsPanel } from "./components/InsightsPanel";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const PAGES: PageType[] = ["overview", "landing", "phased"];
 
@@ -162,7 +163,8 @@ export default function App() {
     const params = new URLSearchParams({ year: String(filters.year) });
     if (filters.market_id.length) params.set("market_id", filters.market_id.join(","));
     if (filters.ta.length) params.set("ta", filters.ta.join(","));
-    window.open(`/api/export/${dimConfig.levels.join(",")}?${params}`, "_blank");
+    const levelsPath = dimConfig.levels.map(l => encodeURIComponent(l)).join(",");
+    window.open(`/api/export/${levelsPath}?${params}`, "_blank");
   }, [dimConfig.levels, filters]);
 
   return (
@@ -179,10 +181,17 @@ export default function App() {
       <KpiStrip spec={kpiData} scale={filters.scale} />
       <ViewTabs activeIndex={pageIndex} onSwitch={handlePageSwitch} />
       <SwipeContainer activeIndex={pageIndex} onSwitch={handlePageSwitch}>
-        <OverviewPage period={period} filters={filters} dimConfig={dimConfig} onInteraction={handleInteraction} onAssistantTrigger={handleAssistantTrigger} />
-        <LandingView period={period} filters={filters} dimConfig={dimConfig} />
-        <ScenariosPage period={period} filters={filters} dimConfig={dimConfig} scenarioPreset={scenarioPreset} onScenarioPresetChange={setScenarioPreset} onInteraction={handleInteraction} onAssistantTrigger={handleAssistantTrigger} />
+        <ErrorBoundary>
+          <OverviewPage period={period} filters={filters} dimConfig={dimConfig} onInteraction={handleInteraction} onAssistantTrigger={handleAssistantTrigger} />
+        </ErrorBoundary>
+        <ErrorBoundary>
+          <LandingView period={period} filters={filters} dimConfig={dimConfig} />
+        </ErrorBoundary>
+        <ErrorBoundary>
+          <ScenariosPage period={period} filters={filters} dimConfig={dimConfig} scenarioPreset={scenarioPreset} onScenarioPresetChange={setScenarioPreset} onInteraction={handleInteraction} onAssistantTrigger={handleAssistantTrigger} />
+        </ErrorBoundary>
       </SwipeContainer>
+      <ErrorBoundary>
       <AssistantDrawer
         open={assistantOpen}
         onClose={() => setAssistantOpen(false)}
@@ -205,6 +214,8 @@ export default function App() {
         newChat={assistant.newChat}
         deleteChat={assistant.deleteChat}
       />
+      </ErrorBoundary>
+      <ErrorBoundary>
       <InsightsPanel
         open={insightsOpen}
         onClose={() => setInsightsOpen(false)}
@@ -212,6 +223,7 @@ export default function App() {
         onAddToChat={handleInsightToChat}
         onToggleBookmark={insights.toggleBookmark}
       />
+      </ErrorBoundary>
     </div>
   );
 }

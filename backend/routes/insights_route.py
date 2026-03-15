@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import tempfile
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -153,7 +154,8 @@ async def stream_insights(
     async def event_generator():
         last_insights_mtime = 0
         last_prefs_mtime = 0
-        while True:
+        deadline = time.monotonic() + 30 * 60  # 30-minute timeout
+        while time.monotonic() < deadline:
             try:
                 insights_mtime = _get_file_mtime_ns(_STORE_PATH)
                 prefs_mtime = _get_file_mtime_ns(_PREFS_PATH)

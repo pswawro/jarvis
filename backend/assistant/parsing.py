@@ -9,10 +9,10 @@ def sse(event_type: str, content: str) -> str:
     return f"data: {json.dumps({'type': event_type, 'content': content})}\n\n"
 
 
-def parse_sections(text: str) -> list[tuple[str, str]]:
+def parse_sections(text: str, extra_tags: tuple[str, ...] = ()) -> list[tuple[str, str]]:
     """Parse XML-tagged sections from model output."""
     sections = []
-    for tag in ("facts", "interpretation", "hypothesis", "recommendations"):
+    for tag in ("facts", "interpretation", "hypothesis", "recommendations") + extra_tags:
         pattern = f"<{tag}>(.*?)</{tag}>"
         match = re.search(pattern, text, re.DOTALL)
         if match:

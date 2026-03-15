@@ -94,10 +94,9 @@ export interface UseAssistantChat {
   newChat: (context?: AssistantContext, initialQuestion?: string) => void;
   deleteChat: (id: string) => void;
 
-  onApplyConfig?: (cfg: ConfigProposal) => void;
 }
 
-export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void): UseAssistantChat {
+export function useAssistantChat(_onApplyConfig?: (cfg: ConfigProposal) => void): UseAssistantChat {
   const [chatList, setChatList] = useState<ChatSummary[]>(loadChatList);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -312,8 +311,9 @@ export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void):
                     setLiveTools([...accTools]);
                     // Also update the timeline entry
                     for (let i = accTimeline.length - 1; i >= 0; i--) {
-                      if (accTimeline[i].kind === "tool" && !accTimeline[i].tool.done) {
-                        accTimeline[i] = { kind: "tool", tool: { ...accTimeline[i].tool, done: true } };
+                      const entry = accTimeline[i];
+                      if (entry.kind === "tool" && !entry.tool.done) {
+                        accTimeline[i] = { kind: "tool", tool: { ...entry.tool, done: true } };
                         break;
                       }
                     }
@@ -336,24 +336,32 @@ export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void):
                     setLiveResponse({ ...accumulated });
                     break;
                   case "visual":
-                    accVisuals.push(JSON.parse(data.content));
-                    setLiveVisuals([...accVisuals]);
+                    try {
+                      accVisuals.push(JSON.parse(data.content));
+                      setLiveVisuals([...accVisuals]);
+                    } catch { /* skip malformed visual */ }
                     break;
                   case "config_proposal":
-                    accConfigProposal = JSON.parse(data.content);
-                    setLiveConfigProposal(accConfigProposal);
+                    try {
+                      accConfigProposal = JSON.parse(data.content);
+                      setLiveConfigProposal(accConfigProposal);
+                    } catch { /* skip malformed config_proposal */ }
                     break;
                   case "thinking": {
-                    const thinkStep: ThinkingStep = JSON.parse(data.content);
-                    accThinking.push(thinkStep);
-                    setLiveThinking([...accThinking]);
-                    accTimeline.push({ kind: "thinking", step: thinkStep });
-                    setLiveTimeline([...accTimeline]);
+                    try {
+                      const thinkStep: ThinkingStep = JSON.parse(data.content);
+                      accThinking.push(thinkStep);
+                      setLiveThinking([...accThinking]);
+                      accTimeline.push({ kind: "thinking", step: thinkStep });
+                      setLiveTimeline([...accTimeline]);
+                    } catch { /* skip malformed thinking */ }
                     break;
                   }
                   case "clarification":
-                    accClarification = JSON.parse(data.content);
-                    setLiveClarification(accClarification);
+                    try {
+                      accClarification = JSON.parse(data.content);
+                      setLiveClarification(accClarification);
+                    } catch { /* skip malformed clarification */ }
                     break;
                   case "done": {
                     const assistantMsg: Message = {
@@ -388,6 +396,8 @@ export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void):
                     accumulated.facts = accumulated.facts || `Error: ${data.content}`;
                     setLiveResponse({ ...accumulated });
                     break;
+                  default:
+                    console.warn("Unknown SSE event type:", data.type);
                 }
               } catch {
                 // skip malformed SSE
@@ -501,6 +511,5 @@ export function useAssistantChat(onApplyConfig?: (cfg: ConfigProposal) => void):
     switchChat,
     newChat,
     deleteChat,
-    onApplyConfig,
   };
 }

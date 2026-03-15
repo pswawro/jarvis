@@ -7,6 +7,7 @@ export function useInsights() {
   const [error, setError] = useState<string | null>(null);
   const sourceRef = useRef<EventSource | null>(null);
   const pendingRef = useRef(new Set<string>());
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const source = new EventSource("/api/insights/stream");
@@ -33,9 +34,12 @@ export function useInsights() {
       }
     };
 
+    abortRef.current = new AbortController();
+
     return () => {
       source.close();
       sourceRef.current = null;
+      abortRef.current?.abort();
     };
   }, []);
 
@@ -61,7 +65,7 @@ export function useInsights() {
     });
 
     try {
-      const resp = await fetch(`/api/insights/${id}/read`, { method: "POST" });
+      const resp = await fetch(`/api/insights/${id}/read`, { method: "POST", signal: abortRef.current?.signal });
       if (!resp.ok) console.warn(`Failed to mark insight ${id} as read: HTTP ${resp.status}`);
     } catch {
       // SSE will reconcile state
@@ -94,7 +98,7 @@ export function useInsights() {
 
     const endpoint = shouldBookmark ? "bookmark" : "unbookmark";
     try {
-      const resp = await fetch(`/api/insights/${id}/${endpoint}`, { method: "POST" });
+      const resp = await fetch(`/api/insights/${id}/${endpoint}`, { method: "POST", signal: abortRef.current?.signal });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     } catch {
       // Revert on failure
@@ -113,7 +117,7 @@ export function useInsights() {
   }, []);
 
   const getInsightContext = useCallback(async (id: string) => {
-    const resp = await fetch(`/api/insights/${id}/chat`, { method: "POST" });
+    const resp = await fetch(`/api/insights/${id}/chat`, { method: "POST", signal: abortRef.current?.signal });
     if (!resp.ok) throw new Error(`Failed to load insight context: HTTP ${resp.status}`);
     return resp.json();
   }, []);

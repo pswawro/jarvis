@@ -43,12 +43,10 @@ export function TreeTable({ tree, columns, invertColor, headerLabels, varianceSu
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   function toggleExpand(id: string) {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    const next = new Set(expandedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setExpandedIds(next);
   }
 
   function handleSort(key: SortKey) {

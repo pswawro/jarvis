@@ -9,6 +9,7 @@ from anthropic import AnthropicBedrock
 
 import config
 from assistant.prompt_builder import build_insight_prompt
+from assistant.parsing import parse_sections
 from assistant.tool_dispatch import TOOL_DISPATCH
 
 log = logging.getLogger(__name__)
@@ -31,46 +32,48 @@ def _parse_analysis_response(text: str) -> dict | None:
     Returns dict with 'sections' (list of (tag, content) tuples),
     'revised_severity', and 'push', or None on failure.
     """
-    sections = []
-    for tag in ("facts", "interpretation", "hypothesis", "recommendations"):
-        pattern = f"<{tag}>(.*?)</{tag}>"
-        match = re.search(pattern, text, re.DOTALL)
-        if match:
-            sections.append((tag, match.group(1).strip()))
+    sections = parse_sections(text, extra_tags=("recommendations", "insight_severity", "insight_push"))
 
-    # If no XML tags found, treat entire text as explanation
-    if not sections and text.strip():
-        sections.append(("facts", text.strip()))
-
-    # Extract insight-specific tags
-    severity_match = re.search(r"<insight_severity>(.*?)</insight_severity>", text, re.DOTALL)
-    push_match = re.search(r"<insight_push>(.*?)</insight_push>", text, re.DOTALL)
-
-    revised_severity = severity_match.group(1).strip().lower() if severity_match else "informational"
-    push_raw = push_match.group(1).strip().lower() if push_match else "false"
-    push = push_raw == "true"
+    # Separate insight-specific tags from content sections
+    content_sections = []
+    revised_severity = "informational"
+    push = False
+    for tag, content in sections:
+        if tag == "insight_severity":
+            revised_severity = content.strip().lower()
+        elif tag == "insight_push":
+            push = content.strip().lower() == "true"
+        else:
+            content_sections.append((tag, content))
 
     # Validate severity
     if revised_severity not in ("critical", "notable", "informational"):
         revised_severity = "informational"
 
     # Build explanation from sections for backward compatibility
-    explanation = " ".join(content for _, content in sections)
+    explanation = " ".join(content for _, content in content_sections)
 
     return {
         "explanation": explanation,
-        "sections": sections,
+        "sections": content_sections,
         "revised_severity": revised_severity,
         "push": push,
     }
 
 
-_client = AnthropicBedrock(
-    aws_region=config.LLM_AWS_REGION,
-    aws_access_key=config.AWS_ACCESS_KEY_ID,
-    aws_secret_key=config.AWS_SECRET_ACCESS_KEY,
-    aws_session_token=config.AWS_SESSION_TOKEN,
-)
+_client = None
+
+
+def _get_client() -> AnthropicBedrock:
+    global _client
+    if _client is None:
+        _client = AnthropicBedrock(
+            aws_region=config.LLM_AWS_REGION,
+            aws_access_key=config.AWS_ACCESS_KEY_ID,
+            aws_secret_key=config.AWS_SECRET_ACCESS_KEY,
+            aws_session_token=config.AWS_SESSION_TOKEN,
+        )
+    return _client
 
 
 def analyze_insight(anomaly: dict) -> dict | None:
@@ -79,7 +82,7 @@ def analyze_insight(anomaly: dict) -> dict | None:
     Returns dict with 'explanation', 'sections', 'revised_severity', 'push'
     or None on failure.
     """
-    client = _client
+    client = _get_client()
 
     system = build_insight_prompt(anomaly)
     tools = _get_analysis_tools()

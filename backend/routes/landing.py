@@ -5,23 +5,17 @@ and future months show the selected comparator (budget/mtp/rbu2).
 Supports composable drill hierarchy via `levels` param.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 import data_loader
 from models import TreeTableSpec, TreeNode, TreeNodeValues
-from routes.shared import validate_params, COMPARATOR_FIELD
+from routes.shared import validate_params, COMPARATOR_FIELD, LEVEL_COLS
 
 router = APIRouter()
 
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-# Level → column mappings (mirrors tree_generic.py)
-_LEVEL_COLS = {
-    "ta":     {"group": "therapeutic_area", "name": "therapeutic_area"},
-    "brand":  {"group": "brand_id",         "name": "brand_name"},
-    "market": {"group": "market_id",        "name": "market_name"},
-    "region": {"group": "region",           "name": "region"},
-}
+# Use LEVEL_COLS from shared module
 
 
 @router.get("/landing", response_model=TreeTableSpec)
@@ -37,7 +31,6 @@ def get_landing_view(
     """closed_month: last month with actuals (1-12). Months after this use forecast."""
     validate_params(year=year, comparator=comparator)
     if closed_month < 1 or closed_month > 12:
-        from fastapi import HTTPException
         raise HTTPException(status_code=400, detail=f"closed_month must be 1-12, got {closed_month}")
 
     # Parse levels
@@ -80,7 +73,7 @@ def get_landing_view(
     group_cols = []
     name_cols = []
     for lv in level_list:
-        cfg = _LEVEL_COLS.get(lv)
+        cfg = LEVEL_COLS.get(lv)
         if cfg:
             group_cols.append(cfg["group"])
             name_cols.append(cfg["name"])

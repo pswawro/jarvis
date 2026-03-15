@@ -77,26 +77,26 @@ ORGANIZATION = [
 # =============================================================================
 
 BRAND_REVENUES_GLOBAL = {
-    "TAGRISSO":  {2023: 5.8, 2024: 6.6, 2025: 7.3},
-    "IMFINZI":   {2023: 4.2, 2024: 4.7, 2025: 6.1},
-    "LYNPARZA":  {2023: 2.8, 2024: 3.7, 2025: 3.3},
-    "CALQUENCE": {2023: 2.5, 2024: 3.1, 2025: 3.5},
-    "ENHERTU":   {2023: 1.3, 2024: 2.0, 2025: 2.8},
-    "KOSELUGO":  {2023: 0.3, 2024: 0.6, 2025: 0.9},
-    "TRUQAP":    {2023: 0.0, 2024: 0.2, 2025: 0.4},
-    "FARXIGA":   {2023: 6.0, 2024: 7.7, 2025: 8.4},
-    "BRILINTA":  {2023: 1.3, 2024: 1.3, 2025: 0.9},
-    "LOKELMA":   {2023: 0.4, 2024: 0.5, 2025: 0.7},
-    "CRESTOR":   {2023: 1.1, 2024: 1.2, 2025: 1.1},
-    "SYMBICORT": {2023: 2.4, 2024: 2.9, 2025: 2.7},
-    "BREZTRI":   {2023: 0.7, 2024: 1.0, 2025: 1.1},
-    "FASENRA":   {2023: 1.6, 2024: 1.7, 2025: 1.8},
-    "SAPHNELO":  {2023: 0.3, 2024: 0.5, 2025: 0.7},
-    "TEZSPIRE":  {2023: 0.3, 2024: 0.7, 2025: 1.0},
-    "ULTOMIRIS": {2023: 3.0, 2024: 3.9, 2025: 4.4},
-    "SOLIRIS":   {2023: 3.1, 2024: 2.6, 2025: 0.5},
-    "STRENSIQ":  {2023: 1.2, 2024: 1.4, 2025: 1.7},
-    "BEYFORTUS": {2023: 0.1, 2024: 0.7, 2025: 0.9},
+    "TAGRISSO":  {2023: 5.8, 2024: 6.6, 2025: 7.3, 2026: 7.9},
+    "IMFINZI":   {2023: 4.2, 2024: 4.7, 2025: 6.1, 2026: 7.2},
+    "LYNPARZA":  {2023: 2.8, 2024: 3.7, 2025: 3.3, 2026: 3.0},
+    "CALQUENCE": {2023: 2.5, 2024: 3.1, 2025: 3.5, 2026: 3.9},
+    "ENHERTU":   {2023: 1.3, 2024: 2.0, 2025: 2.8, 2026: 3.6},
+    "KOSELUGO":  {2023: 0.3, 2024: 0.6, 2025: 0.9, 2026: 1.2},
+    "TRUQAP":    {2023: 0.0, 2024: 0.2, 2025: 0.4, 2026: 0.7},
+    "FARXIGA":   {2023: 6.0, 2024: 7.7, 2025: 8.4, 2026: 9.1},
+    "BRILINTA":  {2023: 1.3, 2024: 1.3, 2025: 0.9, 2026: 0.7},
+    "LOKELMA":   {2023: 0.4, 2024: 0.5, 2025: 0.7, 2026: 0.9},
+    "CRESTOR":   {2023: 1.1, 2024: 1.2, 2025: 1.1, 2026: 1.0},
+    "SYMBICORT": {2023: 2.4, 2024: 2.9, 2025: 2.7, 2026: 2.5},
+    "BREZTRI":   {2023: 0.7, 2024: 1.0, 2025: 1.1, 2026: 1.3},
+    "FASENRA":   {2023: 1.6, 2024: 1.7, 2025: 1.8, 2026: 1.9},
+    "SAPHNELO":  {2023: 0.3, 2024: 0.5, 2025: 0.7, 2026: 0.9},
+    "TEZSPIRE":  {2023: 0.3, 2024: 0.7, 2025: 1.0, 2026: 1.4},
+    "ULTOMIRIS": {2023: 3.0, 2024: 3.9, 2025: 4.4, 2026: 4.9},
+    "SOLIRIS":   {2023: 3.1, 2024: 2.6, 2025: 0.5, 2026: 0.3},
+    "STRENSIQ":  {2023: 1.2, 2024: 1.4, 2025: 1.7, 2026: 1.9},
+    "BEYFORTUS": {2023: 0.1, 2024: 0.7, 2025: 0.9, 2026: 1.2},
 }
 
 # Market split: US ~43%, China ~11% of AZ revenue
@@ -165,7 +165,7 @@ GTN_RATES = {
 # 3. EXPENSE ALLOCATION
 # =============================================================================
 
-TOTAL_OPEX = {2023: 19.6, 2024: 24.0, 2025: 25.6}
+TOTAL_OPEX = {2023: 19.6, 2024: 24.0, 2025: 25.6, 2026: 27.2}
 
 UNIT_EXPENSE_SHARE = {
     "Commercial": 0.35,
@@ -414,7 +414,7 @@ def generate_financial_revenue():
         us_frac, cn_frac = MARKET_SPLIT[brand_id]
         cogs_rate = COGS_RATES[ta]
 
-        for year in [2023, 2024, 2025]:
+        for year in [2023, 2024, 2025, 2026]:
             global_rev = BRAND_REVENUES_GLOBAL[brand_id][year]
 
             for market_id, market_frac in [("US", us_frac), ("CN", cn_frac)]:
@@ -479,7 +479,7 @@ def generate_financial_expenses():
         subunit_weight = SUBUNIT_WEIGHTS[unit][sub_unit_id]
         cost_split = COST_TYPE_SPLIT[unit]
 
-        for year in [2023, 2024, 2025]:
+        for year in [2023, 2024, 2025, 2026]:
             total_opex = TOTAL_OPEX[year]
             annual_subunit_opex = total_opex * unit_share * subunit_weight * 1000
             monthly_opex = distribute_annual_to_monthly(annual_subunit_opex, year)
@@ -579,7 +579,7 @@ def generate_headcount_fte():
     for sub_unit_id, sub_unit_name, unit, dept, mgmt in ORGANIZATION:
         base = BASE_FTE[sub_unit_id]
 
-        for year in [2023, 2024, 2025]:
+        for year in [2023, 2024, 2025, 2026]:
             # YoY growth from 2023 baseline
             years_from_base = year - 2023
             annual_base = base * ((1 + FTE_GROWTH_RATE) ** years_from_base)
@@ -607,16 +607,16 @@ def generate_headcount_fte():
 
 
 def generate_commercial_market():
-    """Generate commercial market data for 2024-2025 only."""
+    """Generate commercial market data for 2024-2026."""
     rows = []
     for brand_id, brand_name, ta, indication in PRODUCTS:
         category = DRUG_CATEGORIES[brand_id]
         cat_data = CATEGORY_MARKET_DATA[category]
         us_frac, cn_frac = MARKET_SPLIT[brand_id]
 
-        for year in [2024, 2025]:
+        for year in [2024, 2025, 2026]:
             global_rev = BRAND_REVENUES_GLOBAL[brand_id][year]
-            year_growth_factor = 1.0 if year == 2024 else (1 + cat_data["growth"])
+            year_growth_factor = (1 + cat_data["growth"]) ** (year - 2024)
 
             for market_id, market_frac in [("US", us_frac), ("CN", cn_frac)]:
                 base_market_size = cat_data["us_size"] if market_id == "US" else cat_data["cn_size"]

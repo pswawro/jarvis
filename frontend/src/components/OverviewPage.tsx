@@ -4,6 +4,8 @@ import { useApi } from "../hooks/useApi";
 import { TreeTable } from "./TreeTable";
 import { TreeMapChart } from "./TreeMapChart";
 import { filtersToExtra, comparatorLabel } from "../utils";
+import { LoadingState } from "./LoadingState";
+import { ErrorState } from "./ErrorState";
 import clsx from "clsx";
 
 /** Walk the tree finding the deepest single-branch expanded path (skipping root). */
@@ -125,21 +127,8 @@ export function OverviewPage({ period, filters, dimConfig, onAssistantTrigger }:
     [onAssistantTrigger, dimConfig.levels, period, filters],
   );
 
-  if (error) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-[13px] text-red-500">
-        Failed to load data. Please try refreshing.
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (error) return <ErrorState />;
+  if (!data) return <LoadingState />;
 
   return (
     <div className="flex flex-col h-full">

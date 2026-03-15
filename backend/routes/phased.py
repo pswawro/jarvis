@@ -5,21 +5,15 @@ togglable between Month, Quarter, and Year granularity.
 Supports composable drill hierarchy via `levels` param.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 import data_loader
-from routes.shared import validate_params
+from routes.shared import validate_params, LEVEL_COLS
 
 router = APIRouter()
 
-# Level → column mappings (same as tree_generic / landing)
-_LEVEL_COLS = {
-    "ta":     {"group": "therapeutic_area", "name": "therapeutic_area"},
-    "brand":  {"group": "brand_id",         "name": "brand_name"},
-    "market": {"group": "market_id",        "name": "market_name"},
-    "region": {"group": "region",           "name": "region"},
-}
+# Use LEVEL_COLS from shared module
 
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
@@ -73,7 +67,6 @@ def get_phased_view(
     levels: str | None = None,
 ):
     if granularity not in ("month", "quarter", "year"):
-        from fastapi import HTTPException
         raise HTTPException(status_code=400, detail=f"Invalid granularity '{granularity}'. Must be month, quarter, or year.")
 
     # Parse levels
@@ -133,7 +126,7 @@ def get_phased_view(
     group_cols = []
     name_cols = []
     for lv in level_list:
-        cfg = _LEVEL_COLS.get(lv)
+        cfg = LEVEL_COLS.get(lv)
         if cfg:
             group_cols.append(cfg["group"])
             name_cols.append(cfg["name"])

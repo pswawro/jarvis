@@ -4,7 +4,7 @@ import type { TreeNode, TreeNodeValues, AssistantContext, Scale, Comparator } fr
 import { VariancePill } from "./VariancePill";
 import { Sparkline } from "./Sparkline";
 import { useLongPress } from "../hooks/useLongPress";
-import { scaleValue } from "../utils";
+import { scaleValue, makeBaseContext } from "../utils";
 
 interface Props {
   node: TreeNode;
@@ -41,11 +41,7 @@ export const TreeRow = memo(function TreeRow({ node, depth, isExpanded, hasChild
   const triggerAssistant = useCallback(() => {
     if (!onAssistantTrigger) return;
     onAssistantTrigger({
-      source: "tree_row",
-      page: "overview", // will be overridden by page component wrapper
-      dimension: "brand", // will be overridden
-      period: { year: new Date().getFullYear(), quarter: null }, // will be overridden
-      filters: { market_id: [], ta: [], product: [], comparator: "BUD", scale: "M", year: new Date().getFullYear(), granularity: "quarter" }, // will be overridden
+      ...makeBaseContext("tree_row"),
       dataPoint: {
         node_id: node.id,
         node_name: node.name,
@@ -72,9 +68,11 @@ export const TreeRow = memo(function TreeRow({ node, depth, isExpanded, hasChild
 
   return (
     <button
+      role="treeitem"
+      aria-expanded={hasChildren ? isExpanded : undefined}
       onClick={hasChildren ? handleClick : undefined}
-      onContextMenu={handleContextMenu}
       {...longPress}
+      onContextMenu={handleContextMenu}
       className={clsx(
         "w-full flex items-center gap-1.5 sm:gap-2 px-3 text-left transition-colors",
         depth === 0 && "py-2.5 bg-gray-50/80 border-b border-gray-200",

@@ -10,6 +10,8 @@ import {
 } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import type { LineChartSpec, ChartInteraction, AssistantContext } from "../types";
+import { escapeHtml, sanitizeColor } from "../escapeHtml";
+import { makeBaseContext } from "../utils";
 
 echarts.use([
   ELineChart,
@@ -37,7 +39,7 @@ interface Props {
 }
 
 /** Convert our semantic LineChartSpec → ECharts option JSON */
-function specToOption(spec: LineChartSpec): echarts.EChartsOption {
+function specToOption(spec: LineChartSpec): echarts.EChartsCoreOption {
   const fmt = spec.y_format === "percent" ? fmtPercent : fmtCurrency;
   const drillableSet = new Set(spec.drillable_ids ?? []);
 
@@ -79,11 +81,10 @@ function specToOption(spec: LineChartSpec): echarts.EChartsOption {
       textStyle: { fontSize: 12 },
       formatter: (params: any) => {
         const p = Array.isArray(params) ? params[0] : params;
-        const color = p.color;
+        const color = sanitizeColor(p.color);
         const val = fmt(p.value as number);
-        const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        return `<div style="font-size:10px;color:#9ca3af;margin-bottom:1px">${esc(p.name)}</div>
-                <div style="color:${color};font-weight:600">${esc(p.seriesName)}: ${val}</div>`;
+        return `<div style="font-size:10px;color:#9ca3af;margin-bottom:1px">${escapeHtml(p.name)}</div>
+                <div style="color:${color};font-weight:600">${escapeHtml(p.seriesName)}: ${val}</div>`;
       },
       extraCssText: "border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.06);",
     },
@@ -182,11 +183,7 @@ export function TimeChart({ spec, onDrill, onDrillBack, onInteraction, onAssista
         const seriesSpec = spec.series.find((s) => s.name === params.seriesName);
         if (!seriesSpec) return;
         onAssistantTrigger({
-          source: "time_chart_point",
-          page: "overview",
-          dimension: "brand",
-          period: { year: new Date().getFullYear(), quarter: null },
-          filters: { market_id: [], ta: [], product: [], comparator: "BUD", scale: "M", year: new Date().getFullYear(), granularity: "quarter" },
+          ...makeBaseContext("time_chart_point"),
           dataPoint: {
             series_name: params.seriesName,
             series_id: seriesSpec.id,

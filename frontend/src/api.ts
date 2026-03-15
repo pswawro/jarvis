@@ -15,6 +15,13 @@ export async function fetchApi<T>(
     }
   }
   const res = await fetch(`${BASE}${path}?${params}`);
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  if (!res.ok) {
+    let detail = `API error: ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body.detail) detail = body.detail;
+    } catch { /* ignore parse error */ }
+    throw new Error(detail);
+  }
   return res.json();
 }

@@ -4,6 +4,8 @@ import type { Period, Filters, DimensionConfig, LineChartSpec, ChartInteraction,
 import { useApi } from "../hooks/useApi";
 import { TimeChart } from "./TimeChart";
 import { filtersToExtra, scaleValue, scaleLabel } from "../utils";
+import { LoadingState } from "./LoadingState";
+import { ErrorState } from "./ErrorState";
 
 /* ---------- Types matching backend PhasedTreeSpec ---------- */
 
@@ -256,13 +258,9 @@ export function ScenariosPage({ period, filters, dimConfig, scenarioPreset, onSc
       {chartMode ? (
         <div className="flex-1">
           {scenarioError ? (
-            <div className="h-full flex items-center justify-center text-[13px] text-red-500">
-              Failed to load scenario data. Please try refreshing.
-            </div>
+            <ErrorState />
           ) : scenarioLoading || !scenarioData ? (
-            <div className="h-full flex items-center justify-center">
-              <div className="w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
-            </div>
+            <LoadingState />
           ) : (
             <TimeChart spec={scenarioData} onInteraction={onInteraction} onAssistantTrigger={wrapTrigger} />
           )}
@@ -270,13 +268,9 @@ export function ScenariosPage({ period, filters, dimConfig, scenarioPreset, onSc
       ) : (
         <div className="flex-1 overflow-auto">
           {phasedError ? (
-            <div className="flex items-center justify-center py-8 text-[13px] text-red-500">
-              Failed to load data. Please try refreshing.
-            </div>
+            <ErrorState />
           ) : phasedLoading || !phasedData ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
-            </div>
+            <LoadingState />
           ) : (
             <table className="w-full text-left border-collapse min-w-[600px]">
               <thead className="sticky top-0 z-20">

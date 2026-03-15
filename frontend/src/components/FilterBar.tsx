@@ -74,7 +74,7 @@ interface Props {
   page: PageType;
 }
 
-export function FilterBar({ filters, onChange, dimConfig, onDimConfigChange, page }: Props) {
+export function FilterBar({ filters, onChange, dimConfig, onDimConfigChange, page: _page }: Props) {
   const [open, setOpen] = useState(false);
   const [dimPickerOpen, setDimPickerOpen] = useState(false);
   const [productDropdownOpen, setProductDropdownOpen] = useState(false);

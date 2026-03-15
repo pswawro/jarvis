@@ -1,6 +1,6 @@
 """Pydantic models = JSON visualization specs."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # --- KPI Spec ---
@@ -94,13 +94,13 @@ class LineChartSpec(BaseModel):
 # --- Assistant ---
 
 class AssistantHistoryMessage(BaseModel):
-    role: str  # "user" or "assistant"
-    content: str  # question text or summary of assistant response
+    role: str = Field(pattern=r"^(user|assistant)$")
+    content: str = Field(max_length=5000)
 
 class AssistantRequest(BaseModel):
     context: dict = {}
-    question: str
-    history: list[AssistantHistoryMessage] = []
+    question: str = Field(max_length=2000)
+    history: list[AssistantHistoryMessage] = Field(default=[], max_length=20)
 
 
 class AssistantChunk(BaseModel):
