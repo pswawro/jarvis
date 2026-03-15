@@ -96,7 +96,7 @@ export interface UseAssistantChat {
 
 }
 
-export function useAssistantChat(_onApplyConfig?: (cfg: ConfigProposal) => void): UseAssistantChat {
+export function useAssistantChat(): UseAssistantChat {
   const [chatList, setChatList] = useState<ChatSummary[]>(loadChatList);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -404,9 +404,9 @@ export function useAssistantChat(_onApplyConfig?: (cfg: ConfigProposal) => void)
               }
             }
           }
-        } catch (e: any) {
-          if (e.name === "AbortError") return;
-          const errMsg: Message = { role: "assistant", facts: `Connection error: ${e.message}` };
+        } catch (e: unknown) {
+          if (e instanceof Error && e.name === "AbortError") return;
+          const errMsg: Message = { role: "assistant", facts: `Connection error: ${e instanceof Error ? e.message : "Unknown error"}` };
           const finalMessages = [...messagesRef.current, errMsg];
           setMessages(finalMessages);
           messagesRef.current = finalMessages;

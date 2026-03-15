@@ -195,6 +195,8 @@ async def stream_insights(
                 yield f"event: error\ndata: {{\"message\": \"Internal error\"}}\n\n"
                 await asyncio.sleep(5)
 
+        yield f"event: timeout\ndata: {{\"message\": \"Stream timeout after 30 minutes\"}}\n\n"
+
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream",

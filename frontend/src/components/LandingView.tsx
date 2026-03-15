@@ -91,7 +91,7 @@ function LandingChart({ data, closedMonth, scale }: { data: TreeTableSpec; close
 
     const nodes = data.tree.children.length > 0 ? data.tree.children : [data.tree];
     const xLabels = MONTHS.map((m, i) => i < closedMonth ? m : `${m}*`);
-    const seriesList: any[] = [];
+    const seriesList: Record<string, unknown>[] = [];
 
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
@@ -166,13 +166,14 @@ function LandingChart({ data, closedMonth, scale }: { data: TreeTableSpec; close
         borderWidth: 1,
         padding: [4, 8],
         textStyle: { fontSize: 12 },
-        formatter: (params: any) => {
+        formatter: (params: Record<string, unknown> | Record<string, unknown>[]) => {
           const p = Array.isArray(params) ? params[0] : params;
           const val = fmtAxis(p.value as number);
-          const name = p.seriesName.replace(" (fcst)", "");
-          const isFcst = p.seriesName.includes("(fcst)");
-          return `<div style="font-size:10px;color:#9ca3af;margin-bottom:1px">${escapeHtml(p.name)}</div>
-                  <div style="color:${sanitizeColor(p.color)};font-weight:600">${escapeHtml(name)}: ${val}${isFcst ? " <i style='color:#9ca3af'>(forecast)</i>" : ""}</div>`;
+          const seriesName = String(p.seriesName ?? "");
+          const name = seriesName.replace(" (fcst)", "");
+          const isFcst = seriesName.includes("(fcst)");
+          return `<div style="font-size:10px;color:#9ca3af;margin-bottom:1px">${escapeHtml(String(p.name ?? ""))}</div>
+                  <div style="color:${sanitizeColor(String(p.color ?? "#999"))};font-weight:600">${escapeHtml(name)}: ${val}${isFcst ? " <i style='color:#9ca3af'>(forecast)</i>" : ""}</div>`;
         },
         extraCssText: "border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.06);",
       },

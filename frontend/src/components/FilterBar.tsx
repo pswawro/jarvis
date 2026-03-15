@@ -25,41 +25,27 @@ const SCALES: { id: Scale; label: string }[] = [
   { id: "B", label: "$B" },
 ];
 
-const MARKETS = [
-  { id: "US", label: "United States" },
-  { id: "CN", label: "China" },
-];
+type FilterOption = { id: string; label: string };
+type ProductOption = { id: string; label: string; ta: string };
 
-const TAS = [
-  { id: "Oncology", label: "Oncology" },
-  { id: "CVRM", label: "CVRM" },
-  { id: "R&I", label: "R&I" },
-  { id: "Rare Disease", label: "Rare Disease" },
-  { id: "V&I", label: "V&I" },
-];
+function useFilterOptions() {
+  const [markets, setMarkets] = useState<FilterOption[]>([]);
+  const [tas, setTas] = useState<FilterOption[]>([]);
+  const [products, setProducts] = useState<ProductOption[]>([]);
 
-const PRODUCTS: { id: string; label: string; ta: string }[] = [
-  { id: "BEYFORTUS", label: "Beyfortus", ta: "V&I" },
-  { id: "BREZTRI", label: "Breztri", ta: "R&I" },
-  { id: "BRILINTA", label: "Brilinta", ta: "CVRM" },
-  { id: "CALQUENCE", label: "Calquence", ta: "Oncology" },
-  { id: "CRESTOR", label: "Crestor", ta: "CVRM" },
-  { id: "ENHERTU", label: "Enhertu", ta: "Oncology" },
-  { id: "FARXIGA", label: "Farxiga", ta: "CVRM" },
-  { id: "FASENRA", label: "Fasenra", ta: "R&I" },
-  { id: "IMFINZI", label: "Imfinzi", ta: "Oncology" },
-  { id: "KOSELUGO", label: "Koselugo", ta: "Oncology" },
-  { id: "LOKELMA", label: "Lokelma", ta: "CVRM" },
-  { id: "LYNPARZA", label: "Lynparza", ta: "Oncology" },
-  { id: "SAPHNELO", label: "Saphnelo", ta: "R&I" },
-  { id: "SOLIRIS", label: "Soliris", ta: "Rare Disease" },
-  { id: "STRENSIQ", label: "Strensiq", ta: "Rare Disease" },
-  { id: "SYMBICORT", label: "Symbicort", ta: "R&I" },
-  { id: "TAGRISSO", label: "Tagrisso", ta: "Oncology" },
-  { id: "TEZSPIRE", label: "Tezspire", ta: "R&I" },
-  { id: "TRUQAP", label: "Truqap", ta: "Oncology" },
-  { id: "ULTOMIRIS", label: "Ultomiris", ta: "Rare Disease" },
-];
+  useEffect(() => {
+    fetch("/api/config/filters")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.markets) setMarkets(data.markets);
+        if (data.tas) setTas(data.tas.map((t: string) => ({ id: t, label: t })));
+        if (data.products) setProducts(data.products);
+      })
+      .catch(() => { /* keep empty arrays */ });
+  }, []);
+
+  return { markets, tas, products };
+}
 
 const LEVEL_LABELS: Record<LevelId, string> = {
   ta: "TA", brand: "Brand", market: "Market", region: "Region",
@@ -74,7 +60,8 @@ interface Props {
   page: PageType;
 }
 
-export function FilterBar({ filters, onChange, dimConfig, onDimConfigChange, page: _page }: Props) {
+export function FilterBar({ filters, onChange, dimConfig, onDimConfigChange }: Props) {
+  const { markets: MARKETS, tas: TAS, products: PRODUCTS } = useFilterOptions();
   const [open, setOpen] = useState(false);
   const [dimPickerOpen, setDimPickerOpen] = useState(false);
   const [productDropdownOpen, setProductDropdownOpen] = useState(false);
@@ -86,8 +73,12 @@ export function FilterBar({ filters, onChange, dimConfig, onDimConfigChange, pag
     if (productDropdownOpen && searchRef.current) {
       searchRef.current.focus();
     }
-    if (!productDropdownOpen) setProductSearch("");
   }, [productDropdownOpen]);
+
+  const toggleProductDropdown = useCallback((open: boolean) => {
+    setProductDropdownOpen(open);
+    if (!open) setProductSearch("");
+  }, []);
 
   const hasDataFilters = filters.market_id.length > 0 || filters.ta.length > 0 || filters.product.length > 0;
 
@@ -103,7 +94,7 @@ export function FilterBar({ filters, onChange, dimConfig, onDimConfigChange, pag
   const activeTAsFromProducts = useMemo(() => {
     if (filters.product.length === 0) return null; // no constraint
     return new Set(filters.product.map((pid) => PRODUCTS.find((p) => p.id === pid)?.ta).filter(Boolean));
-  }, [filters.product]);
+  }, [filters.product, PRODUCTS]);
 
   // Products filtered by TA selection, then by search, sorted alphabetically
   const filteredProducts = useMemo(() => {
@@ -117,7 +108,7 @@ export function FilterBar({ filters, onChange, dimConfig, onDimConfigChange, pag
       list = list.filter((p) => p.label.toLowerCase().includes(q));
     }
     return list; // already alphabetical
-  }, [filters.ta, productSearch]);
+  }, [filters.ta, productSearch, PRODUCTS]);
 
   // Active filter chips — always show all settings
   const chips = useMemo(() => {
@@ -145,7 +136,7 @@ export function FilterBar({ filters, onChange, dimConfig, onDimConfigChange, pag
       result.push({ key: "product", label: `Product: ${labels.join(", ")}`, onRemove: removeProducts });
     }
     return result;
-  }, [filters, removeMarkets, removeTas, removeProducts]);
+  }, [filters, removeMarkets, removeTas, removeProducts, MARKETS, PRODUCTS]);
 
   const showDimensions = true;
 
@@ -278,7 +269,7 @@ export function FilterBar({ filters, onChange, dimConfig, onDimConfigChange, pag
       {/* Unified filter panel */}
       {open && (
         <>
-          <div className="fixed inset-0 z-30" onClick={() => { setOpen(false); setProductDropdownOpen(false); }} />
+          <div className="fixed inset-0 z-30" onClick={() => { setOpen(false); toggleProductDropdown(false); }} />
           <div className="absolute left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-lg px-3 pb-3 pt-1">
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-x-6 gap-y-3">
               {/* Year */}
@@ -410,7 +401,7 @@ export function FilterBar({ filters, onChange, dimConfig, onDimConfigChange, pag
               <div className="flex flex-col gap-1 relative col-span-2 sm:col-span-1">
                 <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Product</span>
                 <button
-                  onClick={() => setProductDropdownOpen(!productDropdownOpen)}
+                  onClick={() => toggleProductDropdown(!productDropdownOpen)}
                   className={clsx(
                     "flex items-center justify-between px-2.5 py-1 text-[11px] font-medium rounded-md border transition-all min-w-[160px] text-left",
                     filters.product.length > 0

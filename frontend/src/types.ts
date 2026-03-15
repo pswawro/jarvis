@@ -1,5 +1,16 @@
 // JSON visualization spec types — matches backend Pydantic models
 
+/** Minimal ECharts callback params type to avoid `any`. */
+export interface EChartsCallbackParams {
+  componentType: string;
+  seriesName: string;
+  name: string;
+  dataIndex: number;
+  value: number | string | null;
+  color: string;
+  event?: { event?: { preventDefault?: () => void } };
+}
+
 export interface KpiComparison {
   label: string;
   variance_pct: number;

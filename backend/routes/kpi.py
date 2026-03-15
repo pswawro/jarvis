@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query
 
 import data_loader
 from models import KpiStripSpec, KpiCard, KpiComparison
-from routes.shared import validate_params, safe_round, var_pct, apply_standard_filters
+from routes.shared import validate_params, safe_round, var_pct, parse_list, period_label
 
 router = APIRouter()
 
@@ -14,15 +14,24 @@ def get_kpi(year: int = 2025, quarter: str | None = None, market_id: str | None 
     exp = data_loader.expenses
     tgt = data_loader.targets
 
-    # Apply standard filters (TA, brand, market)
-    rev, tgt_filtered, _prods = apply_standard_filters(rev, tgt, ta=ta, brand_id=brand_id, market_id=market_id)
-    # Keep expense targets unfiltered by TA/brand/market
-    tgt = tgt[(tgt.entity_id.isin(tgt_filtered.entity_id.unique())) | (tgt.target_type == "expense")]
+    # Filter revenue by TA/brand
+    prods = data_loader.products
+    if ta:
+        ta_list = parse_list(ta)
+        if ta_list:
+            brands_in_ta = prods[prods.therapeutic_area.isin(ta_list)].brand_id.unique()
+            rev = rev[rev.brand_id.isin(brands_in_ta)]
+            tgt = tgt[(tgt.entity_id.isin(brands_in_ta)) | (tgt.target_type == "expense")]
+    if brand_id:
+        brand_list = parse_list(brand_id)
+        if brand_list:
+            rev = rev[rev.brand_id.isin(brand_list)]
+            tgt = tgt[(tgt.entity_id.isin(brand_list)) | (tgt.target_type == "expense")]
     if market_id:
-        from routes.shared import parse_list
         mkt_list = parse_list(market_id)
         if mkt_list:
-            tgt = tgt[(tgt.market_id.isin(mkt_list)) | (tgt.target_type == "expense")]
+            rev = rev[rev.market_id.isin(mkt_list)]
+            tgt = tgt[(tgt.market_id.isin(mkt_list)) | (tgt.market_id == "") | (tgt.target_type == "expense")]
 
     # Filter by year
     r = rev[rev.year == year]
@@ -74,7 +83,7 @@ def get_kpi(year: int = 2025, quarter: str | None = None, market_id: str | None 
         py_opex = e_py.total_operating_expenses.sum()
         py_margin = safe_round((py_gross - py_opex) / py_revenue * 100) if py_revenue else 0
 
-    period_lbl = f"{'Q' + quarter[1] + ' ' if quarter else 'FY '}{year}"
+    period_lbl = period_label(year, quarter)
 
     cards = [
         KpiCard(

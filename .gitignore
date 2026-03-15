@@ -23,6 +23,9 @@ CLAUDE.md
 .claude/
 docs/superpowers/
 
+# Playwright
+.playwright-mcp/
+
 # Insights (generated)
 data/insights.json
 data/push_subscriptions.json

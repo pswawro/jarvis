@@ -4,7 +4,7 @@ import * as echarts from "echarts/core";
 import { BarChart } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
-import type { TreeNode, TreeTableSpec, AssistantContext } from "../types";
+import type { TreeNode, TreeTableSpec, AssistantContext, EChartsCallbackParams } from "../types";
 import { escapeHtml, sanitizeColor } from "../escapeHtml";
 import { makeBaseContext } from "../utils";
 
@@ -82,8 +82,9 @@ export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger, dr
         padding: [8, 12],
         textStyle: { fontSize: 12, color: "#374151" },
         extraCssText: "border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.08);",
-        formatter: (params: any) => {
-          const idx = params.dataIndex;
+        formatter: (params: EChartsCallbackParams | EChartsCallbackParams[]) => {
+          const p = Array.isArray(params) ? params[0] : params;
+          const idx = p.dataIndex;
           const sign = variances[idx] >= 0 ? "+" : "";
           const color = varianceColor(variances[idx], invertColor);
           const canDrill = drillable.has(ids[idx]);
@@ -118,9 +119,9 @@ export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger, dr
         axisLabel: {
           fontSize: 11,
           color: "#374151",
-          fontWeight: 600 as any,
+          fontWeight: 600 as const,
           width: 100,
-          overflow: "truncate" as any,
+          overflow: "truncate" as const,
         },
         axisLine: { show: false },
         axisTick: { show: false },
@@ -150,19 +151,20 @@ export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger, dr
             show: true,
             position: "right" as const,
             fontSize: 11,
-            fontWeight: 500 as any,
+            fontWeight: 500 as const,
             color: "#6b7280",
-            formatter: (params: any) => {
-              const idx = params.dataIndex;
+            formatter: (params: EChartsCallbackParams | EChartsCallbackParams[]) => {
+              const p = Array.isArray(params) ? params[0] : params;
+              const idx = p.dataIndex;
               const sign = variances[idx] >= 0 ? "+" : "";
               const vColor = variances[idx] >= 0.5 ? "green" : variances[idx] <= -0.5 ? "red" : "";
               const arrow = drillable.has(ids[idx]) ? " ›" : "";
-              return `${fmtValue(params.value)}  {${vColor || "neutral"}|${sign}${variances[idx].toFixed(1)}%}${arrow}`;
+              return `${fmtValue(p.value as number)}  {${vColor || "neutral"}|${sign}${variances[idx].toFixed(1)}%}${arrow}`;
             },
             rich: {
-              green: { fontSize: 11, fontWeight: 600 as any, color: "#059669" },
-              red: { fontSize: 11, fontWeight: 600 as any, color: "#dc2626" },
-              neutral: { fontSize: 11, fontWeight: 500 as any, color: "#9ca3af" },
+              green: { fontSize: 11, fontWeight: 600 as const, color: "#059669" },
+              red: { fontSize: 11, fontWeight: 600 as const, color: "#dc2626" },
+              neutral: { fontSize: 11, fontWeight: 500 as const, color: "#9ca3af" },
             },
           },
         },
@@ -185,7 +187,7 @@ export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger, dr
   }, [items, invertColor, drillable]);
 
   const handleClick = useCallback(
-    (params: any) => {
+    (params: EChartsCallbackParams) => {
       if (params.seriesName !== "Actual") return;
       const idx = params.dataIndex;
       const node = items[idx];
@@ -201,7 +203,7 @@ export function TreeMapChart({ spec, invertColor = false, onAssistantTrigger, dr
   }, [drillPath, setDrillPath]);
 
   const handleContextMenu = useCallback(
-    (params: any) => {
+    (params: EChartsCallbackParams) => {
       if (params.seriesName !== "Actual" || !onAssistantTrigger) return;
       params.event?.event?.preventDefault?.();
       const idx = params.dataIndex;

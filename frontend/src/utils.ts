@@ -35,13 +35,15 @@ export function comparatorLabel(comparator: string): string {
   return COMPARATOR_LABELS[comparator] ?? "vs Bgt";
 }
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 /** Create a base AssistantContext with sensible defaults (to be overridden by page wrappers). */
 export function makeBaseContext(source: AssistantContext["source"]): AssistantContext {
   return {
     source,
     page: "overview",
     dimension: "brand",
-    period: { year: new Date().getFullYear(), quarter: null },
-    filters: { market_id: [], ta: [], product: [], comparator: "BUD", scale: "M", year: new Date().getFullYear(), granularity: "quarter" },
+    period: { year: CURRENT_YEAR, quarter: null },
+    filters: { market_id: [], ta: [], product: [], comparator: "BUD", scale: "M", year: CURRENT_YEAR, granularity: "quarter" },
   };
 }

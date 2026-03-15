@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback } from "react";
 import type { Period, Filters, DimensionConfig, LevelId, TreeTableSpec, ChartInteraction, AssistantContext, TreeNode } from "../types";
 import { useApi } from "../hooks/useApi";
 import { TreeTable } from "./TreeTable";
@@ -85,13 +85,15 @@ export function OverviewPage({ period, filters, dimConfig, onAssistantTrigger }:
   const domain = getDomain(dimConfig.levels);
   const config = getDomainConfig(domain);
   const subtitle = getSubtitle(dimConfig.levels, domain);
-  const dataRef = useRef<TreeTableSpec | null>(null);
+  const [prevData, setPrevData] = useState<TreeTableSpec | null>(null);
 
   // Reset drill state when levels change
-  useEffect(() => {
+  const [prevLevelsKey, setPrevLevelsKey] = useState(levelsKey);
+  if (prevLevelsKey !== levelsKey) {
+    setPrevLevelsKey(levelsKey);
     setChartDrillPath([]);
     setTableExpandedIds(new Set());
-  }, [levelsKey]);
+  }
 
   const extra = useMemo(() => {
     const e = config.useFilters ? filtersToExtra(filters) : {};
@@ -101,12 +103,12 @@ export function OverviewPage({ period, filters, dimConfig, onAssistantTrigger }:
   const { data, error } = useApi<TreeTableSpec>("/tree", period, extra);
 
   // Initialize table expandedIds when data loads
-  useEffect(() => {
-    if (data && data !== dataRef.current) {
-      dataRef.current = data;
-      setTableExpandedIds((prev) => prev.size === 0 ? new Set([data.tree.id]) : prev);
+  if (data && data !== prevData) {
+    setPrevData(data);
+    if (tableExpandedIds.size === 0) {
+      setTableExpandedIds(new Set([data.tree.id]));
     }
-  }, [data]);
+  }
 
   const handleToggleMode = useCallback(() => {
     if (!data) return;

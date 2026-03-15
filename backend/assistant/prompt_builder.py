@@ -103,7 +103,7 @@ def _build_dashboard_block(ctx: dict) -> str:
     period = ctx.get("period", {})
     replacements = {
         "{{page}}": _sanitize_value(ctx.get("page", "overview")),
-        "{{levels}}": " → ".join(ctx.get("levels", ["ta", "brand", "market"])),
+        "{{levels}}": _sanitize_value(" → ".join(ctx.get("levels", ["ta", "brand", "market"]))),
         "{{year}}": _sanitize_value(str(period.get("year", 2025))),
         "{{quarter}}": _sanitize_value(str(period.get("quarter", "Full Year"))),
         "{{filters}}": _build_filters_block(filters),

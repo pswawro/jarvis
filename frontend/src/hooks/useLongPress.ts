@@ -11,8 +11,8 @@ export function useLongPress(callback: () => void, delay = 500) {
     };
   }, []);
 
-  const start = useCallback(
-    (_e: React.TouchEvent) => {
+  const start: React.TouchEventHandler = useCallback(
+    () => {
       didLongPress.current = false;
       timerRef.current = window.setTimeout(() => {
         didLongPress.current = true;
@@ -22,7 +22,7 @@ export function useLongPress(callback: () => void, delay = 500) {
     [callback, delay],
   );
 
-  const cancel = useCallback((_e?: React.TouchEvent) => {
+  const cancel: React.TouchEventHandler = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
@@ -31,7 +31,7 @@ export function useLongPress(callback: () => void, delay = 500) {
 
   const onContextMenu = useCallback(
     (e: React.MouseEvent) => {
-      e.preventDefault();
+      if (didLongPress.current) e.preventDefault();
     },
     [],
   );

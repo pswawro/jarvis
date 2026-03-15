@@ -9,7 +9,7 @@ import {
   DataZoomComponent,
 } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
-import type { LineChartSpec, ChartInteraction, AssistantContext } from "../types";
+import type { LineChartSpec, ChartInteraction, AssistantContext, EChartsCallbackParams } from "../types";
 import { escapeHtml, sanitizeColor } from "../escapeHtml";
 import { makeBaseContext } from "../utils";
 
@@ -79,7 +79,7 @@ function specToOption(spec: LineChartSpec): echarts.EChartsCoreOption {
       borderWidth: 1,
       padding: [4, 8],
       textStyle: { fontSize: 12 },
-      formatter: (params: any) => {
+      formatter: (params: EChartsCallbackParams | EChartsCallbackParams[]) => {
         const p = Array.isArray(params) ? params[0] : params;
         const color = sanitizeColor(p.color);
         const val = fmt(p.value as number);
@@ -144,7 +144,7 @@ export function TimeChart({ spec, onDrill, onDrillBack, onInteraction, onAssista
   const option = useMemo(() => specToOption(spec), [spec]);
 
   const buildInteraction = useCallback(
-    (type: "hover" | "click", params: any): ChartInteraction | null => {
+    (type: "hover" | "click", params: EChartsCallbackParams): ChartInteraction | null => {
       const seriesSpec = spec.series.find((s) => s.name === params.seriesName);
       if (!seriesSpec) return null;
       return {
@@ -162,7 +162,7 @@ export function TimeChart({ spec, onDrill, onDrillBack, onInteraction, onAssista
 
   const onEvents = useMemo(
     () => ({
-      click: (params: any) => {
+      click: (params: EChartsCallbackParams) => {
         if (params.componentType !== "series") return;
         // Surface interaction
         if (onInteraction) {
@@ -170,14 +170,14 @@ export function TimeChart({ spec, onDrill, onDrillBack, onInteraction, onAssista
           if (interaction) onInteraction(interaction);
         }
       },
-      mouseover: (params: any) => {
+      mouseover: (params: EChartsCallbackParams) => {
         if (params.componentType !== "series") return;
         if (onInteraction) {
           const interaction = buildInteraction("hover", params);
           if (interaction) onInteraction(interaction);
         }
       },
-      contextmenu: (params: any) => {
+      contextmenu: (params: EChartsCallbackParams) => {
         if (params.componentType !== "series" || !onAssistantTrigger) return;
         params.event?.event?.preventDefault?.();
         const seriesSpec = spec.series.find((s) => s.name === params.seriesName);
@@ -193,7 +193,7 @@ export function TimeChart({ spec, onDrill, onDrillBack, onInteraction, onAssista
           },
         });
       },
-      legendselectchanged: (params: any) => {
+      legendselectchanged: (params: { name: string }) => {
         // Check if clicked legend is drillable
         const clickedName = params.name;
         const s = spec.series.find((s) => s.name === clickedName);

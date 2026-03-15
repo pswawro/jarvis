@@ -61,18 +61,23 @@ def _parse_analysis_response(text: str) -> dict | None:
     }
 
 
+import threading
+
 _client = None
+_client_lock = threading.Lock()
 
 
 def _get_client() -> AnthropicBedrock:
     global _client
     if _client is None:
-        _client = AnthropicBedrock(
-            aws_region=config.LLM_AWS_REGION,
-            aws_access_key=config.AWS_ACCESS_KEY_ID,
-            aws_secret_key=config.AWS_SECRET_ACCESS_KEY,
-            aws_session_token=config.AWS_SESSION_TOKEN,
-        )
+        with _client_lock:
+            if _client is None:
+                _client = AnthropicBedrock(
+                    aws_region=config.LLM_AWS_REGION,
+                    aws_access_key=config.AWS_ACCESS_KEY_ID,
+                    aws_secret_key=config.AWS_SECRET_ACCESS_KEY,
+                    aws_session_token=config.AWS_SESSION_TOKEN,
+                )
     return _client
 
 

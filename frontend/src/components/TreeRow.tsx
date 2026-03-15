@@ -51,7 +51,7 @@ export const TreeRow = memo(function TreeRow({ node, depth, isExpanded, hasChild
     });
   }, [onAssistantTrigger, node, parentPath]);
 
-  const longPress = useLongPress(triggerAssistant);
+  const { didLongPress, ...longPressHandlers } = useLongPress(triggerAssistant);
 
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
@@ -63,15 +63,15 @@ export const TreeRow = memo(function TreeRow({ node, depth, isExpanded, hasChild
   );
 
   const handleClick = useCallback(() => {
-    if (hasChildren && !longPress.didLongPress.current) onToggle();
-  }, [hasChildren, longPress.didLongPress, onToggle]);
+    if (hasChildren && !didLongPress.current) onToggle();
+  }, [hasChildren, didLongPress, onToggle]);
 
   return (
     <button
       role="treeitem"
       aria-expanded={hasChildren ? isExpanded : undefined}
       onClick={hasChildren ? handleClick : undefined}
-      {...longPress}
+      {...longPressHandlers}
       onContextMenu={handleContextMenu}
       className={clsx(
         "w-full flex items-center gap-1.5 sm:gap-2 px-3 text-left transition-colors",

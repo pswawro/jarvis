@@ -33,7 +33,18 @@ export default function App() {
   const [scenarioPreset, setScenarioPreset] = useState("all");
   const lastInteractionRef = useRef<ChartInteraction | null>(null);
   const [assistantOpen, setAssistantOpen] = useState(false);
-  const [insightsOpen, setInsightsOpen] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("insights") === "open") {
+      params.delete("insights");
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params}`
+        : window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+      return true;
+    }
+    return false;
+  });
   const insights = useInsights();
 
   // Derive Period from filters for API calls
@@ -74,12 +85,12 @@ export default function App() {
     }
   }, []);
 
-  const assistant = useAssistantChat(handleApplyConfig);
+  const assistant = useAssistantChat();
 
   useEffect(() => {
     assistant.setDrawerOpen(assistantOpen);
     if (assistantOpen) assistant.markRead();
-  }, [assistantOpen, assistant.setDrawerOpen, assistant.markRead]);
+  }, [assistantOpen, assistant]);
 
   // Listen for service worker messages (push notification clicks)
   useEffect(() => {
@@ -92,24 +103,10 @@ export default function App() {
     return () => navigator.serviceWorker?.removeEventListener("message", handler);
   }, []);
 
-  // Parse ?insights=open URL param (from push notification click)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("insights") === "open") {
-      setInsightsOpen(true);
-      // Clean up URL
-      params.delete("insights");
-      const newUrl = params.toString()
-        ? `${window.location.pathname}?${params}`
-        : window.location.pathname;
-      window.history.replaceState({}, "", newUrl);
-    }
-  }, []);
-
   // Register for push notifications on mount
   useEffect(() => {
     insights.subscribeToPush();
-  }, [insights.subscribeToPush]);
+  }, [insights]);
 
   const handleInteraction = useCallback((interaction: ChartInteraction) => {
     lastInteractionRef.current = interaction;
@@ -118,7 +115,7 @@ export default function App() {
   const handleAssistantTrigger = useCallback((ctx: AssistantContext) => {
     assistant.newChat(ctx);
     setAssistantOpen(true);
-  }, [assistant.newChat]);
+  }, [assistant]);
 
   const handleAssistantOpen = useCallback(() => {
     if (!assistant.activeChatId) {
@@ -131,11 +128,7 @@ export default function App() {
       });
     }
     setAssistantOpen(true);
-  }, [page, dimConfig.levels, period, filters, assistant.activeChatId, assistant.setActiveContext]);
-
-  // Use ref to access latest filters without recreating callbacks
-  const filtersRef = useRef(filters);
-  filtersRef.current = filters;
+  }, [page, dimConfig.levels, period, filters, assistant]);
 
   const handleInsightToChat = useCallback(async (insightId: string) => {
     try {
@@ -143,7 +136,7 @@ export default function App() {
       const raw = await insights.getInsightContext(insightId);
       const ctx: AssistantContext = {
         ...raw,
-        filters: { ...filtersRef.current },
+        filters: { ...filters },
       };
       setInsightsOpen(false);
       const question = ctx.dataPoint?.explanation
@@ -154,7 +147,7 @@ export default function App() {
     } catch (e) {
       console.error("Failed to open insight in chat:", e);
     }
-  }, [insights.markRead, insights.getInsightContext, assistant.newChat]);
+  }, [insights, assistant, filters]);
 
   const extra = useMemo(() => filtersToExtra(filters), [filters]);
   const { data: kpiData } = useApi<KpiStripSpec>("/kpi", period, extra);
@@ -204,7 +197,6 @@ export default function App() {
         liveResponse={assistant.liveResponse}
         liveConfigProposal={assistant.liveConfigProposal}
         liveClarification={assistant.liveClarification}
-        liveThinking={assistant.liveThinking}
         liveTimeline={assistant.liveTimeline}
         sendQuestion={assistant.sendQuestion}
         setActiveContext={assistant.setActiveContext}

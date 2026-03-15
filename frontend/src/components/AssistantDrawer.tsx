@@ -7,7 +7,6 @@ import type {
   Visual,
   ConfigProposal,
   Clarification,
-  ThinkingStep,
   TimelineEvent,
   ChatSummary,
 } from "../types";
@@ -35,7 +34,6 @@ interface Props {
   liveResponse: { facts: string; interpretation: string; hypothesis: string; recommendations: string };
   liveConfigProposal: ConfigProposal | null;
   liveClarification: Clarification | null;
-  liveThinking: ThinkingStep[];
   liveTimeline: TimelineEvent[];
 
   sendQuestion: (q: string) => void;
@@ -137,7 +135,6 @@ export function AssistantDrawer({
   liveResponse,
   liveConfigProposal,
   liveClarification,
-  liveThinking: _liveThinking,
   liveTimeline,
   sendQuestion,
   setActiveContext,
@@ -152,6 +149,7 @@ export function AssistantDrawer({
   const [expandedVisual, setExpandedVisual] = useState<Visual | null>(null);
   const [showChatList, setShowChatList] = useState(false);
   const [listening, setListening] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- SpeechRecognition types not in lib
   const recognitionRef = useRef<any>(null);
   const voiceTranscriptRef = useRef("");
   const voiceTimeoutRef = useRef<number | null>(null);
@@ -181,6 +179,7 @@ export function AssistantDrawer({
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages.length, liveTimeline.length, liveResponse.facts, liveResponse.interpretation, liveResponse.hypothesis, liveResponse.recommendations, liveConfigProposal, liveClarification]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- SpeechRecognition is a non-standard API
   const hasSpeech = typeof window !== "undefined" && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
 
   const VOICE_TIMEOUT_MS = 30_000;
@@ -207,6 +206,7 @@ export function AssistantDrawer({
       return;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- SpeechRecognition is a non-standard API
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
@@ -217,6 +217,7 @@ export function AssistantDrawer({
     voiceTranscriptRef.current = "";
     voiceStoppingRef.current = false;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- SpeechRecognition event types
     recognition.onresult = (event: any) => {
       let finalText = "";
       let interimText = "";
@@ -245,14 +246,13 @@ export function AssistantDrawer({
     voiceTimeoutRef.current = window.setTimeout(stopVoiceAndSend, VOICE_TIMEOUT_MS);
   }, [listening, hasSpeech, stopVoiceAndSend]);
 
-  const questionRef = useRef(question);
-  questionRef.current = question;
-
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
-      if (questionRef.current.trim()) {
-        sendQuestion(questionRef.current);
+      const input = (e.target as HTMLFormElement).querySelector("input");
+      const value = input?.value?.trim() ?? "";
+      if (value) {
+        sendQuestion(value);
         setQuestion("");
       }
     },
