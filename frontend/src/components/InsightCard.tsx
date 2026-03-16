@@ -1,6 +1,7 @@
 import { useState } from "react";
 import clsx from "clsx";
 import type { Insight } from "../types";
+import { parseMarkdown } from "./assistant";
 
 interface Props {
   insight: Insight;
@@ -28,7 +29,7 @@ function relativeTime(iso: string): string {
 
 export function InsightCard({ insight, onAddToChat, onToggleBookmark }: Props) {
   const isInactive = insight.status === "inactive";
-  const hasAI = !!insight.ai_analysis;
+  const hasAI = !!insight.ai_analysis && (!!insight.ai_analysis.explanation || (insight.ai_analysis.sections?.length ?? 0) > 0);
   const styles = SEVERITY_STYLES[insight.severity] ?? SEVERITY_STYLES.informational;
 
   return (
@@ -40,14 +41,25 @@ export function InsightCard({ insight, onAddToChat, onToggleBookmark }: Props) {
       )}
     >
       {/* Header row */}
-      <div className="flex items-center gap-1.5 mb-1.5">
-        {isInactive ? (
+      <div className="flex items-center gap-1.5 mb-1.5">        {isInactive ? (
           <span className="text-[9px] font-bold text-white/40 bg-white/8 px-1.5 py-0.5 rounded uppercase">
             Inactive
           </span>
         ) : (
           <span className={clsx("text-[9px] font-bold px-1.5 py-0.5 rounded uppercase", styles.chip)}>
             {insight.severity}
+          </span>
+        )}        {!isInactive && hasAI && insight.ai_analysis?.sections?.length && (
+          <span
+            className={clsx(
+              "text-[9px] font-bold px-1.5 py-0.5 rounded uppercase",
+              insight.outcome === "positive"
+                ? "text-emerald-400 bg-emerald-400/15"
+                : "text-rose-400 bg-rose-400/15"
+            )}
+            title={insight.outcome === "positive" ? "Positive outcome" : "Negative outcome"}
+          >
+            {insight.outcome === "positive" ? "↑ positive" : "↓ negative"}
           </span>
         )}
         <span className="text-[10px] text-white/30">{relativeTime(insight.detected_at)}</span>
@@ -98,7 +110,14 @@ const SECTION_LABELS: Record<string, string> = {
   facts: "Key Facts",
   interpretation: "Interpretation",
   hypothesis: "Hypothesis",
-  recommendations: "Recommendations",
+  recommendations: "Suggested Actions",
+};
+
+const SECTION_COLORS: Record<string, string> = {
+  facts: "border-green-500",
+  interpretation: "border-blue-500",
+  hypothesis: "border-purple-500",
+  recommendations: "border-amber-500",
 };
 
 function InsightAnalysis({ ai }: { ai: NonNullable<Insight["ai_analysis"]> }) {
@@ -110,23 +129,29 @@ function InsightAnalysis({ ai }: { ai: NonNullable<Insight["ai_analysis"]> }) {
   const rest = sections.slice(1);
 
   if (!preview) {
+    if (!ai.explanation) {
+      return (
+        <div className="text-[11px] text-white/40 leading-relaxed italic">
+          AI analysis pending
+        </div>
+      );
+    }
     return (
-      <div className="text-[11px] text-white/50 leading-relaxed">{ai.explanation}</div>
+      <div className="text-[11px] text-white/60 leading-relaxed whitespace-pre-line">
+        {parseMarkdown(ai.explanation, true)}
+      </div>
     );
   }
 
   return (
-    <div className="text-[11px] text-white/50 leading-relaxed">
-      <div>{preview[1]}</div>
+    <div className="text-[11px] leading-relaxed space-y-1.5">
+      {/* First section shown as preview */}
+      <InsightSection tag={preview[0]} content={preview[1]} />
+
       {rest.length > 0 && expanded && (
-        <div className="mt-1.5 space-y-1.5">
+        <div className="space-y-1.5">
           {rest.map(([tag, content]) => (
-            <div key={tag}>
-              <span className="text-[9px] font-semibold text-white/30 uppercase tracking-wide">
-                {SECTION_LABELS[tag] ?? tag}
-              </span>
-              <div className="mt-0.5">{content}</div>
-            </div>
+            <InsightSection key={tag} tag={tag} content={content} />
           ))}
         </div>
       )}
@@ -138,6 +163,19 @@ function InsightAnalysis({ ai }: { ai: NonNullable<Insight["ai_analysis"]> }) {
           {expanded ? "Show less" : `Show more (${rest.length} sections)`}
         </button>
       )}
+    </div>
+  );
+}
+
+function InsightSection({ tag, content }: { tag: string; content: string }) {
+  const color = SECTION_COLORS[tag] ?? "border-white/20";
+  const label = SECTION_LABELS[tag] ?? tag;
+  return (
+    <div className={`border-l-2 ${color} pl-2.5`}>
+      <div className="text-[9px] font-bold uppercase tracking-wider text-white/35 mb-0.5">
+        {label}
+      </div>
+      <div className="text-white/60">{content ? parseMarkdown(content, true) : null}</div>
     </div>
   );
 }

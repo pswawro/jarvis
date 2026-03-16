@@ -1,10 +1,10 @@
 """API endpoints for insights and push subscriptions."""
 
 import asyncio
-import fcntl
 import json
 import logging
 import os
+import sys
 import tempfile
 import time
 from datetime import datetime, timezone
@@ -314,12 +314,26 @@ _SUBS_LOCK_PATH = _SUBS_PATH.with_suffix(".lock")
 def _acquire_subs_lock():
     _SUBS_LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
     fd = open(_SUBS_LOCK_PATH, "w")
-    fcntl.flock(fd, fcntl.LOCK_EX)
+    if sys.platform == "win32":
+        import msvcrt
+        msvcrt.locking(fd.fileno(), msvcrt.LK_LOCK, 1)
+    else:
+        import fcntl
+        fcntl.flock(fd, fcntl.LOCK_EX)
     return fd
 
 
 def _release_subs_lock(fd):
-    fcntl.flock(fd, fcntl.LOCK_UN)
+    if sys.platform == "win32":
+        import msvcrt
+        try:
+            fd.seek(0)
+            msvcrt.locking(fd.fileno(), msvcrt.LK_UNLCK, 1)
+        except OSError:
+            pass
+    else:
+        import fcntl
+        fcntl.flock(fd, fcntl.LOCK_UN)
     fd.close()
 
 

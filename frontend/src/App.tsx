@@ -138,9 +138,9 @@ export default function App() {
         ...raw,
         filters: { ...filters },
       };
-      setInsightsOpen(false);
-      const question = ctx.dataPoint?.explanation
-        ? `Analyze this insight: ${ctx.dataPoint.explanation}`
+      setInsightsOpen(false);      const explanation = ctx.dataPoint?.explanation || "";
+      const question = explanation
+        ? `Analyze this insight: ${explanation.length > 500 ? explanation.slice(0, 500) + "..." : explanation}`
         : "Analyze this data anomaly and provide recommendations.";
       assistant.newChat(ctx, question);
       setAssistantOpen(true);

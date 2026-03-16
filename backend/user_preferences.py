@@ -1,11 +1,16 @@
 """Per-user preferences store (JSON file, atomic writes with file locking)."""
 
-import fcntl
 import json
 import os
+import sys
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
+
+if sys.platform == "win32":
+    import msvcrt
+else:
+    import fcntl
 
 _PREFS_PATH = Path(__file__).parent.parent / "data" / "user_preferences.json"
 
@@ -20,10 +25,20 @@ class UserPreferencesStore:
         self._lock_path.parent.mkdir(parents=True, exist_ok=True)
         fd = open(self._lock_path, "w")
         try:
-            fcntl.flock(fd, fcntl.LOCK_SH if shared else fcntl.LOCK_EX)
+            if sys.platform == "win32":
+                msvcrt.locking(fd.fileno(), msvcrt.LK_LOCK, 1)
+            else:
+                fcntl.flock(fd, fcntl.LOCK_SH if shared else fcntl.LOCK_EX)
             yield
         finally:
-            fcntl.flock(fd, fcntl.LOCK_UN)
+            if sys.platform == "win32":
+                try:
+                    fd.seek(0)
+                    msvcrt.locking(fd.fileno(), msvcrt.LK_UNLCK, 1)
+                except OSError:
+                    pass
+            else:
+                fcntl.flock(fd, fcntl.LOCK_UN)
             fd.close()
 
     def _load(self) -> dict:

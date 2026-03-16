@@ -391,11 +391,10 @@
 
   <div class="card" style="margin-top: 16px;">
     <h3>Unified AI Engine</h3>
-    <span class="badge badge-done">Done</span>
-    <p style="font-size: 13px; color: var(--gray-light); margin-top: 8px; line-height: 1.6;">
+    <span class="badge badge-done">Done</span>    <p style="font-size: 13px; color: var(--gray-light); margin-top: 8px; line-height: 1.6;">
       One investigation pattern shared between assistant chat and automated insights. A semantic model dynamically built from actual data at startup
       ensures the AI always references real entities. Both modes share the same query tools and output structure &mdash;
-      chat adds dashboard context and render tools; insights add anomaly details and severity classification.
+      chat adds dashboard context and render tools; insights add anomaly details, severity classification, and positive/negative outcome tagging.
     </p>
   </div>
 </div>
@@ -445,12 +444,11 @@
   <div class="section-num">05 &mdash; Push Insights</div>
   <h2>Automated Anomaly Detection &amp; Delivery</h2>
   <p class="subtitle">From statistical detection to AI analysis to push notification</p>
-
   <div class="pipeline">
     <div class="pipeline-step">
       <div class="step-num">1</div>
       <div class="step-title">Detect</div>
-      <div class="step-desc">4 statistical methods scan all entities</div>
+      <div class="step-desc">4 trend-aware methods scan all entities</div>
     </div>
     <div class="pipeline-arrow">&rarr;</div>
     <div class="pipeline-step">
@@ -462,35 +460,34 @@
     <div class="pipeline-step">
       <div class="step-num">3</div>
       <div class="step-title">AI Analyse</div>
-      <div class="step-desc">Claude investigates context and writes structured analysis</div>
+      <div class="step-desc">Claude investigates context, writes structured analysis</div>
     </div>
     <div class="pipeline-arrow">&rarr;</div>
     <div class="pipeline-step">
       <div class="step-num">4</div>
       <div class="step-title">Classify &amp; Deliver</div>
-      <div class="step-desc">Severity gating + Web Push to subscribed users by role</div>
+      <div class="step-desc">Severity + outcome (positive/negative) gating + Web Push by role</div>
     </div>
   </div>
-
   <div class="card-grid cols-3" style="margin-top: 8px;">
     <div class="card card-accent">
       <h3>Detection Methods</h3>
       <span class="badge badge-done">Done</span>
       <ul>
-        <li><strong>Outlier (Z-Score):</strong> Single-month deviations from historical average</li>
-        <li><strong>Drift (Rolling Mean):</strong> Sustained trend changes vs baseline</li>
-        <li><strong>Target Miss:</strong> Actual vs budget variance beyond threshold</li>
-        <li><strong>Competitive Shift:</strong> MoM market share changes</li>
+        <li><strong>Outlier (Trend-Residual):</strong> Fits a linear trend on history, flags points that deviate significantly from the projected trend &mdash; both above and below. Eliminates false positives from steady growth</li>
+        <li><strong>Drift (Slope Change):</strong> Compares the slope in the recent window vs historical window. Only fires on genuine acceleration or deceleration, not steady trends. Scored as % of series mean</li>
+        <li><strong>Target Miss:</strong> Actual vs budget variance beyond configurable threshold (default 15% at low sensitivity)</li>
+        <li><strong>Competitive Shift:</strong> Period-over-period market share changes beyond threshold</li>
       </ul>
     </div>
     <div class="card card-accent">
-      <h3>User Interaction</h3>
+      <h3>Frequency-Adaptive &amp; AI-Classified</h3>
       <span class="badge badge-done">Done</span>
       <ul>
-        <li>Slide-out insights panel with severity-sorted anomalies</li>
-        <li>Read/unread tracking, bookmarking, sort by date or severity</li>
-        <li>One-click "Send to chat" for deeper AI analysis</li>
-        <li>Expandable analysis: facts / interpretation / hypothesis / recommendations</li>
+        <li>Auto-detects data frequency (monthly, weekly, daily) and adjusts window sizes &mdash; no config needed</li>
+        <li>AI classifies each anomaly as <strong>positive</strong> (revenue beat, share gain) or <strong>negative</strong> (shortfall, cost overrun)</li>
+        <li>Three sensitivity profiles (high/medium/low) configurable via env var or JSON</li>
+        <li>Atomic file store with cross-platform locking (Windows &amp; Unix)</li>
       </ul>
     </div>
     <div class="card card-accent">

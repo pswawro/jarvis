@@ -32,15 +32,18 @@ def _parse_analysis_response(text: str) -> dict | None:
     Returns dict with 'sections' (list of (tag, content) tuples),
     'revised_severity', and 'push', or None on failure.
     """
-    sections = parse_sections(text, extra_tags=("recommendations", "insight_severity", "insight_push"))
+    sections = parse_sections(text, extra_tags=("insight_severity", "insight_outcome", "insight_push"))
 
     # Separate insight-specific tags from content sections
     content_sections = []
     revised_severity = "informational"
+    outcome = "negative"
     push = False
     for tag, content in sections:
         if tag == "insight_severity":
             revised_severity = content.strip().lower()
+        elif tag == "insight_outcome":
+            outcome = content.strip().lower()
         elif tag == "insight_push":
             push = content.strip().lower() == "true"
         else:
@@ -50,6 +53,10 @@ def _parse_analysis_response(text: str) -> dict | None:
     if revised_severity not in ("critical", "notable", "informational"):
         revised_severity = "informational"
 
+    # Validate outcome
+    if outcome not in ("positive", "negative"):
+        outcome = "negative"
+
     # Build explanation from sections for backward compatibility
     explanation = " ".join(content for _, content in content_sections)
 
@@ -57,6 +64,7 @@ def _parse_analysis_response(text: str) -> dict | None:
         "explanation": explanation,
         "sections": content_sections,
         "revised_severity": revised_severity,
+        "outcome": outcome,
         "push": push,
     }
 

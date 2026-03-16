@@ -99,7 +99,7 @@ class AssistantHistoryMessage(BaseModel):
 
 class AssistantRequest(BaseModel):
     context: dict = {}
-    question: str = Field(max_length=2000)
+    question: str = Field(max_length=8000)
     history: list[AssistantHistoryMessage] = Field(default=[], max_length=20)
 
 
@@ -131,6 +131,7 @@ class InsightResponse(BaseModel):
     read: bool
     push: bool
     severity: str
+    outcome: str = "negative"
     bookmarked: bool = False
     ai_analysis: dict | None = None
     raw_stats: dict = {}

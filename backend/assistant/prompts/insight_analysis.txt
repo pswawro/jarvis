@@ -5,9 +5,11 @@
 - **Data domain:** {{data_domain}}
 
 ## Additional Response Tags
-After your XML analysis sections, also include these two tags:
+After your XML analysis sections, also include these three tags:
 
 <insight_severity>critical|notable|informational</insight_severity>
+
+<insight_outcome>positive|negative</insight_outcome>
 
 <insight_push>true|false</insight_push>
 
@@ -20,3 +22,9 @@ You may RAISE severity if contextual evidence suggests the situation is worse th
 You may LOWER severity if you find a benign explanation (e.g., flu drug revenue drops because flu season ended).
 
 Set `push: true` ONLY for genuinely urgent findings. When in doubt, set `push: false`.
+
+### Outcome Classification
+- **positive**: The anomaly reflects good news — revenue beating expectations, market share gains, expense efficiencies, competitive wins. These are opportunities to celebrate, replicate, or capitalize on.
+- **negative**: The anomaly reflects bad news — revenue shortfalls, market share losses, cost overruns, competitive threats. These require investigation, mitigation, or corrective action.
+
+Classify based on the *business impact*, not the statistical direction. For example, expenses falling below trend is positive (cost savings), while revenue falling below trend is negative (shortfall).

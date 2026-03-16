@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent.parent / ".env")
 
 import data_loader
+import pandas as pd
 from insights.config import load_sensitivity_profile
 from insights.detector import detect_outliers, detect_drift, detect_target_misses, detect_competitive_shifts
 from insights.dedup import make_fingerprint, deduplicate
@@ -29,6 +30,27 @@ log = logging.getLogger(__name__)
 STORE_PATH = Path(__file__).parent.parent.parent / "data" / "insights.json"
 
 
+def _infer_outcome(anomaly: dict) -> str:
+    """Infer positive/negative outcome from raw_stats when AI analysis is skipped."""
+    stats = anomaly.get("raw_stats", {})
+    domain = anomaly.get("data_domain", "")
+    detection = anomaly.get("detection_type", "")
+
+    if detection == "competitive_shift":
+        # Gaining market share is positive
+        return "positive" if stats.get("delta_pct", 0) > 0 else "negative"
+
+    direction = stats.get("direction", "")
+    if domain == "revenue":
+        # Revenue above trend / accelerating = positive
+        return "positive" if direction in ("above", "accelerating") else "negative"
+    elif domain == "expenses":
+        # Expenses above trend / accelerating = negative (costs rising)
+        return "negative" if direction in ("above", "accelerating") else "positive"
+
+    return "negative"
+
+
 def _make_insight(anomaly: dict, run_id: str, ai_result: dict | None, profile: dict) -> dict:
     """Build a full insight record from an anomaly and optional AI analysis."""
     now = datetime.now(timezone.utc).isoformat()
@@ -36,6 +58,7 @@ def _make_insight(anomaly: dict, run_id: str, ai_result: dict | None, profile: d
 
     if ai_result:
         severity = ai_result["revised_severity"]
+        outcome = ai_result.get("outcome", "negative")
         push = ai_result["push"]
     else:
         # Fallback: assign severity from statistical score
@@ -46,6 +69,7 @@ def _make_insight(anomaly: dict, run_id: str, ai_result: dict | None, profile: d
             severity = "notable"
         else:
             severity = "informational"
+        outcome = _infer_outcome(anomaly)
         push = False
 
     return {
@@ -62,6 +86,7 @@ def _make_insight(anomaly: dict, run_id: str, ai_result: dict | None, profile: d
         "read": False,
         "push": push,
         "severity": severity,
+        "outcome": outcome,
         "ai_analysis": ai_result or {},
         "raw_stats": anomaly.get("raw_stats", {}),
     }
@@ -75,13 +100,15 @@ def run():
     data_loader.load_all()
     profile = load_sensitivity_profile()
     threshold = profile["zscore_notable"]
-    log.info("Profile: %s (threshold=%.1f)", profile, threshold)
+    log.info("Profile: %s (threshold=%.1f)", profile, threshold)    # Only analyze actuals up to the current month — exclude future/forecast periods
+    cutoff = pd.Timestamp(datetime.now().replace(day=1))
+    log.info("Date cutoff (actuals only): %s", cutoff)
 
     # Run all detectors
     all_anomalies = []
 
     # Revenue outliers & drift by brand+market
-    rev = data_loader.revenue
+    rev = data_loader.revenue[data_loader.revenue["period_date"] <= cutoff].copy()
     all_anomalies.extend(detect_outliers(
         rev, "revenue", "brand", ["brand_id", "market_id"], profile, "revenue"))
     all_anomalies.extend(detect_drift(
@@ -115,7 +142,8 @@ def run():
 
     # Expense outliers & drift by sub_unit
     # Rename sub_unit_id → sub_unit so entity keys match dedup fingerprint and Pydantic model
-    exp = data_loader.expenses.rename(columns={"sub_unit_id": "sub_unit"})
+    exp = data_loader.expenses[data_loader.expenses["period_date"] <= cutoff].copy()
+    exp = exp.rename(columns={"sub_unit_id": "sub_unit"})
     all_anomalies.extend(detect_outliers(
         exp, "total_operating_expenses", "sub_unit", ["sub_unit"], profile, "expenses"))
     all_anomalies.extend(detect_drift(
@@ -133,9 +161,15 @@ def run():
         unit_monthly, "total_operating_expenses", "unit", ["unit"], profile, "expenses"))
 
     # Competitive shifts
-    all_anomalies.extend(detect_competitive_shifts(data_loader.commercial, profile))
+    commercial = data_loader.commercial[data_loader.commercial["period_date"] <= cutoff].copy()
+    all_anomalies.extend(detect_competitive_shifts(commercial, profile))
 
     log.info("Detected %d raw anomalies", len(all_anomalies))
+
+    # Log breakdown by detection type
+    from collections import Counter
+    type_counts = Counter(a["detection_type"] for a in all_anomalies)
+    log.info("Breakdown: %s", dict(type_counts))
 
     # Dedup against existing insights
     store = InsightStore(STORE_PATH)
@@ -168,6 +202,7 @@ def run():
         if ai_result:
             ins["ai_analysis"] = ai_result
             ins["severity"] = ai_result["revised_severity"]
+            ins["outcome"] = ai_result.get("outcome", "negative")
             ins["push"] = ai_result["push"]
 
     # Transition inactive

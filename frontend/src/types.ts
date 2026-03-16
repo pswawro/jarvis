@@ -305,6 +305,7 @@ export interface Insight {
   read: boolean;
   push: boolean;
   severity: "critical" | "notable" | "informational";
+  outcome: "positive" | "negative";
   bookmarked: boolean;
   ai_analysis: {
     explanation: string;
